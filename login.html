@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AFISH.uz — Login</title>
+  <link rel="stylesheet" href="login.css" />
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+      background: #08090d;
+      padding: 24px;
+      flex-wrap: wrap;
+    }
+    .phone-frame {
+      width: 390px;
+      min-height: 700px;
+      border-radius: 44px;
+      overflow: hidden;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06);
+      display: flex;
+      flex-direction: column;
+    }
+    .phone-frame .afish-login {
+      flex: 1;
+      min-height: 700px;
+    }
+    .label {
+      text-align: center;
+      color: rgba(255,255,255,0.35);
+      font-family: -apple-system, sans-serif;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+    .col { display: flex; flex-direction: column; align-items: center; }
+  </style>
+</head>
+<body>
+  <div class="col">
+    <div class="phone-frame" id="zakazchi-frame"></div>
+    <p class="label">Zakazchi</p>
+  </div>
+  <div class="col">
+    <div class="phone-frame" id="usta-frame"></div>
+    <p class="label">Usta</p>
+  </div>
+
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script type="text/babel" src="login.jsx"></script>
+  <script type="text/babel">
+    ReactDOM.createRoot(document.getElementById('zakazchi-frame')).render(
+      <AfishLoginZakazchi onSubmit={(p) => alert('Tel: ' + p)} />
+    );
+    ReactDOM.createRoot(document.getElementById('usta-frame')).render(
+      <AfishLoginUsta onSubmit={(p) => alert('Tel: ' + p)} />
+    );
+  </script>
+</body>
+</html>
