@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { StatusBar } from "expo-status-bar";
+import { useState, useRef, useEffect } from 'react';
+import { StatusBar } from 'expo-status-bar';
 import {
   StyleSheet,
   Text,
@@ -9,128 +9,128 @@ import {
   ScrollView,
   FlatList,
   Image,
-} from "react-native";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import Feather from "@expo/vector-icons/Feather";
-import { COLORS } from "./src/constants/colors";
-import { ENDPOINTS } from "./src/constants/config";
-import LoginScreen from "./src/screens/LoginScreen";
-import UstaMainScreen from "./src/screens/UstaMainScreen";
-import ZakazchiMainScreen from "./src/screens/ZakazchiMainScreen";
-import UstaDetailScreen from "./src/screens/UstaDetailScreen";
-import { ThemeProvider } from "./src/context/ThemeContext";
-import { getCategories } from "./src/api/categories";
-import { getWorkers } from "./src/api/workers";
+} from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import Feather from '@expo/vector-icons/Feather';
+import { COLORS } from './src/constants/colors';
+import { ENDPOINTS } from './src/constants/config';
+import LoginScreen from './src/screens/LoginScreen';
+import UstaMainScreen from './src/screens/UstaMainScreen';
+import ZakazchiMainScreen from './src/screens/ZakazchiMainScreen';
+import UstaDetailScreen from './src/screens/UstaDetailScreen';
+import { ThemeProvider } from './src/context/ThemeContext';
+import { getCategories } from './src/api/categories';
+import { getWorkers } from './src/api/workers';
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const TOP_WORKS = [
   {
     id: 1,
-    title: "Zamonaviy oshxona",
-    profession: "Duradgor",
-    worker: "Davron M.",
+    title: 'Zamonaviy oshxona',
+    profession: 'Duradgor',
+    worker: 'Davron M.',
     rating: 5.0,
-    icon: "hammer",
+    icon: 'hammer',
   },
   {
     id: 2,
     title: "Vannaxona ta'miri",
-    profession: "Santexnik",
-    worker: "Alisher U.",
+    profession: 'Santexnik',
+    worker: 'Alisher U.',
     rating: 5.0,
-    icon: "water-pump",
+    icon: 'water-pump',
   },
   {
     id: 3,
-    title: "Loft dizayn",
-    profession: "Elektrik",
-    worker: "Bobur K.",
+    title: 'Loft dizayn',
+    profession: 'Elektrik',
+    worker: 'Bobur K.',
     rating: 5.0,
-    icon: "lightning-bolt",
+    icon: 'lightning-bolt',
   },
   {
     id: 4,
     title: "Yotoqxona ta'miri",
     profession: "Bo'yoqchi",
-    worker: "Sherzod N.",
+    worker: 'Sherzod N.',
     rating: 4.9,
-    icon: "brush",
+    icon: 'brush',
   },
   {
     id: 5,
-    title: "Ofis plitka",
-    profession: "Plitachi",
-    worker: "Jasur T.",
+    title: 'Ofis plitka',
+    profession: 'Plitachi',
+    worker: 'Jasur T.',
     rating: 4.8,
-    icon: "grid",
+    icon: 'grid',
   },
   {
     id: 6,
-    title: "Metall eshik",
-    profession: "Payvandchi",
-    worker: "Firdavs A.",
+    title: 'Metall eshik',
+    profession: 'Payvandchi',
+    worker: 'Firdavs A.',
     rating: 4.9,
-    icon: "fire",
+    icon: 'fire',
   },
   {
     id: 7,
     title: "Ko'p qavatli bino",
-    profession: "Quruvchi",
-    worker: "Nodir R.",
+    profession: 'Quruvchi',
+    worker: 'Nodir R.',
     rating: 4.8,
-    icon: "domain",
+    icon: 'domain',
   },
   {
     id: 8,
     title: "Yuk ko'chirish",
-    profession: "Haydovchi",
-    worker: "Ulmas S.",
+    profession: 'Haydovchi',
+    worker: 'Ulmas S.',
     rating: 4.7,
-    icon: "truck",
+    icon: 'truck',
   },
   {
     id: 9,
     title: "Bog' obodonlashtirish",
     profession: "Bog'bon",
-    worker: "Kamol Y.",
+    worker: 'Kamol Y.',
     rating: 5.0,
-    icon: "flower",
+    icon: 'flower',
   },
   {
     id: 10,
-    title: "Smart uy tizimi",
-    profession: "Elektrik",
-    worker: "Bobur K.",
+    title: 'Smart uy tizimi',
+    profession: 'Elektrik',
+    worker: 'Bobur K.',
     rating: 5.0,
-    icon: "home-automation",
+    icon: 'home-automation',
   },
 ];
 
 const REVIEWS_DATA = [
   {
-    name: "Nodira A.",
-    location: "Toshkent",
-    initial: "N",
-    color: "#ec4899",
+    name: 'Nodira A.',
+    location: 'Toshkent',
+    initial: 'N',
+    color: '#ec4899',
     stars: 5,
-    text: "Santexnik 30 daqiqada yetib keldi va ishni juda toza bajardi. Mamnunman!",
+    text: 'Santexnik 30 daqiqada yetib keldi va ishni juda toza bajardi. Mamnunman!',
   },
   {
-    name: "Jamshid R.",
-    location: "Samarqand",
-    initial: "J",
-    color: "#3b82f6",
+    name: 'Jamshid R.',
+    location: 'Samarqand',
+    initial: 'J',
+    color: '#3b82f6',
     stars: 5,
     text: "Elektrik narxi hamyonbop, usta o'z ishining ustasi ekan. Tavsiya qilaman.",
   },
   {
-    name: "Malika T.",
-    location: "Toshkent",
-    initial: "M",
-    color: "#8b5cf6",
+    name: 'Malika T.',
+    location: 'Toshkent',
+    initial: 'M',
+    color: '#8b5cf6',
     stars: 4,
     text: "Bo'yoqchi vaqtida keldi, sifat zo'r. Ilova juda qulay.",
   },
@@ -139,38 +139,38 @@ const REVIEWS_DATA = [
 const STEPS = [
   {
     num: 1,
-    title: "Xizmatni tanlang",
-    desc: "Kerakli usta turini toping yoki qidiruvdan foydalaning.",
+    title: 'Xizmatni tanlang',
+    desc: 'Kerakli usta turini toping yoki qidiruvdan foydalaning.',
   },
   {
     num: 2,
-    title: "Buyurtma bering",
+    title: 'Buyurtma bering',
     desc: "Vaqt va manzilni belgilab, ustaga so'rov yuboring.",
   },
   {
     num: 3,
-    title: "Baholang",
-    desc: "Ish tugagach reyting va sharh qoldiring.",
+    title: 'Baholang',
+    desc: 'Ish tugagach reyting va sharh qoldiring.',
   },
 ];
 
 const BENEFITS_DATA = [
   {
-    icon: "shield-check",
-    color: "#2ecc71",
-    title: "Kafolatlangan ish",
-    desc: "Har bir buyurtma himoyalangan, sifat kafolati bilan.",
+    icon: 'shield-check',
+    color: '#2ecc71',
+    title: 'Kafolatlangan ish',
+    desc: 'Har bir buyurtma himoyalangan, sifat kafolati bilan.',
   },
   {
-    icon: "check-decagram",
-    color: "#3b82f6",
-    title: "Tekshirilgan ustalar",
-    desc: "Hujjatlari va tajribasi tasdiqlangan mutaxassislar.",
+    icon: 'check-decagram',
+    color: '#3b82f6',
+    title: 'Tekshirilgan ustalar',
+    desc: 'Hujjatlari va tajribasi tasdiqlangan mutaxassislar.',
   },
   {
-    icon: "lightning-bolt",
-    color: "#f5b81f",
-    title: "Tezkor javob",
+    icon: 'lightning-bolt',
+    color: '#f5b81f',
+    title: 'Tezkor javob',
     desc: "O'rtacha 15 daqiqada usta sizga bog'lanadi.",
   },
 ];
@@ -186,8 +186,13 @@ function TaklifXizmatlar() {
 
   useEffect(() => {
     getCategories()
-      .then(setCategories)
-      .catch(() => {});
+      .then((data) => {
+        console.log('Categories:', data);
+        setCategories(data);
+      })
+      .catch((error) => {
+        console.error('Xatolik:', error);
+      });
   }, []);
 
   useEffect(() => {
@@ -222,7 +227,7 @@ function TaklifXizmatlar() {
         contentContainerStyle={tx.list}
         renderItem={({ item }) => (
           <TouchableOpacity style={tx.item} activeOpacity={0.8}>
-            <View style={[tx.iconBox, { backgroundColor: item.color + "18" }]}>
+            <View style={[tx.iconBox, { backgroundColor: item.color + '18' }]}>
               {item.icon ? (
                 <Text style={tx.emoji}>{item.icon}</Text>
               ) : (
@@ -246,29 +251,29 @@ function TaklifXizmatlar() {
 const tx = StyleSheet.create({
   container: { marginTop: 26, marginBottom: 6 },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 16,
     marginBottom: 14,
   },
-  title: { color: COLORS.white, fontSize: 18, fontWeight: "700" },
-  link: { color: COLORS.orange, fontSize: 14, fontWeight: "600" },
+  title: { color: COLORS.white, fontSize: 18, fontWeight: '700' },
+  link: { color: COLORS.orange, fontSize: 14, fontWeight: '600' },
   list: { paddingHorizontal: 16, gap: 10 },
-  item: { width: 66, alignItems: "center" },
+  item: { width: 66, alignItems: 'center' },
   iconBox: {
     width: 56,
     height: 56,
     borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 6,
   },
   label: {
     color: COLORS.gray,
     fontSize: 11,
-    fontWeight: "500",
-    textAlign: "center",
+    fontWeight: '500',
+    textAlign: 'center',
   },
   emoji: { fontSize: 24 },
 });
@@ -329,13 +334,13 @@ function EngZorUstalar({ onSelectUsta }) {
               <Text style={eu.loc}>{worker.location}</Text>
             </View>
             <Text style={eu.price}>
-              Narx:{" "}
+              Narx:{' '}
               <Text style={eu.priceBold}>{worker.startingPrice} so'm</Text> dan
             </Text>
           </View>
 
           {/* Rating */}
-          <View style={{ alignItems: "flex-end", gap: 6 }}>
+          <View style={{ alignItems: 'flex-end', gap: 6 }}>
             <View style={eu.ratingBox}>
               <Ionicons name="star" size={13} color="#FBBF24" />
               <Text style={eu.ratingText}>{worker.rating.toFixed(1)}</Text>
@@ -351,42 +356,42 @@ function EngZorUstalar({ onSelectUsta }) {
 const eu = StyleSheet.create({
   container: { marginTop: 28 },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 16,
     marginBottom: 13,
   },
-  title: { color: COLORS.white, fontSize: 18, fontWeight: "700" },
-  link: { color: COLORS.orange, fontSize: 14, fontWeight: "600" },
+  title: { color: COLORS.white, fontSize: 18, fontWeight: '700' },
+  link: { color: COLORS.orange, fontSize: 14, fontWeight: '600' },
   card: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: COLORS.card,
     marginHorizontal: 16,
     borderRadius: 18,
     padding: 13,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   rankBadge: {
-    position: "absolute",
+    position: 'absolute',
     top: -7,
     left: -7,
-    backgroundColor: "#f5c451",
+    backgroundColor: '#f5c451',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 7,
   },
-  rankText: { fontSize: 9, fontWeight: "800", color: "#3a2a08" },
+  rankText: { fontSize: 9, fontWeight: '800', color: '#3a2a08' },
   onlineDot: {
-    position: "absolute",
+    position: 'absolute',
     bottom: 0,
     right: 0,
     width: 11,
     height: 11,
     borderRadius: 6,
-    backgroundColor: "#22C55E",
+    backgroundColor: '#22C55E',
     borderWidth: 2,
     borderColor: COLORS.card,
   },
@@ -394,37 +399,37 @@ const eu = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 15,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  avatarText: { color: COLORS.white, fontSize: 19, fontWeight: "700" },
+  avatarText: { color: COLORS.white, fontSize: 19, fontWeight: '700' },
   info: { flex: 1 },
   name: {
     color: COLORS.white,
     fontSize: 14.5,
-    fontWeight: "700",
+    fontWeight: '700',
     marginBottom: 3,
   },
   metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 5,
     marginBottom: 3,
   },
   prof: { color: COLORS.gray, fontSize: 12 },
   loc: { color: COLORS.gray, fontSize: 11.5 },
   price: { fontSize: 12, color: COLORS.gray },
-  priceBold: { color: COLORS.white, fontWeight: "800" },
+  priceBold: { color: COLORS.white, fontWeight: '800' },
   ratingBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(245,196,81,0.13)",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(245,196,81,0.13)',
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
     gap: 3,
   },
-  ratingText: { color: "#FBBF24", fontSize: 12.5, fontWeight: "700" },
+  ratingText: { color: '#FBBF24', fontSize: 12.5, fontWeight: '700' },
   exp: { fontSize: 12, color: COLORS.gray },
 });
 
@@ -497,14 +502,14 @@ function EngZorIshlar() {
 const ei = StyleSheet.create({
   container: { marginTop: 28, marginBottom: 6 },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 16,
     marginBottom: 12,
   },
-  title: { color: COLORS.white, fontSize: 18, fontWeight: "700" },
-  link: { color: COLORS.orange, fontSize: 14, fontWeight: "600" },
+  title: { color: COLORS.white, fontSize: 18, fontWeight: '700' },
+  link: { color: COLORS.orange, fontSize: 14, fontWeight: '600' },
   list: { paddingHorizontal: 16, gap: EI_GAP },
   card: { width: EI_CARD_W },
   imgBox: {
@@ -512,28 +517,28 @@ const ei = StyleSheet.create({
     height: 140,
     backgroundColor: COLORS.card,
     borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 8,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   ratingBadge: {
-    position: "absolute",
+    position: 'absolute',
     top: 8,
     right: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.55)",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.55)',
     borderRadius: 8,
     paddingHorizontal: 6,
     paddingVertical: 3,
     gap: 3,
   },
-  ratingBadgeText: { color: COLORS.white, fontSize: 11, fontWeight: "700" },
+  ratingBadgeText: { color: COLORS.white, fontSize: 11, fontWeight: '700' },
   cardTitle: {
     color: COLORS.white,
     fontSize: 13,
-    fontWeight: "700",
+    fontWeight: '700',
     marginBottom: 3,
   },
   cardSub: { color: COLORS.gray, fontSize: 11 },
@@ -553,9 +558,9 @@ function PromoBanner({ onPress }) {
           style={{ opacity: 0.12 }}
         />
       </View>
-      <Text style={pb.heading}>Ustangizni 2 daqiqada{"\n"}toping</Text>
+      <Text style={pb.heading}>Ustangizni 2 daqiqada{'\n'}toping</Text>
       <Text style={pb.sub}>
-        1 200+ tekshirilgan mutaxassis —{"\n"}kafolat bilan ishlaydi.
+        1 200+ tekshirilgan mutaxassis —{'\n'}kafolat bilan ishlaydi.
       </Text>
       <TouchableOpacity style={pb.cta} activeOpacity={0.85} onPress={onPress}>
         <Text style={pb.ctaTxt}>Boshlash</Text>
@@ -573,58 +578,58 @@ const pb = StyleSheet.create({
     borderRadius: 22,
     backgroundColor: COLORS.orange,
     padding: 22,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   glow: {
-    position: "absolute",
+    position: 'absolute',
     top: -60,
     right: -50,
     width: 220,
     height: 220,
     borderRadius: 110,
-    backgroundColor: "rgba(255,255,255,0.10)",
+    backgroundColor: 'rgba(255,255,255,0.10)',
   },
-  iconBg: { position: "absolute", right: -12, bottom: -20 },
+  iconBg: { position: 'absolute', right: -12, bottom: -20 },
   heading: {
     fontSize: 21,
-    fontWeight: "800",
-    color: "#fff",
+    fontWeight: '800',
+    color: '#fff',
     lineHeight: 28,
     marginBottom: 8,
   },
   sub: {
     fontSize: 13.5,
-    color: "rgba(255,255,255,0.92)",
+    color: 'rgba(255,255,255,0.92)',
     lineHeight: 20,
     marginBottom: 18,
   },
   cta: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 6,
-    alignSelf: "flex-start",
-    backgroundColor: "#fff",
+    alignSelf: 'flex-start',
+    backgroundColor: '#fff',
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 16,
   },
-  ctaTxt: { color: COLORS.orange, fontWeight: "700", fontSize: 14 },
+  ctaTxt: { color: COLORS.orange, fontWeight: '700', fontSize: 14 },
 });
 
 // ─── TrustRow ─────────────────────────────────────────────────────────────────
 
 const TRUST_ITEMS = [
-  { icon: "shield-check", color: "#2ecc71", label: "Kafolat" },
-  { icon: "check-decagram", color: "#3b82f6", label: "Tekshirilgan" },
-  { icon: "lightning-bolt", color: "#f5b81f", label: "24/7 xizmat" },
+  { icon: 'shield-check', color: '#2ecc71', label: 'Kafolat' },
+  { icon: 'check-decagram', color: '#3b82f6', label: 'Tekshirilgan' },
+  { icon: 'lightning-bolt', color: '#f5b81f', label: '24/7 xizmat' },
 ];
 
 function TrustRow() {
   return (
     <View
       style={{
-        flexDirection: "row",
-        justifyContent: "center",
+        flexDirection: 'row',
+        justifyContent: 'center',
         gap: 10,
         marginBottom: 10,
         paddingHorizontal: 16,
@@ -634,15 +639,15 @@ function TrustRow() {
         <View
           key={i}
           style={{
-            flexDirection: "row",
-            alignItems: "center",
+            flexDirection: 'row',
+            alignItems: 'center',
             gap: 6,
             backgroundColor: COLORS.card,
             paddingHorizontal: 13,
             paddingVertical: 9,
             borderRadius: 22,
             borderWidth: 1,
-            borderColor: "rgba(255,255,255,0.07)",
+            borderColor: 'rgba(255,255,255,0.07)',
           }}
         >
           <MaterialCommunityIcons
@@ -651,7 +656,7 @@ function TrustRow() {
             color={item.color}
           />
           <Text
-            style={{ fontSize: 12, color: COLORS.white, fontWeight: "600" }}
+            style={{ fontSize: 12, color: COLORS.white, fontWeight: '600' }}
           >
             {item.label}
           </Text>
@@ -664,9 +669,9 @@ function TrustRow() {
 // ─── StatsBand ────────────────────────────────────────────────────────────────
 
 const DEFAULT_STATS = [
-  ["1 200+", "Usta"],
-  ["8 500+", "Bajarilgan ish"],
-  ["4.8★", "O'rtacha reyting"],
+  ['1 200+', 'Usta'],
+  ['8 500+', 'Bajarilgan ish'],
+  ['4.8★', "O'rtacha reyting"],
 ];
 
 function StatsBand() {
@@ -680,8 +685,8 @@ function StatsBand() {
           const { worker_count, order_count, average_rating } =
             data.response_data;
           setStats([
-            [`${worker_count}+`, "Usta"],
-            [`${order_count}+`, "Bajarilgan ish"],
+            [`${worker_count}+`, 'Usta'],
+            [`${order_count}+`, 'Bajarilgan ish'],
             [`${average_rating.toFixed(1)}★`, "O'rtacha reyting"],
           ]);
         }
@@ -697,10 +702,10 @@ function StatsBand() {
         marginBottom: 28,
         backgroundColor: COLORS.card,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.06)",
+        borderColor: 'rgba(255,255,255,0.06)',
         borderRadius: 18,
         paddingVertical: 18,
-        flexDirection: "row",
+        flexDirection: 'row',
       }}
     >
       {stats.map(([v, l], i) => (
@@ -708,13 +713,13 @@ function StatsBand() {
           key={i}
           style={{
             flex: 1,
-            alignItems: "center",
+            alignItems: 'center',
             borderRightWidth: i < 2 ? 1 : 0,
-            borderRightColor: "rgba(255,255,255,0.06)",
+            borderRightColor: 'rgba(255,255,255,0.06)',
           }}
         >
           <Text
-            style={{ fontSize: 19, fontWeight: "800", color: COLORS.white }}
+            style={{ fontSize: 19, fontWeight: '800', color: COLORS.white }}
           >
             {v}
           </Text>
@@ -723,7 +728,7 @@ function StatsBand() {
               fontSize: 11,
               color: COLORS.gray,
               marginTop: 3,
-              textAlign: "center",
+              textAlign: 'center',
               paddingHorizontal: 4,
             }}
           >
@@ -743,21 +748,21 @@ function HowItWorks() {
       {STEPS.map((s) => (
         <View
           key={s.num}
-          style={{ flexDirection: "row", alignItems: "flex-start", gap: 14 }}
+          style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 14 }}
         >
           <View
             style={{
               width: 36,
               height: 36,
               borderRadius: 11,
-              backgroundColor: COLORS.orange + "22",
-              alignItems: "center",
-              justifyContent: "center",
+              backgroundColor: COLORS.orange + '22',
+              alignItems: 'center',
+              justifyContent: 'center',
               flexShrink: 0,
             }}
           >
             <Text
-              style={{ color: COLORS.orange, fontWeight: "800", fontSize: 15 }}
+              style={{ color: COLORS.orange, fontWeight: '800', fontSize: 15 }}
             >
               {s.num}
             </Text>
@@ -766,7 +771,7 @@ function HowItWorks() {
             <Text
               style={{
                 color: COLORS.white,
-                fontWeight: "700",
+                fontWeight: '700',
                 fontSize: 14.5,
                 marginBottom: 4,
               }}
@@ -806,22 +811,22 @@ function ReviewsSection() {
             borderRadius: 18,
             padding: 16,
             borderWidth: 1,
-            borderColor: "rgba(255,255,255,0.06)",
+            borderColor: 'rgba(255,255,255,0.06)',
           }}
         >
-          <View style={{ flexDirection: "row", gap: 3, marginBottom: 10 }}>
+          <View style={{ flexDirection: 'row', gap: 3, marginBottom: 10 }}>
             {[0, 1, 2, 3, 4].map((j) => (
               <Ionicons
                 key={j}
                 name="star"
                 size={14}
-                color={j < r.stars ? "#f5b81f" : "#2a3a4a"}
+                color={j < r.stars ? '#f5b81f' : '#2a3a4a'}
               />
             ))}
           </View>
           <Text
             style={{
-              color: "#c4cdd8",
+              color: '#c4cdd8',
               fontSize: 13.5,
               lineHeight: 20,
               marginBottom: 14,
@@ -829,24 +834,24 @@ function ReviewsSection() {
           >
             {r.text}
           </Text>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View
               style={{
                 width: 34,
                 height: 34,
                 borderRadius: 10,
                 backgroundColor: r.color,
-                alignItems: "center",
-                justifyContent: "center",
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
-              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 14 }}>
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>
                 {r.initial}
               </Text>
             </View>
             <View>
               <Text
-                style={{ color: COLORS.white, fontWeight: "600", fontSize: 13 }}
+                style={{ color: COLORS.white, fontWeight: '600', fontSize: 13 }}
               >
                 {r.name}
               </Text>
@@ -872,14 +877,14 @@ function BenefitsSection() {
         <View
           key={i}
           style={{
-            flexDirection: "row",
-            alignItems: "flex-start",
+            flexDirection: 'row',
+            alignItems: 'flex-start',
             gap: 14,
             backgroundColor: COLORS.card,
             borderRadius: 18,
             padding: 16,
             borderWidth: 1,
-            borderColor: "rgba(255,255,255,0.06)",
+            borderColor: 'rgba(255,255,255,0.06)',
           }}
         >
           <View
@@ -887,9 +892,9 @@ function BenefitsSection() {
               width: 46,
               height: 46,
               borderRadius: 13,
-              backgroundColor: b.color + "22",
-              alignItems: "center",
-              justifyContent: "center",
+              backgroundColor: b.color + '22',
+              alignItems: 'center',
+              justifyContent: 'center',
               flexShrink: 0,
             }}
           >
@@ -899,7 +904,7 @@ function BenefitsSection() {
             <Text
               style={{
                 color: COLORS.white,
-                fontWeight: "700",
+                fontWeight: '700',
                 fontSize: 14.5,
                 marginBottom: 4,
               }}
@@ -927,28 +932,28 @@ function ClosingCTA({ onPress }) {
         backgroundColor: COLORS.card,
         borderRadius: 22,
         padding: 24,
-        alignItems: "center",
+        alignItems: 'center',
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.06)",
-        overflow: "hidden",
+        borderColor: 'rgba(255,255,255,0.06)',
+        overflow: 'hidden',
       }}
     >
       <View
         style={{
-          position: "absolute",
+          position: 'absolute',
           width: 220,
           height: 180,
-          backgroundColor: "rgba(232,122,69,0.10)",
+          backgroundColor: 'rgba(232,122,69,0.10)',
           borderRadius: 110,
         }}
       />
       <Text
         style={{
           color: COLORS.white,
-          fontWeight: "800",
+          fontWeight: '800',
           fontSize: 20,
           marginBottom: 8,
-          textAlign: "center",
+          textAlign: 'center',
           lineHeight: 27,
         }}
       >
@@ -958,7 +963,7 @@ function ClosingCTA({ onPress }) {
         style={{
           color: COLORS.gray,
           fontSize: 13.5,
-          textAlign: "center",
+          textAlign: 'center',
           marginBottom: 20,
           lineHeight: 20,
         }}
@@ -969,18 +974,18 @@ function ClosingCTA({ onPress }) {
         onPress={onPress}
         activeOpacity={0.85}
         style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "center",
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
           backgroundColor: COLORS.orange,
           borderRadius: 14,
           paddingVertical: 14,
           gap: 8,
-          width: "100%",
+          width: '100%',
         }}
       >
         <Feather name="log-in" size={18} color="#fff" />
-        <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>
+        <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>
           Kirish / Ro'yxatdan o'tish
         </Text>
       </TouchableOpacity>
@@ -994,19 +999,19 @@ function SectionHead({ title, link }) {
   return (
     <View
       style={{
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         paddingHorizontal: 16,
         marginBottom: 14,
         marginTop: 28,
       }}
     >
-      <Text style={{ color: COLORS.white, fontSize: 18, fontWeight: "700" }}>
+      <Text style={{ color: COLORS.white, fontSize: 18, fontWeight: '700' }}>
         {title}
       </Text>
       {link && (
-        <Text style={{ color: COLORS.orange, fontSize: 14, fontWeight: "600" }}>
+        <Text style={{ color: COLORS.orange, fontSize: 14, fontWeight: '600' }}>
           {link}
         </Text>
       )}
@@ -1017,8 +1022,8 @@ function SectionHead({ title, link }) {
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [searchText, setSearchText] = useState("");
-  const [screen, setScreen] = useState("home");
+  const [searchText, setSearchText] = useState('');
+  const [screen, setScreen] = useState('home');
   const [selectedUsta, setSelectedUsta] = useState(null);
 
   if (selectedUsta) {
@@ -1030,25 +1035,23 @@ export default function App() {
           onBack={() => setSelectedUsta(null)}
           onGoToLogin={() => {
             setSelectedUsta(null);
-            setScreen("login");
+            setScreen('login');
           }}
         />
       </SafeAreaProvider>
     );
   }
 
-  if (screen === "login") {
+  if (screen === 'login') {
     return (
       <ThemeProvider>
         <SafeAreaProvider>
           <StatusBar style="light" />
           <LoginScreen
-            onBack={() => setScreen("home")}
+            onBack={() => setScreen('home')}
             onLoginSuccess={(actorType) =>
               setScreen(
-                actorType === "worker"
-                  ? "usta-dashboard"
-                  : "zakazchi-dashboard",
+                actorType === 'worker' ? 'usta-dashboard' : 'zakazchi-dashboard'
               )
             }
           />
@@ -1057,9 +1060,9 @@ export default function App() {
     );
   }
 
-  const handleLogout = () => setScreen("home");
+  const handleLogout = () => setScreen('home');
 
-  if (screen === "usta-dashboard") {
+  if (screen === 'usta-dashboard') {
     return (
       <SafeAreaProvider>
         <StatusBar style="light" />
@@ -1068,7 +1071,7 @@ export default function App() {
     );
   }
 
-  if (screen === "zakazchi-dashboard") {
+  if (screen === 'zakazchi-dashboard') {
     return (
       <ThemeProvider>
         <SafeAreaProvider>
@@ -1081,7 +1084,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
@@ -1089,14 +1092,14 @@ export default function App() {
           {/* ── Header ── */}
           <View style={styles.header}>
             <Image
-              source={require("./assets/afish-logo-horizontal.png")}
+              source={require('./assets/afish-logo-horizontal.png')}
               style={styles.logoImg}
               resizeMode="contain"
             />
             <TouchableOpacity
               style={styles.loginBtn}
               activeOpacity={0.8}
-              onPress={() => setScreen("login")}
+              onPress={() => setScreen('login')}
             >
               <Feather
                 name="log-in"
@@ -1131,7 +1134,7 @@ export default function App() {
           </View>
 
           {/* ── Promo + Trust ── */}
-          <PromoBanner onPress={() => setScreen("login")} />
+          <PromoBanner onPress={() => setScreen('login')} />
           <TrustRow />
 
           {/* ── Taklif xizmatlar ── */}
@@ -1159,7 +1162,7 @@ export default function App() {
           <BenefitsSection />
 
           {/* ── Closing CTA ── */}
-          <ClosingCTA onPress={() => setScreen("login")} />
+          <ClosingCTA onPress={() => setScreen('login')} />
         </ScrollView>
       </SafeAreaView>
     </SafeAreaProvider>
@@ -1173,9 +1176,9 @@ const styles = StyleSheet.create({
   scrollContent: { paddingBottom: 110 },
 
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 12,
@@ -1183,26 +1186,26 @@ const styles = StyleSheet.create({
   logoImg: { width: 130, height: 36 },
 
   loginBtn: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: COLORS.orange,
     paddingVertical: 9,
     paddingHorizontal: 16,
     borderRadius: 24,
   },
-  loginBtnTxt: { color: COLORS.white, fontWeight: "600", fontSize: 14 },
+  loginBtnTxt: { color: COLORS.white, fontWeight: '600', fontSize: 14 },
 
   searchRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginHorizontal: 16,
     marginTop: 4,
     gap: 10,
   },
   searchInner: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: COLORS.card,
     borderRadius: 14,
     paddingHorizontal: 14,
@@ -1213,7 +1216,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.card,
     borderRadius: 14,
     padding: 14,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

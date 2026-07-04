@@ -21,7 +21,7 @@ import { COLORS } from "../../constants/colors";
 import PhoneInput from "../../components/login/PhoneInput";
 import * as Location from "expo-location";
 import { WebView } from "react-native-webview";
-import { requestRegisterOtp, getRegisterUploadUrl, uploadImageToPresignedUrl } from "../../api/auth";
+import { requestRegisterOtp, getRegisterUploadUrl, uploadImageToPresignedUrl, verifyRegisterOtp } from "../../api/auth";
 
 const REGIONS = {
   "Toshkent shahri": [
@@ -994,8 +994,6 @@ function StepGps({ data, set, onNext }) {
     } catch {}
   };
 
-  const ok = !!data.default_gps_lat;
-
   return (
     <View style={sh.flex}>
       <ScrollView
@@ -1036,7 +1034,7 @@ function StepGps({ data, set, onNext }) {
             </Text>
           </TouchableOpacity>
 
-          {!ok && (
+          {!data.default_gps_lat && (
             <View style={gp.hintWrap} pointerEvents="none">
               <Text style={gp.tapHint}>Xaritaga bosib joylashuvni belgilang</Text>
             </View>
@@ -1059,7 +1057,6 @@ function StepGps({ data, set, onNext }) {
         <CtaBtn
           label="Ro'yxatni yakunlash"
           onPress={onNext}
-          disabled={!ok}
           checkIcon
         />
       </View>
@@ -1108,7 +1105,7 @@ const gp = StyleSheet.create({
 });
 
 // ─── Done ────────────────────────────────────────────────────────────────────
-function StepDone({ data, onFinish }) {
+function StepDone({ data, onFinish, submitting }) {
   const genderLabel =
     data.gender === "male" ? "Erkak" : data.gender === "female" ? "Ayol" : "—";
   const rows = [
@@ -1164,12 +1161,18 @@ function StepDone({ data, onFinish }) {
       </View>
 
       <TouchableOpacity
-        style={[ct.btn, { width: "100%", marginHorizontal: 0 }]}
-        onPress={onFinish}
+        style={[ct.btn, { width: "100%", marginHorizontal: 0 }, submitting && ct.disabled]}
+        onPress={submitting ? undefined : onFinish}
         activeOpacity={0.85}
       >
-        <Text style={ct.txt}>Ilovaga kirish</Text>
-        <Ionicons name="arrow-forward" size={18} color="#fff" />
+        {submitting ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <>
+            <Text style={ct.txt}>Ilovaga kirish</Text>
+            <Ionicons name="arrow-forward" size={18} color="#fff" />
+          </>
+        )}
       </TouchableOpacity>
     </ScrollView>
   );
@@ -1348,6 +1351,35 @@ export default function RegisterStep({ onBack, onDone }) {
     else setStep((s) => s - 1);
   };
 
+  const finish = async () => {
+    const phone = "+998" + data.phone.replace(/\D/g, "");
+    const [day, month, year] = data.birth_date.split(".");
+    setLoading(true);
+    try {
+      await verifyRegisterOtp({
+        phone,
+        code: data.code,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email: data.email,
+        birth_date: `${year}-${month}-${day}`,
+        address: data.address,
+        verification_temp_key: data.passport_selfie_key,
+        gender: data.gender,
+        region: data.region,
+        district: data.district,
+        default_gps_lat: data.default_gps_lat ? parseFloat(data.default_gps_lat) : 0,
+        default_gps_lng: data.default_gps_lng ? parseFloat(data.default_gps_lng) : 0,
+        default_landmark: data.default_landmark,
+      });
+      onDone();
+    } catch (e) {
+      Alert.alert("Xatolik", e.message || "Ro'yxatdan o'tishni yakunlashda muammo yuz berdi");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: COLORS.bg }}
@@ -1376,7 +1408,9 @@ export default function RegisterStep({ onBack, onDone }) {
         {step === 4 && <StepInfo data={data} set={set} onNext={next} />}
         {step === 5 && <StepAddress data={data} set={set} onNext={next} />}
         {step === 6 && <StepGps data={data} set={set} onNext={next} />}
-        {step === 7 && <StepDone data={data} onFinish={onDone} />}
+        {step === 7 && (
+          <StepDone data={data} onFinish={finish} submitting={loading} />
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

@@ -35,6 +35,23 @@ export async function getRegisterUploadUrl(phone, code, contentType) {
   return data.response_data; // { upload_url, temp_key, expires_in }
 }
 
+export async function verifyRegisterOtp(payload) {
+  console.log('[verifyRegisterOtp] so\'rov:', payload);
+  const res = await fetch(ENDPOINTS.REGISTER_VERIFY_OTP, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    console.log('[verifyRegisterOtp] ERROR:', err);
+    throw new Error(err.message || "Ro'yxatdan o'tishni yakunlashda xatolik");
+  }
+  const data = await res.json();
+  console.log('[verifyRegisterOtp]', data);
+  return data.response_data;
+}
+
 export async function uploadImageToPresignedUrl(uploadUrl, imageUri, contentType) {
   const ct = contentType || 'image/jpeg';
 
