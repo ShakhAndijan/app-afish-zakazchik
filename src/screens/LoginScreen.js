@@ -5,7 +5,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { useTheme } from '../context/ThemeContext';
 import { googleLogin } from '../api/auth';
 import PhoneStep from './steps/PhoneStep';
-import CodeStep from './steps/CodeStep';
+import ForgotPasswordStep from './steps/ForgotPasswordStep';
 import EmailStep from './steps/EmailStep';
 import RegisterStep from './steps/RegisterStep';
 
@@ -16,7 +16,9 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
   const { theme } = useTheme();
   const [step, setStep] = useState('phone');
   const [phone, setPhone] = useState('');
-  const [actorType, setActorType] = useState('customer');
+  const [password, setPassword] = useState('');
+  const [forgotPhone, setForgotPhone] = useState('');
+  const [actorType] = useState('customer');
   const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleGoogle = async () => {
@@ -38,21 +40,31 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
       <PhoneStep
         phone={phone}
         onChange={setPhone}
+        password={password}
+        onPasswordChange={setPassword}
+        onLogin={() => (onLoginSuccess ?? onBack)(actorType)}
+        onForgot={() => {
+          setForgotPhone(phone);
+          setStep('forgot');
+        }}
         onBack={onBack}
-        onSms={() => setStep('code')}
         onGoogle={handleGoogle}
         googleLoading={googleLoading}
         onEmail={() => setStep('email')}
         onRegister={() => setStep('register')}
         actorType={actorType}
-        onActorTypeChange={setActorType}
       />
     ),
-    code: (
-      <CodeStep
-        phone={phone}
+    forgot: (
+      <ForgotPasswordStep
+        phone={forgotPhone}
+        onChange={setForgotPhone}
+        onSubmit={() => {
+          Alert.alert('Kod yuborildi', 'Tasdiqlash kodi SMS orqali yuborildi.');
+          setStep('phone');
+        }}
         onBack={() => setStep('phone')}
-        onConfirm={() => (onLoginSuccess ?? onBack)(actorType)}
+        actorType={actorType}
       />
     ),
     email: (

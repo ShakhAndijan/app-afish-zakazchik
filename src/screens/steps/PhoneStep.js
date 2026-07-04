@@ -12,6 +12,7 @@ import {
 import { Feather, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import PhoneInput from '../../components/login/PhoneInput';
+import PasswordInput from '../../components/login/PasswordInput';
 
 const SERVICES = [
   { name: 'Santexnik', color: '#22b8cf', icon: 'wrench',          lib: 'MaterialCommunityIcons' },
@@ -27,16 +28,21 @@ function ServiceIcon({ icon, color }) {
 export default function PhoneStep({
   phone,
   onChange,
-  onSms,
+  password,
+  onPasswordChange,
+  onLogin,
+  onForgot,
   onGoogle,
   googleLoading,
   onEmail,
   onRegister,
   onBack,
+  actorType = 'customer',
 }) {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme.isDark !== false;
-  const isReady = phone.length === 9;
+  const isUsta = actorType === 'worker';
+  const isReady = phone.length === 9 && password.length >= 4;
 
   return (
     <KeyboardAvoidingView
@@ -74,33 +80,52 @@ export default function PhoneStep({
         <View style={s.body}>
           {/* ── Hero ── */}
           <View style={s.hero}>
-            <View style={[s.orb, isDark
-              ? { backgroundColor: 'rgba(240,122,48,0.13)' }
-              : { backgroundColor: 'rgba(240,122,48,0.08)' }
+            <View style={[s.orb, isUsta
+              ? { backgroundColor: isDark ? 'rgba(63,127,212,0.16)' : 'rgba(63,127,212,0.10)' }
+              : isDark
+                ? { backgroundColor: 'rgba(240,122,48,0.13)' }
+                : { backgroundColor: 'rgba(240,122,48,0.08)' }
             ]} />
             <Image
               source={require('../../../assets/afish-logo-vertical.png')}
               style={s.logo}
               resizeMode="contain"
             />
-            <Text style={[s.h1, { color: theme.text }]}>Xush kelibsiz!</Text>
+            {isUsta && (
+              <View style={[s.ustaPill, { backgroundColor: theme.orange }]}>
+                <Text style={s.ustaPillTxt}>USTA</Text>
+              </View>
+            )}
+            <Text style={[s.h1, { color: theme.text }]}>
+              {isUsta ? 'Ishni boshlaymizmi?' : 'Xush kelibsiz!'}
+            </Text>
             <Text style={[s.sub, { color: theme.muted }]}>
-              Hisobingizga kiring va ishonchli ustalarga buyurtma bering.
+              {isUsta
+                ? 'Hisobingizga kirib buyurtmalarni qabul qiling va daromad oling.'
+                : 'Hisobingizga kiring va ishonchli ustalarga buyurtma bering.'}
             </Text>
           </View>
 
-          {/* ── Xizmat chips ── */}
-          <View style={s.chipRow}>
-            {SERVICES.map((sv) => (
-              <View
-                key={sv.name}
-                style={[s.chip, { backgroundColor: theme.card, borderColor: theme.border }]}
-              >
-                <ServiceIcon icon={sv.icon} color={sv.color} />
-                <Text style={[s.chipTxt, { color: theme.muted }]}>{sv.name}</Text>
+          {/* ── Statistika (usta) ── */}
+          {isUsta && (
+            <View style={s.statsRow}>
+              <View style={[s.statBox, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                <MaterialCommunityIcons name="lightning-bolt" size={18} color={theme.gold} />
+                <Text style={[s.statVal, { color: theme.text }]}>5 000+</Text>
+                <Text style={[s.statLbl, { color: theme.muted }]}>oylik ish</Text>
               </View>
-            ))}
-          </View>
+              <View style={[s.statBox, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                <MaterialCommunityIcons name="wallet-outline" size={18} color={theme.green} />
+                <Text style={[s.statVal, { color: theme.text }]}>24 soat</Text>
+                <Text style={[s.statLbl, { color: theme.muted }]}>to'lov</Text>
+              </View>
+              <View style={[s.statBox, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                <Ionicons name="star" size={18} color={theme.gold} />
+                <Text style={[s.statVal, { color: theme.text }]}>4.8</Text>
+                <Text style={[s.statLbl, { color: theme.muted }]}>reyting</Text>
+              </View>
+            </View>
+          )}
 
           {/* ── Phone field ── */}
           <View style={s.fieldWrap}>
@@ -108,15 +133,41 @@ export default function PhoneStep({
             <PhoneInput value={phone} onChangeText={onChange} theme={theme} />
           </View>
 
+          {/* ── Password field ── */}
+          <View style={s.fieldWrap}>
+            <View style={s.fieldLabelRow}>
+              <Text style={[s.fieldLabel, { color: theme.muted }]}>Parol</Text>
+              <TouchableOpacity onPress={onForgot} activeOpacity={0.7}>
+                <Text style={[s.forgotTxt, { color: theme.orange }]}>Parolni unutdingizmi?</Text>
+              </TouchableOpacity>
+            </View>
+            <PasswordInput value={password} onChangeText={onPasswordChange} theme={theme} />
+          </View>
+
           {/* ── CTA ── */}
           <TouchableOpacity
             style={[s.cta, !isReady && s.ctaDisabled]}
-            onPress={isReady ? onSms : undefined}
+            onPress={isReady ? onLogin : undefined}
             activeOpacity={0.85}
           >
-            <Text style={[s.ctaTxt, !isReady && s.ctaTxtDisabled]}>SMS kod yuborish</Text>
+            <Text style={[s.ctaTxt, !isReady && s.ctaTxtDisabled]}>Kirish</Text>
             <Feather name="arrow-right" size={18} color={isReady ? '#fff' : '#7a6253'} />
           </TouchableOpacity>
+
+          {/* ── Xizmat chips (zakazchi) ── */}
+          {!isUsta && (
+            <View style={s.chipRow}>
+              {SERVICES.map((sv) => (
+                <View
+                  key={sv.name}
+                  style={[s.chip, { backgroundColor: theme.card, borderColor: theme.border }]}
+                >
+                  <ServiceIcon icon={sv.icon} color={sv.color} />
+                  <Text style={[s.chipTxt, { color: theme.muted }]}>{sv.name}</Text>
+                </View>
+              ))}
+            </View>
+          )}
 
           {/* ── Social ── */}
           <View style={s.orWrap}>
@@ -158,7 +209,9 @@ export default function PhoneStep({
               ga rozilik bildirasiz.
             </Text>
             <View style={s.regRow}>
-              <Text style={[s.regHint, { color: theme.muted }]}>Hisobingiz yo'qmi? </Text>
+              <Text style={[s.regHint, { color: theme.muted }]}>
+                {isUsta ? 'Usta sifatida yangimisiz? ' : "Hisobingiz yo'qmi? "}
+              </Text>
               <TouchableOpacity onPress={onRegister} activeOpacity={0.7}>
                 <Text style={[s.regLink, { color: theme.orange }]}>Ro'yxatdan o'tish</Text>
               </TouchableOpacity>
@@ -213,6 +266,13 @@ const s = StyleSheet.create({
     borderRadius: 100,
   },
   logo: { width: 220, height: 120 },
+  ustaPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginTop: -8,
+  },
+  ustaPillTxt: { color: '#fff', fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
   h1: {
     fontSize: 27,
     fontWeight: '800',
@@ -230,6 +290,7 @@ const s = StyleSheet.create({
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'center',
     gap: 8,
   },
   chip: {
@@ -243,8 +304,29 @@ const s = StyleSheet.create({
   },
   chipTxt: { fontSize: 12.5, fontWeight: '600' },
 
+  statsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  statBox: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 3,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  statVal: { fontSize: 14, fontWeight: '800' },
+  statLbl: { fontSize: 11, fontWeight: '500' },
+
   fieldWrap: { gap: 8 },
   fieldLabel: { fontSize: 13, fontWeight: '600' },
+  fieldLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  forgotTxt: { fontSize: 12.5, fontWeight: '600' },
 
   cta: {
     flexDirection: 'row',
