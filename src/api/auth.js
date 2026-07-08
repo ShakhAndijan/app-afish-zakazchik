@@ -122,6 +122,25 @@ export async function requestResetPasswordOtp(phone) {
   return data.response_data; // { sent, dev_code }
 }
 
+export async function verifyResetPasswordOtp(phone, code, newPassword) {
+  const res = await fetch(ENDPOINTS.RESET_PASSWORD_VERIFY_OTP, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      phone,
+      actor_type: 'customer',
+      code,
+      new_password: newPassword,
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || 'Parolni saqlashda xatolik yuz berdi');
+  }
+  const data = await res.json();
+  return data.response_data;
+}
+
 export async function googleLogin(actorType = 'customer') {
   const redirectUri = Linking.createURL('auth/callback');
   const loginUrl =

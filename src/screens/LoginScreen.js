@@ -3,7 +3,12 @@ import { StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import { useTheme } from '../context/ThemeContext';
-import { googleLogin, loginCustomer, requestResetPasswordOtp } from '../api/auth';
+import {
+  googleLogin,
+  loginCustomer,
+  requestResetPasswordOtp,
+  verifyResetPasswordOtp,
+} from '../api/auth';
 import { saveToken, saveRefreshToken, saveActorType } from '../utils/token';
 import PhoneStep from './steps/PhoneStep';
 import ForgotPasswordStep from './steps/ForgotPasswordStep';
@@ -24,6 +29,9 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
   const [forgotError, setForgotError] = useState('');
   const [forgotDevCode, setForgotDevCode] = useState('');
   const [forgotResendLoading, setForgotResendLoading] = useState(false);
+  const [forgotCode, setForgotCode] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetError, setResetError] = useState('');
   const [actorType] = useState('customer');
   const [googleLoading, setGoogleLoading] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
@@ -51,9 +59,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
       setForgotLoading(true);
       setForgotError('');
       const fullPhone = '+998' + forgotPhone.replace(/\D/g, '');
-      console.log('reset-password/request-otp payload:', { phone: fullPhone, actor_type: 'customer' });
       const data = await requestResetPasswordOtp(fullPhone);
-      console.log('reset-password/request-otp response_data:', data);
       setForgotDevCode(data?.dev_code || '');
       setStep('forgotCode');
     } catch (e) {
@@ -67,14 +73,31 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
     try {
       setForgotResendLoading(true);
       const fullPhone = '+998' + forgotPhone.replace(/\D/g, '');
-      console.log('reset-password/request-otp payload:', { phone: fullPhone, actor_type: 'customer' });
       const data = await requestResetPasswordOtp(fullPhone);
-      console.log('reset-password/request-otp response_data:', data);
       setForgotDevCode(data?.dev_code || '');
     } catch (e) {
       Alert.alert('Xato', e.message || 'Kod yuborishda xatolik yuz berdi');
     } finally {
       setForgotResendLoading(false);
+    }
+  };
+
+  const handleResetPasswordSubmit = async (newPassword) => {
+    try {
+      setResetLoading(true);
+      setResetError('');
+      const fullPhone = '+998' + forgotPhone.replace(/\D/g, '');
+      const data = await verifyResetPasswordOtp(
+        fullPhone,
+        forgotCode,
+        newPassword
+      );
+      setStep('phone');
+      return data;
+    } catch (e) {
+      setResetError(e.message || 'Parolni saqlashda xatolik yuz berdi');
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -142,7 +165,11 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
         phone={forgotPhone}
         devCode={forgotDevCode}
         onBack={() => setStep('forgot')}
-        onConfirm={() => setStep('newPassword')}
+        onConfirm={(code) => {
+          setForgotCode(code);
+          setResetError('');
+          setStep('newPassword');
+        }}
         onResend={handleForgotResend}
         resendLoading={forgotResendLoading}
       />
@@ -150,7 +177,9 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
     newPassword: (
       <NewPasswordStep
         onBack={() => setStep('forgotCode')}
-        onSubmit={() => setStep('phone')}
+        onSubmit={handleResetPasswordSubmit}
+        loading={resetLoading}
+        error={resetError}
       />
     ),
     email: (

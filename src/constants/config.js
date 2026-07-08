@@ -8,6 +8,7 @@ export const ENDPOINTS = {
   CUSTOMER_LOGIN: `${API_BASE_URL}/api/v1/auth/customer/login`,
   LOGIN_REQUEST_OTP: `${API_BASE_URL}/api/v1/auth/customer/login/request-otp`,
   RESET_PASSWORD_REQUEST_OTP: `${API_BASE_URL}/api/v1/auth/reset-password/request-otp`,
+  RESET_PASSWORD_VERIFY_OTP: `${API_BASE_URL}/api/v1/auth/reset-password/verify-otp`,
   CATEGORIES: `${API_BASE_URL}/api/v1/categories`,
   // NOTE: WORKERS, SYSTEM_STATS below are best-guess REST conventions, not yet
   // confirmed against the real backend — update if the actual paths differ.

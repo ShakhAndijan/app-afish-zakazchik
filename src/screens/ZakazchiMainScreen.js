@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, FlatList, useWindowDimensions,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, FlatList, useWindowDimensions, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -10,35 +10,11 @@ import Feather from '@expo/vector-icons/Feather';
 import ZakazchiProfileScreen from './ZakazchiProfileScreen';
 import UstaDetailScreen from './UstaDetailScreen';
 import { useTheme } from '../context/ThemeContext';
-
-const SERVICES = [
-  { key: 'santexnik',    label: 'Santexnik',      color: '#e87a45', icon: 'water-pump' },
-  { key: 'elektrik',     label: 'Elektrik',       color: '#3f7fd4', icon: 'lightning-bolt' },
-  { key: 'duradgor',     label: 'Duradgor',       color: '#2fa37a', icon: 'hammer' },
-  { key: 'konditsioner', label: 'Konditsioner',   color: '#9b6cd1', icon: 'snowflake' },
-  { key: 'boyoqchi',     label: "Bo'yoqchi",      color: '#f5c451', icon: 'brush' },
-  { key: 'tozalash',     label: 'Tozalash',       color: '#e87a45', icon: 'broom' },
-  { key: 'gipschi',      label: 'Gipschi',        color: '#26a69a', icon: 'layers' },
-  { key: 'plitachi',     label: 'Plitachi',       color: '#8d6e63', icon: 'grid' },
-  { key: 'payvandchi',   label: 'Payvandchi',     color: '#ef5350', icon: 'fire' },
-  { key: 'quruvchi',     label: 'Quruvchi',       color: '#5c6bc0', icon: 'domain' },
-  { key: 'haydovchi',    label: 'Haydovchi',      color: '#42a5f5', icon: 'truck' },
-  { key: 'yuktashuvchi', label: 'Yuk tashuvchi',  color: '#ff7043', icon: 'package-variant-closed' },
-  { key: 'bogbon',       label: "Bog'bon",        color: '#66bb6a', icon: 'flower' },
-  { key: 'temirchi',     label: 'Temirchi',       color: '#78909c', icon: 'wrench' },
-  { key: 'kranovshchik', label: 'Kranovshchik',   color: '#ab47bc', icon: 'arrow-up-bold-circle' },
-];
+import { getCategories } from '../api/categories';
 
 const SVC_GAP = 10;
 const SVC_H_PAD = 20;
 const SVC_VISIBLE = 4;
-const SVC_LOOP_LEN = SERVICES.length;
-
-const SERVICES_LOOP = [
-  ...SERVICES.map((s) => ({ ...s, uid: `a-${s.key}` })),
-  ...SERVICES.map((s) => ({ ...s, uid: `b-${s.key}` })),
-  ...SERVICES.map((s) => ({ ...s, uid: `c-${s.key}` })),
-];
 
 const TOP = [
   { initial: 'D', name: 'Davron Mirzayev', trade: 'Duradgor',  rating: '5.0', jobs: '210', bgColor: '#2fa37a', isFirst: true, location: 'Yunusobod',    experience: '9 yil', repeatRate: '99%', startingPrice: '50 000' },
@@ -76,6 +52,14 @@ const SAVED = [
 const SAVED_CARD_W = 148;
 const SAVED_CARD_GAP = 12;
 
+// ── Yangi e'lonlar uchun ma'lumot ──
+const LISTINGS = [
+  { id: 1, initial: 'D', name: 'Davron Mirzayev', trade: 'Duradgor',   color: '#2fa37a', rating: '5.0', price: '50 000', location: 'Yunusobod',     postedAgo: '2 soat oldin', title: "Yog'och mebel va eshik ustasi",          desc: 'Kvartira va ofis uchun maxsus mebel, eshik tayyorlayman. Tez va sifatli.' },
+  { id: 2, initial: 'A', name: 'Alisher Usmonov', trade: 'Santexnik',  color: '#e87a45', rating: '4.9', price: '30 000', location: 'Chilonzor',      postedAgo: '5 soat oldin', title: "Santexnika ta'mirlash va o'rnatish",     desc: "Kran, unitaz, isitish tizimlarini o'rnataman va ta'mirlayman." },
+  { id: 3, initial: 'B', name: 'Bobur Karimov',   trade: 'Elektrik',   color: '#3f7fd4', rating: '4.8', price: '35 000', location: "Mirzo Ulug'bek", postedAgo: '1 kun oldin',  title: 'Elektr montaj va LED yoritish',          desc: 'Uy va ofislarda elektr simlari, rozetka, yoritish tizimlari.' },
+  { id: 4, initial: 'S', name: 'Sherzod Nazarov', trade: "Bo'yoqchi",  color: '#f5c451', rating: '4.8', price: '45 000', location: 'Shayxontohur',   postedAgo: '3 soat oldin', title: "Devor va shift bo'yash ustasi",          desc: "Zamonaviy bo'yoq texnikalari, tez muddatda sifatli ish." },
+];
+
 const NAV = [
   { key: 'home',     label: 'Asosiy',    on: 'home',       off: 'home-outline' },
   { key: 'services', label: 'Xizmatlar', on: 'grid',       off: 'grid-outline' },
@@ -106,46 +90,81 @@ function ServiceCarousel() {
   const { theme: t } = useTheme();
   const { width: screenW } = useWindowDimensions();
   const [active, setActive] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
   const listRef = useRef(null);
-  const idxRef = useRef(SVC_LOOP_LEN);
+  const idxRef = useRef(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    getCategories()
+      .then((items) => {
+        if (!cancelled) setCategories(items);
+      })
+      .catch(() => {
+        if (!cancelled) setCategories([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const loopLen = categories.length;
+  const servicesLoop = useMemo(() => {
+    if (loopLen === 0) return [];
+    return [
+      ...categories.map((c) => ({ ...c, uid: `a-${c.id}` })),
+      ...categories.map((c) => ({ ...c, uid: `b-${c.id}` })),
+      ...categories.map((c) => ({ ...c, uid: `c-${c.id}` })),
+    ];
+  }, [categories, loopLen]);
 
   const itemW = Math.floor((screenW - SVC_H_PAD * 2 - SVC_GAP * (SVC_VISIBLE - 1)) / SVC_VISIBLE);
   const itemStep = itemW + SVC_GAP;
 
   useEffect(() => {
+    if (loopLen === 0) return;
+    idxRef.current = loopLen;
     const init = setTimeout(() => {
-      listRef.current?.scrollToOffset({ offset: SVC_LOOP_LEN * itemStep, animated: false });
+      listRef.current?.scrollToOffset({ offset: loopLen * itemStep, animated: false });
     }, 0);
     return () => clearTimeout(init);
-  }, [itemStep]);
+  }, [itemStep, loopLen]);
 
   useEffect(() => {
+    if (loopLen === 0) return;
     const timer = setInterval(() => {
       idxRef.current += 1;
-      if (idxRef.current >= SVC_LOOP_LEN * 2) {
-        idxRef.current = SVC_LOOP_LEN;
-        listRef.current?.scrollToOffset({ offset: SVC_LOOP_LEN * itemStep, animated: false });
+      if (idxRef.current >= loopLen * 2) {
+        idxRef.current = loopLen;
+        listRef.current?.scrollToOffset({ offset: loopLen * itemStep, animated: false });
         return;
       }
       listRef.current?.scrollToOffset({ offset: idxRef.current * itemStep, animated: true });
     }, 2000);
     return () => clearInterval(timer);
-  }, [itemStep]);
+  }, [itemStep, loopLen]);
 
   const renderItem = useCallback(
     ({ item }) => {
-      const isActive = active === item.key;
+      const isActive = active === item.id;
+      const color = item.color || t.orange;
       return (
         <TouchableOpacity
-          style={[s.svcItem, { width: itemW, backgroundColor: t.card, borderColor: isActive ? item.color : t.border }]}
-          onPress={() => setActive(isActive ? null : item.key)}
+          style={[s.svcItem, { width: itemW, backgroundColor: t.card, borderColor: isActive ? color : t.border }]}
+          onPress={() => setActive(isActive ? null : item.id)}
           activeOpacity={0.8}
         >
-          <View style={[s.svcIconBox, { backgroundColor: isActive ? item.color : t.rowIconBg }]}>
-            <MaterialCommunityIcons name={item.icon} size={22} color={isActive ? '#fff' : item.color} />
+          <View style={[s.svcIconBox, { backgroundColor: isActive ? color : t.rowIconBg }]}>
+            {item.icon ? (
+              <Text style={{ fontSize: 20 }}>{item.icon}</Text>
+            ) : (
+              <MaterialCommunityIcons name="toolbox-outline" size={22} color={isActive ? '#fff' : color} />
+            )}
           </View>
-          <Text style={[s.svcLabel, { color: isActive ? item.color : t.muted }]} numberOfLines={2}>
-            {item.label}
+          <Text style={[s.svcLabel, { color: isActive ? color : t.muted }]} numberOfLines={2}>
+            {item.name}
           </Text>
         </TouchableOpacity>
       );
@@ -153,10 +172,20 @@ function ServiceCarousel() {
     [active, t, itemW],
   );
 
+  if (loading) {
+    return (
+      <View style={{ height: 92, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={t.orange} />
+      </View>
+    );
+  }
+
+  if (loopLen === 0) return null;
+
   return (
     <FlatList
       ref={listRef}
-      data={SERVICES_LOOP}
+      data={servicesLoop}
       keyExtractor={(item) => item.uid}
       renderItem={renderItem}
       horizontal
@@ -428,7 +457,8 @@ export default function ZakazchiMainScreen({ onLogout }) {
           </View>
         </View>
 
-        {/* ── Faol buyurtma banneri ── */}
+        {/* ── Faol buyurtma banneri (disabled) ── */}
+        {false && (
         <View style={{ paddingHorizontal: 20, marginTop: 6 }}>
           <View style={[s.activeCard, { backgroundColor: t.card }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
@@ -456,23 +486,7 @@ export default function ZakazchiMainScreen({ onLogout }) {
             </TouchableOpacity>
           </View>
         </View>
-
-        {/* ── Order CTA ── */}
-        <View style={{ paddingHorizontal: 20, marginTop: 12 }}>
-          <View style={s.ctaCard}>
-            <View style={{ position: 'absolute', right: -18, bottom: -26, opacity: 0.16 }}>
-              <MaterialCommunityIcons name="lightning-bolt" size={100} color="#fff" />
-            </View>
-            <Text style={{ fontWeight: '700', fontSize: 19, color: '#fff' }}>Zakaz bering</Text>
-            <Text style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.92)', marginTop: 5, maxWidth: 200 }}>
-              Muammoni yozing — eng yaqin usta 15 daqiqada
-            </Text>
-            <TouchableOpacity style={s.ctaBtn} activeOpacity={0.8}>
-              <Text style={{ color: t.orangeD, fontWeight: '700', fontSize: 13.5 }}>Yangi buyurtma</Text>
-              <Ionicons name="arrow-forward" size={16} color={t.orangeD} style={{ marginLeft: 8 }} />
-            </TouchableOpacity>
-          </View>
-        </View>
+        )}
 
         {/* ── Services ── */}
         <View style={{ marginTop: 24 }}>
@@ -529,6 +543,47 @@ export default function ZakazchiMainScreen({ onLogout }) {
         {/* ── Sevimli ustalar ── */}
         <SevimliUstalar onSelectUsta={setSelectedUsta} />
 
+        {/* ── Yangi e'lonlar ── */}
+        <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
+          <View style={s.sectionHeader}>
+            <Text style={[s.sectionTitle, { color: t.text }]}>Yangi e'lonlar</Text>
+            <TouchableOpacity activeOpacity={0.7}>
+              <Text style={{ color: t.orange, fontSize: 12.5, fontWeight: '600' }}>Barchasi</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={{ gap: 12 }}>
+            {LISTINGS.map((l) => (
+              <View key={l.id} style={[el.card, { backgroundColor: t.card, borderColor: t.border }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <Avatar letter={l.initial} size={38} bgColor={l.color} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontWeight: '700', fontSize: 13.5, color: t.text }}>{l.name}</Text>
+                    <Text style={{ fontSize: 11, color: t.muted, marginTop: 1 }}>{l.trade} · {l.location}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                    <Ionicons name="star" size={11} color={t.gold} />
+                    <Text style={{ fontSize: 11.5, fontWeight: '700', color: t.gold }}>{l.rating}</Text>
+                  </View>
+                </View>
+
+                <Text style={{ fontWeight: '800', fontSize: 14, color: t.text, marginTop: 10 }}>{l.title}</Text>
+                <Text style={{ fontSize: 12, color: t.muted, marginTop: 3, lineHeight: 17 }} numberOfLines={2}>{l.desc}</Text>
+
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}>
+                  <View>
+                    <Text style={{ fontSize: 12.5, fontWeight: '700', color: t.text }}>{l.price} so'm dan</Text>
+                    <Text style={{ fontSize: 10.5, color: t.faint, marginTop: 1 }}>{l.postedAgo}</Text>
+                  </View>
+                  <TouchableOpacity style={el.chatBtn} activeOpacity={0.85}>
+                    <Ionicons name="chatbubble-ellipses" size={13} color="#fff" />
+                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>Yozish</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+
       </ScrollView>
 
       {/* ── Bottom nav ── */}
@@ -547,6 +602,14 @@ export default function ZakazchiMainScreen({ onLogout }) {
     </SafeAreaView>
   );
 }
+
+const el = StyleSheet.create({
+  card: { borderWidth: 1, borderRadius: 18, padding: 14 },
+  chatBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    backgroundColor: '#e87a45', paddingVertical: 9, paddingHorizontal: 14, borderRadius: 11,
+  },
+});
 
 const s = StyleSheet.create({
   searchBar: {

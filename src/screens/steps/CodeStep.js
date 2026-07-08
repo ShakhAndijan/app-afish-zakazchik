@@ -78,7 +78,7 @@ export default function CodeStep({
       <PrimaryBtn
         label="Tasdiqlash"
         disabled={code.length < 6}
-        onPress={onConfirm}
+        onPress={() => onConfirm?.(code)}
       />
     </View>
   );
