@@ -1,4 +1,4 @@
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet, ActivityIndicator } from 'react-native';
 import { useState, useEffect } from 'react';
 
 import { COLORS } from '../../constants/colors';
@@ -16,9 +16,16 @@ const formatPhone = (raw = '') => {
   return s;
 };
 
-export default function CodeStep({ phone, onBack, onConfirm }) {
+export default function CodeStep({
+  phone,
+  onBack,
+  onConfirm,
+  devCode,
+  onResend,
+  resendLoading,
+}) {
   const [code, setCode] = useState('');
-  const [timer, setTimer] = useState(45);
+  const [timer, setTimer] = useState(60);
 
   useEffect(() => {
     if (timer === 0) return;
@@ -27,7 +34,11 @@ export default function CodeStep({ phone, onBack, onConfirm }) {
   }, [timer]);
 
   const handleBack = () => { setCode(''); onBack(); };
-  const resend = () => { setCode(''); setTimer(45); };
+  const resend = async () => {
+    setCode('');
+    setTimer(60);
+    if (onResend) await onResend();
+  };
 
   return (
     <View style={styles.container}>
@@ -42,15 +53,23 @@ export default function CodeStep({ phone, onBack, onConfirm }) {
         <Text style={styles.title}>Tasdiqlash kodi</Text>
         <Text style={styles.subtitle}>
           <Text style={styles.phone}>+998 {formatPhone(phone)}</Text>
-          {' '}raqamiga yuborilgan 5 xonali kodni kiriting.
+          {' '}raqamiga yuborilgan 6 xonali kodni kiriting.
         </Text>
       </View>
 
-      <OtpInput value={code} onChange={setCode} />
+      <OtpInput value={code} onChange={setCode} length={6} />
+
+      {!!devCode && (
+        <Text style={styles.devCode}>
+          Dev kod: <Text style={styles.devCodeVal}>{devCode}</Text>
+        </Text>
+      )}
 
       <Text style={styles.timerText}>
         {timer > 0 ? (
           <>Qayta yuborish <Text style={styles.timerCount}>00:{String(timer).padStart(2, '0')}</Text></>
+        ) : resendLoading ? (
+          <ActivityIndicator size="small" color={COLORS.orange} />
         ) : (
           <Text style={styles.resend} onPress={resend}>Kodni qayta yuborish</Text>
         )}
@@ -58,7 +77,7 @@ export default function CodeStep({ phone, onBack, onConfirm }) {
 
       <PrimaryBtn
         label="Tasdiqlash"
-        disabled={code.length < 5}
+        disabled={code.length < 6}
         onPress={onConfirm}
       />
     </View>
@@ -99,6 +118,16 @@ const styles = StyleSheet.create({
     fontSize: 13.5,
     textAlign: 'center',
     marginTop: -8,
+  },
+  devCode: {
+    color: COLORS.muted,
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: -8,
+  },
+  devCodeVal: {
+    color: COLORS.orange,
+    fontWeight: '700',
   },
   timerCount: {
     color: COLORS.white,

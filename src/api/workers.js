@@ -1,4 +1,5 @@
 import { ENDPOINTS } from '../constants/config';
+import { apiFetch } from '../utils/apiClient';
 
 const AVATAR_COLORS = ['#2fa37a', '#e87a45', '#3f7fd4', '#ec4899', '#8b5cf6', '#f5c451', '#06b6d4'];
 
@@ -30,9 +31,7 @@ export function mapWorker(w) {
  */
 export async function getWorkers({ limit = 5, offset = 0 } = {}) {
   const url = `${ENDPOINTS.WORKERS}?limit=${limit}&offset=${offset}`;
-  const res = await fetch(url, {
-    headers: { 'ngrok-skip-browser-warning': 'true' },
-  });
+  const res = await apiFetch(url);
 
   if (!res.ok) {
     throw new Error(`Workers fetch failed: ${res.status}`);

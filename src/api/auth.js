@@ -11,11 +11,9 @@ export async function requestRegisterOtp(phone) {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    console.log('[requestRegisterOtp] ERROR:', err);
     throw new Error(err.message || 'OTP yuborishda xatolik yuz berdi');
   }
   const data = await res.json();
-  console.log('[requestRegisterOtp]', data);
   return data.response_data;
 }
 
@@ -27,16 +25,13 @@ export async function getRegisterUploadUrl(phone, code, contentType) {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    console.log('[getRegisterUploadUrl] ERROR:', err);
     throw new Error(err.message || 'Yuklash URL olishda xatolik');
   }
   const data = await res.json();
-  console.log('[getRegisterUploadUrl]', data);
   return data.response_data; // { upload_url, temp_key, expires_in }
 }
 
 export async function verifyRegisterOtp(payload) {
-  console.log('[verifyRegisterOtp] so\'rov:', payload);
   const res = await fetch(ENDPOINTS.REGISTER_VERIFY_OTP, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -44,21 +39,22 @@ export async function verifyRegisterOtp(payload) {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    console.log('[verifyRegisterOtp] ERROR:', err);
     throw new Error(err.message || "Ro'yxatdan o'tishni yakunlashda xatolik");
   }
   const data = await res.json();
-  console.log('[verifyRegisterOtp]', data);
   return data.response_data;
 }
 
-export async function uploadImageToPresignedUrl(uploadUrl, imageUri, contentType) {
+export async function uploadImageToPresignedUrl(
+  uploadUrl,
+  imageUri,
+  contentType
+) {
   const ct = contentType || 'image/jpeg';
 
   const base64 = await FileSystem.readAsStringAsync(imageUri, {
     encoding: FileSystem.EncodingType.Base64,
   });
-  console.log('[upload] base64 length:', base64.length, 'contentType:', ct);
 
   // base64 → binary bytes (React Native da data: URI yo'q, XHR kerak)
   const binaryStr = atob(base64);
@@ -66,7 +62,6 @@ export async function uploadImageToPresignedUrl(uploadUrl, imageUri, contentType
   for (let i = 0; i < binaryStr.length; i++) {
     bytes[i] = binaryStr.charCodeAt(i);
   }
-  console.log('[upload] bytes size:', bytes.length);
 
   await new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -74,7 +69,6 @@ export async function uploadImageToPresignedUrl(uploadUrl, imageUri, contentType
     xhr.setRequestHeader('Content-Type', ct);
     xhr.onreadystatechange = function () {
       if (xhr.readyState !== 4) return;
-      console.log('[upload] XHR status:', xhr.status, xhr.responseText);
       if (xhr.status >= 200 && xhr.status < 300) {
         resolve();
       } else {
@@ -84,7 +78,48 @@ export async function uploadImageToPresignedUrl(uploadUrl, imageUri, contentType
     xhr.onerror = () => reject(new Error('Rasmni yuklashda tarmoq xatosi'));
     xhr.send(bytes.buffer);
   });
-  console.log('[upload] OK');
+}
+
+export async function loginCustomer(phone, password) {
+  const res = await fetch(ENDPOINTS.CUSTOMER_LOGIN, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone, password }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || 'Kirishda xatolik yuz berdi');
+  }
+  const data = await res.json();
+  return data.response_data;
+}
+
+export async function requestLoginOtp(phone) {
+  const res = await fetch(ENDPOINTS.LOGIN_REQUEST_OTP, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || 'Kod yuborishda xatolik yuz berdi');
+  }
+  const data = await res.json();
+  return data.response_data; // { sent, dev_code }
+}
+
+export async function requestResetPasswordOtp(phone) {
+  const res = await fetch(ENDPOINTS.RESET_PASSWORD_REQUEST_OTP, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone, actor_type: 'customer' }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || 'Kod yuborishda xatolik yuz berdi');
+  }
+  const data = await res.json();
+  return data.response_data; // { sent, dev_code }
 }
 
 export async function googleLogin(actorType = 'customer') {
@@ -94,7 +129,6 @@ export async function googleLogin(actorType = 'customer') {
     `&redirect_uri=${encodeURIComponent(redirectUri)}`;
 
   const result = await WebBrowser.openAuthSessionAsync(loginUrl, redirectUri);
-  console.log('[googleLogin]', result);
 
   if (result.type !== 'success') {
     throw new Error('cancelled');

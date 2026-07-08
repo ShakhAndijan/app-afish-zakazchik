@@ -31,6 +31,8 @@ export default function PhoneStep({
   password,
   onPasswordChange,
   onLogin,
+  loginLoading,
+  error,
   onForgot,
   onGoogle,
   googleLoading,
@@ -42,7 +44,7 @@ export default function PhoneStep({
   const { theme, toggleTheme } = useTheme();
   const isDark = theme.isDark !== false;
   const isUsta = actorType === 'worker';
-  const isReady = phone.length === 9 && password.length >= 4;
+  const isReady = phone.length === 9 && password.length >= 4 && !loginLoading;
 
   return (
     <KeyboardAvoidingView
@@ -135,14 +137,28 @@ export default function PhoneStep({
 
           {/* ── Password field ── */}
           <View style={s.fieldWrap}>
-            <View style={s.fieldLabelRow}>
-              <Text style={[s.fieldLabel, { color: theme.muted }]}>Parol</Text>
-              <TouchableOpacity onPress={onForgot} activeOpacity={0.7}>
-                <Text style={[s.forgotTxt, { color: theme.orange }]}>Parolni unutdingizmi?</Text>
-              </TouchableOpacity>
-            </View>
+            <Text style={[s.fieldLabel, { color: theme.muted }]}>Parol</Text>
             <PasswordInput value={password} onChangeText={onPasswordChange} theme={theme} />
+            <TouchableOpacity onPress={onForgot} activeOpacity={0.7} style={s.forgotRow}>
+              <Text style={[s.forgotTxt, { color: theme.orange }]}>Parolni unutdingizmi?</Text>
+            </TouchableOpacity>
           </View>
+
+          {/* ── Error ── */}
+          {!!error && (
+            <View
+              style={[
+                s.errorBox,
+                {
+                  backgroundColor: isDark ? 'rgba(224,71,58,0.13)' : 'rgba(224,71,58,0.08)',
+                  borderColor: 'rgba(224,71,58,0.32)',
+                },
+              ]}
+            >
+              <MaterialCommunityIcons name="alert-circle" size={18} color={theme.red} />
+              <Text style={[s.errorTxt, { color: theme.red }]}>{error}</Text>
+            </View>
+          )}
 
           {/* ── CTA ── */}
           <TouchableOpacity
@@ -150,8 +166,14 @@ export default function PhoneStep({
             onPress={isReady ? onLogin : undefined}
             activeOpacity={0.85}
           >
-            <Text style={[s.ctaTxt, !isReady && s.ctaTxtDisabled]}>Kirish</Text>
-            <Feather name="arrow-right" size={18} color={isReady ? '#fff' : '#7a6253'} />
+            {loginLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <Text style={[s.ctaTxt, !isReady && s.ctaTxtDisabled]}>Kirish</Text>
+                <Feather name="arrow-right" size={18} color={isReady ? '#fff' : '#7a6253'} />
+              </>
+            )}
           </TouchableOpacity>
 
           {/* ── Xizmat chips (zakazchi) ── */}
@@ -321,12 +343,19 @@ const s = StyleSheet.create({
 
   fieldWrap: { gap: 8 },
   fieldLabel: { fontSize: 13, fontWeight: '600' },
-  fieldLabelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
+  forgotRow: { alignSelf: 'flex-end' },
   forgotTxt: { fontSize: 12.5, fontWeight: '600' },
+
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    borderWidth: 1,
+    borderRadius: 13,
+    paddingVertical: 11,
+    paddingHorizontal: 13,
+  },
+  errorTxt: { flex: 1, fontSize: 12.5, fontWeight: '600', lineHeight: 17 },
 
   cta: {
     flexDirection: 'row',

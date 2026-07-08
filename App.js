@@ -9,6 +9,7 @@ import {
   ScrollView,
   FlatList,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -23,118 +24,10 @@ import UstaDetailScreen from './src/screens/UstaDetailScreen';
 import { ThemeProvider } from './src/context/ThemeContext';
 import { getCategories } from './src/api/categories';
 import { getWorkers } from './src/api/workers';
+import { getTopComments, getTopOrders } from './src/api/reviews';
+import { getToken, getActorType, clearTokens } from './src/utils/token';
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
-
-const TOP_WORKS = [
-  {
-    id: 1,
-    title: 'Zamonaviy oshxona',
-    profession: 'Duradgor',
-    worker: 'Davron M.',
-    rating: 5.0,
-    icon: 'hammer',
-  },
-  {
-    id: 2,
-    title: "Vannaxona ta'miri",
-    profession: 'Santexnik',
-    worker: 'Alisher U.',
-    rating: 5.0,
-    icon: 'water-pump',
-  },
-  {
-    id: 3,
-    title: 'Loft dizayn',
-    profession: 'Elektrik',
-    worker: 'Bobur K.',
-    rating: 5.0,
-    icon: 'lightning-bolt',
-  },
-  {
-    id: 4,
-    title: "Yotoqxona ta'miri",
-    profession: "Bo'yoqchi",
-    worker: 'Sherzod N.',
-    rating: 4.9,
-    icon: 'brush',
-  },
-  {
-    id: 5,
-    title: 'Ofis plitka',
-    profession: 'Plitachi',
-    worker: 'Jasur T.',
-    rating: 4.8,
-    icon: 'grid',
-  },
-  {
-    id: 6,
-    title: 'Metall eshik',
-    profession: 'Payvandchi',
-    worker: 'Firdavs A.',
-    rating: 4.9,
-    icon: 'fire',
-  },
-  {
-    id: 7,
-    title: "Ko'p qavatli bino",
-    profession: 'Quruvchi',
-    worker: 'Nodir R.',
-    rating: 4.8,
-    icon: 'domain',
-  },
-  {
-    id: 8,
-    title: "Yuk ko'chirish",
-    profession: 'Haydovchi',
-    worker: 'Ulmas S.',
-    rating: 4.7,
-    icon: 'truck',
-  },
-  {
-    id: 9,
-    title: "Bog' obodonlashtirish",
-    profession: "Bog'bon",
-    worker: 'Kamol Y.',
-    rating: 5.0,
-    icon: 'flower',
-  },
-  {
-    id: 10,
-    title: 'Smart uy tizimi',
-    profession: 'Elektrik',
-    worker: 'Bobur K.',
-    rating: 5.0,
-    icon: 'home-automation',
-  },
-];
-
-const REVIEWS_DATA = [
-  {
-    name: 'Nodira A.',
-    location: 'Toshkent',
-    initial: 'N',
-    color: '#ec4899',
-    stars: 5,
-    text: 'Santexnik 30 daqiqada yetib keldi va ishni juda toza bajardi. Mamnunman!',
-  },
-  {
-    name: 'Jamshid R.',
-    location: 'Samarqand',
-    initial: 'J',
-    color: '#3b82f6',
-    stars: 5,
-    text: "Elektrik narxi hamyonbop, usta o'z ishining ustasi ekan. Tavsiya qilaman.",
-  },
-  {
-    name: 'Malika T.',
-    location: 'Toshkent',
-    initial: 'M',
-    color: '#8b5cf6',
-    stars: 4,
-    text: "Bo'yoqchi vaqtida keldi, sifat zo'r. Ilova juda qulay.",
-  },
-];
 
 const STEPS = [
   {
@@ -187,12 +80,9 @@ function TaklifXizmatlar() {
   useEffect(() => {
     getCategories()
       .then((data) => {
-        console.log('Categories:', data);
         setCategories(data);
       })
-      .catch((error) => {
-        console.error('Xatolik:', error);
-      });
+      .catch((error) => {});
   }, []);
 
   useEffect(() => {
@@ -438,15 +328,24 @@ const eu = StyleSheet.create({
 const EI_CARD_W = 160;
 const EI_GAP = 12;
 const EI_SLOT = EI_CARD_W + EI_GAP;
-const EI_TOTAL = TOP_WORKS.length;
 
 function EngZorIshlar() {
+  const [works, setWorks] = useState([]);
   const flatListRef = useRef(null);
   const indexRef = useRef(0);
 
   useEffect(() => {
+    getTopOrders({ limit: 10 })
+      .then((data) => {
+        setWorks(data);
+      })
+      .catch((error) => {});
+  }, []);
+
+  useEffect(() => {
+    if (works.length === 0) return;
     const timer = setInterval(() => {
-      const next = (indexRef.current + 1) % EI_TOTAL;
+      const next = (indexRef.current + 1) % works.length;
       indexRef.current = next;
       flatListRef.current?.scrollToOffset({
         offset: next * EI_SLOT,
@@ -454,7 +353,9 @@ function EngZorIshlar() {
       });
     }, 2000);
     return () => clearInterval(timer);
-  }, []);
+  }, [works.length]);
+
+  if (works.length === 0) return null;
 
   return (
     <View style={ei.container}>
@@ -466,36 +367,70 @@ function EngZorIshlar() {
       </View>
       <FlatList
         ref={flatListRef}
-        data={TOP_WORKS}
-        keyExtractor={(item) => String(item.id)}
+        data={works}
+        keyExtractor={(item) => item.id}
         horizontal
         showsHorizontalScrollIndicator={false}
         snapToInterval={EI_SLOT}
         decelerationRate="fast"
         contentContainerStyle={ei.list}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={ei.card} activeOpacity={0.85}>
-            <View style={ei.imgBox}>
-              <MaterialCommunityIcons
-                name={item.icon}
-                size={40}
-                color="rgba(255,255,255,0.22)"
-              />
-              <View style={ei.ratingBadge}>
-                <Ionicons name="star" size={11} color="#FBBF24" />
-                <Text style={ei.ratingBadgeText}>{item.rating.toFixed(1)}</Text>
-              </View>
-            </View>
-            <Text style={ei.cardTitle} numberOfLines={1}>
-              {item.title}
-            </Text>
-            <Text style={ei.cardSub} numberOfLines={1}>
-              {item.profession} · {item.worker}
-            </Text>
-          </TouchableOpacity>
-        )}
+        renderItem={({ item }) => <WorkCard item={item} />}
       />
     </View>
+  );
+}
+
+function WorkCard({ item }) {
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const total = item.photos.length;
+
+  const goPrev = () => setPhotoIndex((i) => (i - 1 + total) % total);
+  const goNext = () => setPhotoIndex((i) => (i + 1) % total);
+
+  return (
+    <TouchableOpacity style={ei.card} activeOpacity={0.85}>
+      <View style={ei.imgBox}>
+        <Image source={{ uri: item.photos[photoIndex] }} style={ei.img} />
+        <View style={ei.ratingBadge}>
+          <Ionicons name="star" size={11} color="#FBBF24" />
+          <Text style={ei.ratingBadgeText}>{item.rating.toFixed(1)}</Text>
+        </View>
+        {total > 1 && (
+          <>
+            <TouchableOpacity
+              style={[ei.navBtn, ei.navBtnLeft]}
+              activeOpacity={0.7}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              onPress={goPrev}
+            >
+              <Ionicons name="chevron-back" size={14} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[ei.navBtn, ei.navBtnRight]}
+              activeOpacity={0.7}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              onPress={goNext}
+            >
+              <Ionicons name="chevron-forward" size={14} color="#fff" />
+            </TouchableOpacity>
+            <View style={ei.dots}>
+              {item.photos.map((_, i) => (
+                <View
+                  key={i}
+                  style={[ei.dot, i === photoIndex && ei.dotActive]}
+                />
+              ))}
+            </View>
+          </>
+        )}
+      </View>
+      <Text style={ei.cardTitle} numberOfLines={1}>
+        {item.title}
+      </Text>
+      <Text style={ei.cardSub} numberOfLines={1}>
+        {item.worker}
+      </Text>
+    </TouchableOpacity>
   );
 }
 
@@ -517,10 +452,12 @@ const ei = StyleSheet.create({
     height: 140,
     backgroundColor: COLORS.card,
     borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: 8,
     overflow: 'hidden',
+  },
+  img: {
+    width: '100%',
+    height: '100%',
   },
   ratingBadge: {
     position: 'absolute',
@@ -535,6 +472,38 @@ const ei = StyleSheet.create({
     gap: 3,
   },
   ratingBadgeText: { color: COLORS.white, fontSize: 11, fontWeight: '700' },
+  navBtn: {
+    position: 'absolute',
+    top: '50%',
+    marginTop: -12,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navBtnLeft: { left: 6 },
+  navBtnRight: { right: 6 },
+  dots: {
+    position: 'absolute',
+    bottom: 8,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  dot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.4)',
+  },
+  dotActive: {
+    backgroundColor: COLORS.white,
+    width: 12,
+  },
   cardTitle: {
     color: COLORS.white,
     fontSize: 13,
@@ -790,21 +759,55 @@ function HowItWorks() {
 
 // ─── ReviewsSection ───────────────────────────────────────────────────────────
 
+const REVIEW_CARD_W = 240;
+const REVIEW_CARD_GAP = 12;
+const REVIEW_SLOT = REVIEW_CARD_W + REVIEW_CARD_GAP;
+
 function ReviewsSection() {
+  const [reviews, setReviews] = useState([]);
+  const listRef = useRef(null);
+  const idxRef = useRef(0);
+
+  useEffect(() => {
+    getTopComments({ limit: 10 })
+      .then((data) => {
+        setReviews(data);
+      })
+      .catch((error) => {});
+  }, []);
+
+  useEffect(() => {
+    if (reviews.length === 0) return;
+    const timer = setInterval(() => {
+      const next = (idxRef.current + 1) % reviews.length;
+      idxRef.current = next;
+      listRef.current?.scrollToOffset({
+        offset: next * REVIEW_SLOT,
+        animated: true,
+      });
+    }, 2500);
+    return () => clearInterval(timer);
+  }, [reviews.length]);
+
+  if (reviews.length === 0) return null;
+
   return (
-    <ScrollView
+    <FlatList
+      ref={listRef}
+      data={reviews}
+      keyExtractor={(_, i) => String(i)}
       horizontal
       showsHorizontalScrollIndicator={false}
+      snapToInterval={REVIEW_SLOT}
+      decelerationRate="fast"
       contentContainerStyle={{
         paddingHorizontal: 16,
         gap: 12,
         paddingBottom: 4,
       }}
       style={{ marginBottom: 32 }}
-    >
-      {REVIEWS_DATA.map((r, i) => (
+      renderItem={({ item: r }) => (
         <View
-          key={i}
           style={{
             width: 240,
             backgroundColor: COLORS.card,
@@ -863,8 +866,8 @@ function ReviewsSection() {
             </View>
           </View>
         </View>
-      ))}
-    </ScrollView>
+      )}
+    />
   );
 }
 
@@ -1025,6 +1028,36 @@ export default function App() {
   const [searchText, setSearchText] = useState('');
   const [screen, setScreen] = useState('home');
   const [selectedUsta, setSelectedUsta] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const token = await getToken();
+      if (token) {
+        const actorType = await getActorType();
+        setScreen(
+          actorType === 'worker' ? 'usta-dashboard' : 'zakazchi-dashboard'
+        );
+      }
+      setAuthChecked(true);
+    })();
+  }, []);
+
+  if (!authChecked) {
+    return (
+      <SafeAreaProvider>
+        <StatusBar style="light" />
+        <View
+          style={[
+            styles.safeArea,
+            { alignItems: 'center', justifyContent: 'center' },
+          ]}
+        >
+          <ActivityIndicator size="large" color={COLORS.orange} />
+        </View>
+      </SafeAreaProvider>
+    );
+  }
 
   if (selectedUsta) {
     return (
@@ -1060,7 +1093,10 @@ export default function App() {
     );
   }
 
-  const handleLogout = () => setScreen('home');
+  const handleLogout = async () => {
+    await clearTokens();
+    setScreen('home');
+  };
 
   if (screen === 'usta-dashboard') {
     return (
@@ -1154,7 +1190,7 @@ export default function App() {
           <HowItWorks />
 
           {/* ── Mijozlar fikri ── */}
-          <SectionHead title="Mijozlar fikri" link="Barchasi" />
+          <SectionHead title="Mijozlar fikri" />
           <ReviewsSection />
 
           {/* ── Nega AFISH? ── */}

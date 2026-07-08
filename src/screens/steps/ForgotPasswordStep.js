@@ -7,15 +7,25 @@ import {
   Platform,
   ScrollView,
   Image,
+  ActivityIndicator,
 } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import PhoneInput from '../../components/login/PhoneInput';
 
-export default function ForgotPasswordStep({ phone, onChange, onSubmit, onBack, actorType = 'customer' }) {
+export default function ForgotPasswordStep({
+  phone,
+  onChange,
+  onSubmit,
+  onBack,
+  actorType = 'customer',
+  loading = false,
+  error = '',
+}) {
   const { theme } = useTheme();
+  const isDark = theme.isDark !== false;
   const isUsta = actorType === 'worker';
-  const isReady = phone.length === 9;
+  const isReady = phone.length === 9 && !loading;
 
   return (
     <KeyboardAvoidingView
@@ -59,13 +69,34 @@ export default function ForgotPasswordStep({ phone, onChange, onSubmit, onBack, 
             <PhoneInput value={phone} onChangeText={onChange} theme={theme} />
           </View>
 
+          {!!error && (
+            <View
+              style={[
+                s.errorBox,
+                {
+                  backgroundColor: isDark ? 'rgba(224,71,58,0.13)' : 'rgba(224,71,58,0.08)',
+                  borderColor: 'rgba(224,71,58,0.32)',
+                },
+              ]}
+            >
+              <MaterialCommunityIcons name="alert-circle" size={18} color={theme.red} />
+              <Text style={[s.errorTxt, { color: theme.red }]}>{error}</Text>
+            </View>
+          )}
+
           <TouchableOpacity
             style={[s.cta, !isReady && s.ctaDisabled]}
             onPress={isReady ? onSubmit : undefined}
             activeOpacity={0.85}
           >
-            <Text style={[s.ctaTxt, !isReady && s.ctaTxtDisabled]}>Kod yuborish</Text>
-            <Feather name="arrow-right" size={18} color={isReady ? '#fff' : '#7a6253'} />
+            {loading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <Text style={[s.ctaTxt, !isReady && s.ctaTxtDisabled]}>Kod yuborish</Text>
+                <Feather name="arrow-right" size={18} color={isReady ? '#fff' : '#7a6253'} />
+              </>
+            )}
           </TouchableOpacity>
 
           <View style={s.footer}>
@@ -142,6 +173,17 @@ const s = StyleSheet.create({
 
   fieldWrap: { gap: 8 },
   fieldLabel: { fontSize: 13, fontWeight: '600' },
+
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    borderWidth: 1,
+    borderRadius: 13,
+    paddingVertical: 11,
+    paddingHorizontal: 13,
+  },
+  errorTxt: { flex: 1, fontSize: 12.5, fontWeight: '600', lineHeight: 17 },
 
   cta: {
     flexDirection: 'row',
