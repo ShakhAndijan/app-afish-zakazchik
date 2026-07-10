@@ -17,18 +17,7 @@ import ZakazchiOrdersScreen from './ZakazchiOrdersScreen';
 import ZakazchiPromoScreen from './ZakazchiPromoScreen';
 import ZakazchiReferralScreen from './ZakazchiReferralScreen';
 import TilBottomSheet, { LANGS } from '../components/TilBottomSheet';
-
-const NAV = [
-  { key: 'home', label: 'Asosiy', on: 'home', off: 'home-outline' },
-  { key: 'services', label: 'Xizmatlar', on: 'grid', off: 'grid-outline' },
-  {
-    key: 'chat',
-    label: 'Xabarlar',
-    on: 'chatbubble',
-    off: 'chatbubble-outline',
-  },
-  { key: 'profile', label: 'Profil', on: 'person', off: 'person-outline' },
-];
+import BottomNav from '../components/BottomNav';
 
 
 function Avatar({ letter = 'J', size = 80, bgColor }) {
@@ -475,33 +464,14 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
       </ScrollView>
 
       {/* ── Bottom Nav ── */}
-      <View
-        style={[s.nav, { backgroundColor: t.navBg, borderTopColor: t.border }]}
-      >
-        {NAV.map((item) => {
-          const active = item.key === 'profile';
-          const color = active ? t.orange : t.faint;
-          return (
-            <TouchableOpacity
-              key={item.key}
-              style={s.navTab}
-              onPress={() => onTabChange?.(item.key)}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name={active ? item.on : item.off}
-                size={23}
-                color={color}
-              />
-              <Text
-                style={{ fontSize: 10, fontWeight: '600', color, marginTop: 4 }}
-              >
-                {item.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      <BottomNav
+        activeTab="profile"
+        onTabChange={onTabChange}
+        accent={t.orange}
+        background={t.navBg}
+        border={t.border}
+        muted={t.faint}
+      />
       <TilBottomSheet
         visible={showTil}
         currentLang={lang}
@@ -626,17 +596,4 @@ const s = StyleSheet.create({
   rowLabel: { flex: 1, fontWeight: '600', fontSize: 14 },
   rowValue: { fontSize: 12.5 },
   divider: { height: 1 },
-
-  nav: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 78,
-    borderTopWidth: 1,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingTop: 13,
-  },
-  navTab: { flex: 1, alignItems: 'center' },
 });
