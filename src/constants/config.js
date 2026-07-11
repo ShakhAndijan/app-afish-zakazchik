@@ -7,6 +7,7 @@ export const ENDPOINTS = {
   REGISTER_VERIFY_OTP: `${API_BASE_URL}/api/v1/auth/customer/register/verify-otp`,
   CUSTOMER_LOGIN: `${API_BASE_URL}/api/v1/auth/customer/login`,
   LOGIN_REQUEST_OTP: `${API_BASE_URL}/api/v1/auth/customer/login/request-otp`,
+  AUTH_ME: `${API_BASE_URL}/api/v1/auth/me`,
   RESET_PASSWORD_REQUEST_OTP: `${API_BASE_URL}/api/v1/auth/reset-password/request-otp`,
   RESET_PASSWORD_VERIFY_OTP: `${API_BASE_URL}/api/v1/auth/reset-password/verify-otp`,
   CATEGORIES: `${API_BASE_URL}/api/v1/categories`,
@@ -20,5 +21,9 @@ export const ENDPOINTS = {
   SYSTEM_STATS: `${API_BASE_URL}/api/v1/system/stats`,
   TOP_COMMENTS: (limit = 10) => `${API_BASE_URL}/api/v1/reviews/top-comments?limit=${limit}`,
   TOP_ORDERS: (limit = 10) => `${API_BASE_URL}/api/v1/reviews/top-orders?limit=${limit}`,
+  CUSTOMER_FAVORITES: (page = 1, size = 10) =>
+    `${API_BASE_URL}/api/v1/customers/me/favorites?page=${page}&size=${size}`,
+  CUSTOMER_AVATAR_UPLOAD_URL: `${API_BASE_URL}/api/v1/customers/me/avatar/upload-url`,
+  CUSTOMER_AVATAR_CONFIRM: `${API_BASE_URL}/api/v1/customers/me/avatar/confirm`,
 };
 // https://engraver-garnet-scalded.ngrok-free.dev

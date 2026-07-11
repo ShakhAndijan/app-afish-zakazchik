@@ -29,7 +29,7 @@ const FALLBACK_GENDERS = [
 const FALLBACK_REGIONS = [
   { id: 1, name: 'Toshkent shahri' },
   { id: 2, name: 'Toshkent viloyati' },
-  { id: 3, name: "Samarqand viloyati" },
+  { id: 3, name: 'Samarqand viloyati' },
   { id: 4, name: "Farg'ona viloyati" },
   { id: 5, name: 'Buxoro viloyati' },
 ];
@@ -47,8 +47,18 @@ const LANGUAGE_OPTIONS = [
 ];
 
 const MONTH_NAMES_UZ = [
-  'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
-  'Iyul', 'Avgust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr',
+  'Yanvar',
+  'Fevral',
+  'Mart',
+  'Aprel',
+  'May',
+  'Iyun',
+  'Iyul',
+  'Avgust',
+  'Sentyabr',
+  'Oktyabr',
+  'Noyabr',
+  'Dekabr',
 ];
 const pad2 = (n) => String(n).padStart(2, '0');
 const daysInMonth = (year, month) => new Date(year, month, 0).getDate();
@@ -65,7 +75,16 @@ const formatDisplayDate = (iso) => {
 };
 
 /* ── Text / textarea field ── */
-function TextField({ label, value, onChangeText, placeholder, t, keyboardType, multiline, maxLength }) {
+function TextField({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  t,
+  keyboardType,
+  multiline,
+  maxLength,
+}) {
   return (
     <View style={{ gap: 8 }}>
       <Text style={[s.fieldLabel, { color: t.muted }]}>{label}</Text>
@@ -105,29 +124,57 @@ function SelectField({ label, value, placeholder, onPress, t, disabled }) {
       <TouchableOpacity
         style={[
           s.inputWrap,
-          { backgroundColor: t.inputBg, borderColor: t.border, opacity: disabled ? 0.5 : 1 },
+          {
+            backgroundColor: t.inputBg,
+            borderColor: t.border,
+            opacity: disabled ? 0.5 : 1,
+          },
         ]}
         onPress={disabled ? undefined : onPress}
         activeOpacity={0.7}
       >
-        <Text style={[s.input, { color: value ? t.text : t.faint }]} numberOfLines={1}>
+        <Text
+          style={[s.input, { color: value ? t.text : t.faint }]}
+          numberOfLines={1}
+        >
           {value || placeholder}
         </Text>
-        <MaterialCommunityIcons name="chevron-right" size={18} color={t.faint} />
+        <MaterialCommunityIcons
+          name="chevron-right"
+          size={18}
+          color={t.faint}
+        />
       </TouchableOpacity>
     </View>
   );
 }
 
 /* ── Generic single-select bottom sheet (gender / region / district) ── */
-function OptionSheet({ visible, onClose, title, options, selectedId, onSelect, t, loading }) {
+function OptionSheet({
+  visible,
+  onClose,
+  title,
+  options,
+  selectedId,
+  onSelect,
+  t,
+  loading,
+}) {
   return (
-    <Modal visible={visible} transparent animationType="fade" statusBarTranslucent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+      onRequestClose={onClose}
+    >
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={s.overlay} />
       </TouchableWithoutFeedback>
 
-      <View style={[s.sheet, { backgroundColor: t.card, borderColor: t.border }]}>
+      <View
+        style={[s.sheet, { backgroundColor: t.card, borderColor: t.border }]}
+      >
         <View style={s.grabberRow}>
           <View style={[s.grabber, { backgroundColor: t.border }]} />
         </View>
@@ -143,16 +190,24 @@ function OptionSheet({ visible, onClose, title, options, selectedId, onSelect, t
         </View>
 
         {loading ? (
-          <ActivityIndicator size="small" color={t.orange} style={{ marginVertical: 30 }} />
+          <ActivityIndicator
+            size="small"
+            color={t.orange}
+            style={{ marginVertical: 30 }}
+          />
         ) : options.length === 0 ? (
-          <Text style={[s.sheetEmpty, { color: t.muted }]}>Ma'lumot topilmadi</Text>
+          <Text style={[s.sheetEmpty, { color: t.muted }]}>
+            Ma'lumot topilmadi
+          </Text>
         ) : (
           <FlatList
             data={options}
             keyExtractor={(item) => String(item.id)}
             style={{ maxHeight: 380 }}
             contentContainerStyle={{ paddingBottom: 12 }}
-            ItemSeparatorComponent={() => <View style={[s.sheetDivider, { backgroundColor: t.border }]} />}
+            ItemSeparatorComponent={() => (
+              <View style={[s.sheetDivider, { backgroundColor: t.border }]} />
+            )}
             renderItem={({ item }) => {
               const on = item.id === selectedId;
               return (
@@ -164,8 +219,16 @@ function OptionSheet({ visible, onClose, title, options, selectedId, onSelect, t
                     onClose();
                   }}
                 >
-                  <Text style={[s.sheetRowText, { color: t.text }]}>{item.name}</Text>
-                  {on && <MaterialCommunityIcons name="check-circle" size={19} color={t.orange} />}
+                  <Text style={[s.sheetRowText, { color: t.text }]}>
+                    {item.name}
+                  </Text>
+                  {on && (
+                    <MaterialCommunityIcons
+                      name="check-circle"
+                      size={19}
+                      color={t.orange}
+                    />
+                  )}
                 </TouchableOpacity>
               );
             }}
@@ -195,7 +258,15 @@ function DateColumn({ values, value, onChange, format, t }) {
             onPress={() => onChange(item)}
             activeOpacity={0.7}
           >
-            <Text style={[s.dateCellText, { color: selected ? t.orange : t.muted, fontWeight: selected ? '700' : '400' }]}>
+            <Text
+              style={[
+                s.dateCellText,
+                {
+                  color: selected ? t.orange : t.muted,
+                  fontWeight: selected ? '700' : '400',
+                },
+              ]}
+            >
               {format ? format(item) : item}
             </Text>
           </TouchableOpacity>
@@ -224,7 +295,10 @@ function BirthDateSheet({ visible, onClose, value, onChange, t }) {
   const maxDay = daysInMonth(year, month);
   const days = Array.from({ length: maxDay }, (_, i) => i + 1);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
-  const years = Array.from({ length: currentYear - 1940 + 1 }, (_, i) => currentYear - i);
+  const years = Array.from(
+    { length: currentYear - 1940 + 1 },
+    (_, i) => currentYear - i
+  );
 
   const changeMonth = (m) => {
     setMonth(m);
@@ -241,12 +315,20 @@ function BirthDateSheet({ visible, onClose, value, onChange, t }) {
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" statusBarTranslucent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+      onRequestClose={onClose}
+    >
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={s.overlay} />
       </TouchableWithoutFeedback>
 
-      <View style={[s.sheet, { backgroundColor: t.card, borderColor: t.border }]}>
+      <View
+        style={[s.sheet, { backgroundColor: t.card, borderColor: t.border }]}
+      >
         <View style={s.grabberRow}>
           <View style={[s.grabber, { backgroundColor: t.border }]} />
         </View>
@@ -262,14 +344,27 @@ function BirthDateSheet({ visible, onClose, value, onChange, t }) {
         </View>
 
         <View style={s.dateWheelWrap}>
-          <View style={[s.dateHighlight, { backgroundColor: t.rowIconBg }]} pointerEvents="none" />
+          <View
+            style={[s.dateHighlight, { backgroundColor: t.rowIconBg }]}
+            pointerEvents="none"
+          />
           <DateColumn values={days} value={day} onChange={setDay} t={t} />
-          <DateColumn values={months} value={month} onChange={changeMonth} format={(m) => MONTH_NAMES_UZ[m - 1]} t={t} />
+          <DateColumn
+            values={months}
+            value={month}
+            onChange={changeMonth}
+            format={(m) => MONTH_NAMES_UZ[m - 1]}
+            t={t}
+          />
           <DateColumn values={years} value={year} onChange={changeYear} t={t} />
         </View>
 
         <View style={{ paddingHorizontal: 20, paddingTop: 6 }}>
-          <TouchableOpacity style={[s.confirmBtn, { backgroundColor: t.orange }]} activeOpacity={0.85} onPress={confirm}>
+          <TouchableOpacity
+            style={[s.confirmBtn, { backgroundColor: t.orange }]}
+            activeOpacity={0.85}
+            onPress={confirm}
+          >
             <Text style={s.confirmBtnText}>Tasdiqlash</Text>
           </TouchableOpacity>
         </View>
@@ -289,10 +384,18 @@ function LanguageChips({ selectedIds, onToggle, t }) {
             key={opt.id}
             onPress={() => onToggle(opt.id)}
             activeOpacity={0.8}
-            style={[s.chip, { backgroundColor: on ? t.orange : t.inputBg, borderColor: on ? t.orange : t.border }]}
+            style={[
+              s.chip,
+              {
+                backgroundColor: on ? t.orange : t.inputBg,
+                borderColor: on ? t.orange : t.border,
+              },
+            ]}
           >
             <Text style={{ fontSize: 13 }}>{opt.flag}</Text>
-            <Text style={[s.chipText, { color: on ? '#fff' : t.text }]}>{opt.name}</Text>
+            <Text style={[s.chipText, { color: on ? '#fff' : t.text }]}>
+              {opt.name}
+            </Text>
           </TouchableOpacity>
         );
       })}
@@ -303,7 +406,12 @@ function LanguageChips({ selectedIds, onToggle, t }) {
 /* ── Numeric stepper (experience_years) ── */
 function Stepper({ value, onChange, t, min = 0, max = 80 }) {
   return (
-    <View style={[s.stepperWrap, { backgroundColor: t.inputBg, borderColor: t.border }]}>
+    <View
+      style={[
+        s.stepperWrap,
+        { backgroundColor: t.inputBg, borderColor: t.border },
+      ]}
+    >
       <TouchableOpacity
         style={s.stepperBtn}
         activeOpacity={0.7}
@@ -358,14 +466,20 @@ export default function EditProfileScreen({ onBack }) {
   useEffect(() => {
     let alive = true;
     getGenders()
-      .then((list) => { if (alive && list?.length) setGenders(list); })
+      .then((list) => {
+        if (alive && list?.length) setGenders(list);
+      })
       .catch(() => {})
       .finally(() => alive && setGendersLoading(false));
     getRegions()
-      .then((list) => { if (alive && list?.length) setRegions(list); })
+      .then((list) => {
+        if (alive && list?.length) setRegions(list);
+      })
       .catch(() => {})
       .finally(() => alive && setRegionsLoading(false));
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -376,10 +490,16 @@ export default function EditProfileScreen({ onBack }) {
     let alive = true;
     setDistrictsLoading(true);
     getDistricts(regionId)
-      .then((list) => { if (alive) setDistricts(list?.length ? list : FALLBACK_DISTRICTS); })
-      .catch(() => { if (alive) setDistricts(FALLBACK_DISTRICTS); })
+      .then((list) => {
+        if (alive) setDistricts(list?.length ? list : FALLBACK_DISTRICTS);
+      })
+      .catch(() => {
+        if (alive) setDistricts(FALLBACK_DISTRICTS);
+      })
       .finally(() => alive && setDistrictsLoading(false));
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [regionId]);
 
   const selectedGender = genders.find((g) => g.id === genderId);
@@ -387,10 +507,13 @@ export default function EditProfileScreen({ onBack }) {
   const selectedDistrict = districts.find((d) => d.id === districtId);
 
   const toggleLanguage = (id) => {
-    setLanguageIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    setLanguageIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
   };
 
-  const isReady = firstName.trim().length > 0 && lastName.trim().length > 0 && !saving;
+  const isReady =
+    firstName.trim().length > 0 && lastName.trim().length > 0 && !saving;
 
   const handleSave = () => {
     if (!isReady) return;
@@ -407,37 +530,72 @@ export default function EditProfileScreen({ onBack }) {
       languages: languageIds,
       experience_years: experienceYears,
     };
-    console.log('profile update payload', payload);
+    // console.log('profile update payload', payload);
     setSaving(true);
     setTimeout(() => {
       setSaving(false);
-      Alert.alert('Saqlandi', "Profil ma'lumotlari muvaffaqiyatli yangilandi.", [
-        { text: 'OK', onPress: onBack },
-      ]);
+      Alert.alert(
+        'Saqlandi',
+        "Profil ma'lumotlari muvaffaqiyatli yangilandi.",
+        [{ text: 'OK', onPress: onBack }]
+      );
     }, 1000);
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }} edges={['top', 'left', 'right']}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: t.bg }}
+      edges={['top', 'left', 'right']}
+    >
       <StatusBar style={t.isDark ? 'light' : 'dark'} />
 
       <View style={[s.header, { backgroundColor: t.bg }]}>
         <TouchableOpacity
-          style={[s.backBtn, { backgroundColor: t.card, borderColor: t.border }]}
+          style={[
+            s.backBtn,
+            { backgroundColor: t.card, borderColor: t.border },
+          ]}
           onPress={onBack}
           activeOpacity={0.8}
         >
-          <MaterialCommunityIcons name="chevron-left" size={24} color={t.text} />
+          <MaterialCommunityIcons
+            name="chevron-left"
+            size={24}
+            color={t.text}
+          />
         </TouchableOpacity>
-        <Text style={[s.headerTitle, { color: t.text }]}>Profilni tahrirlash</Text>
+        <Text style={[s.headerTitle, { color: t.text }]}>
+          Profilni tahrirlash
+        </Text>
       </View>
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={s.scroll}
+          keyboardShouldPersistTaps="handled"
+        >
           <GroupLabel t={t}>SHAXSIY MA'LUMOTLAR</GroupLabel>
-          <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
-            <TextField label="Ism" value={firstName} onChangeText={setFirstName} placeholder="Ismingiz" t={t} />
-            <TextField label="Familiya" value={lastName} onChangeText={setLastName} placeholder="Familiyangiz" t={t} />
+          <View
+            style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}
+          >
+            <TextField
+              label="Ism"
+              value={firstName}
+              onChangeText={setFirstName}
+              placeholder="Ismingiz"
+              t={t}
+            />
+            <TextField
+              label="Familiya"
+              value={lastName}
+              onChangeText={setLastName}
+              placeholder="Familiyangiz"
+              t={t}
+            />
             <SelectField
               label="Jinsi"
               value={selectedGender?.name}
@@ -464,7 +622,9 @@ export default function EditProfileScreen({ onBack }) {
           </View>
 
           <GroupLabel t={t}>ALOQA</GroupLabel>
-          <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
+          <View
+            style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}
+          >
             <TextField
               label="Email"
               value={email}
@@ -476,7 +636,9 @@ export default function EditProfileScreen({ onBack }) {
           </View>
 
           <GroupLabel t={t}>MANZIL</GroupLabel>
-          <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
+          <View
+            style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}
+          >
             <SelectField
               label="Viloyat"
               value={selectedRegion?.name}
@@ -487,7 +649,9 @@ export default function EditProfileScreen({ onBack }) {
             <SelectField
               label="Tuman"
               value={selectedDistrict?.name}
-              placeholder={regionId ? 'Tumanni tanlang' : 'Avval viloyatni tanlang'}
+              placeholder={
+                regionId ? 'Tumanni tanlang' : 'Avval viloyatni tanlang'
+              }
               onPress={() => setShowDistrictSheet(true)}
               t={t}
               disabled={!regionId}
@@ -502,19 +666,36 @@ export default function EditProfileScreen({ onBack }) {
           </View>
 
           <GroupLabel t={t}>KASBIY MA'LUMOT</GroupLabel>
-          <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
+          <View
+            style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}
+          >
             <View style={{ gap: 8 }}>
-              <Text style={[s.fieldLabel, { color: t.muted }]}>Bilgan tillari</Text>
-              <LanguageChips selectedIds={languageIds} onToggle={toggleLanguage} t={t} />
+              <Text style={[s.fieldLabel, { color: t.muted }]}>
+                Bilgan tillari
+              </Text>
+              <LanguageChips
+                selectedIds={languageIds}
+                onToggle={toggleLanguage}
+                t={t}
+              />
             </View>
             <View style={{ gap: 8 }}>
-              <Text style={[s.fieldLabel, { color: t.muted }]}>Ish tajribasi</Text>
-              <Stepper value={experienceYears} onChange={setExperienceYears} t={t} />
+              <Text style={[s.fieldLabel, { color: t.muted }]}>
+                Ish tajribasi
+              </Text>
+              <Stepper
+                value={experienceYears}
+                onChange={setExperienceYears}
+                t={t}
+              />
             </View>
           </View>
 
           <TouchableOpacity
-            style={[s.saveBtn, { backgroundColor: isReady ? t.orange : t.orange + '55' }]}
+            style={[
+              s.saveBtn,
+              { backgroundColor: isReady ? t.orange : t.orange + '55' },
+            ]}
             activeOpacity={0.85}
             onPress={handleSave}
             disabled={!isReady}
@@ -615,7 +796,11 @@ const s = StyleSheet.create({
     borderWidth: 1.5,
     paddingHorizontal: 14,
   },
-  inputWrapMultiline: { height: 96, alignItems: 'flex-start', paddingVertical: 12 },
+  inputWrapMultiline: {
+    height: 96,
+    alignItems: 'flex-start',
+    paddingVertical: 12,
+  },
   input: { flex: 1, fontSize: 14.5, fontWeight: '500', padding: 0 },
   inputMultiline: { height: '100%' },
   counter: { fontSize: 11, textAlign: 'right' },

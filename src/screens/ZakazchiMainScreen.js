@@ -4,6 +4,8 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
+  forwardRef,
+  useImperativeHandle,
 } from 'react';
 import {
   View,
@@ -20,7 +22,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import Feather from '@expo/vector-icons/Feather';
 import ZakazchiProfileScreen from './ZakazchiProfileScreen';
 import UstaDetailScreen from './UstaDetailScreen';
 import XizmatlarScreen from './XizmatlarScreen';
@@ -29,7 +30,9 @@ import ZakazchiChatScreen from './ZakazchiChatScreen';
 import BottomNav from '../components/BottomNav';
 import ListingCard from '../components/ListingCard';
 import { useTheme } from '../context/ThemeContext';
+import { useUser } from '../context/UserContext';
 import { getCategories } from '../api/categories';
+import { getWorkers, getFavorites } from '../api/workers';
 import { getTopOrders } from '../api/reviews';
 import { getToken } from '../utils/token';
 
@@ -37,82 +40,6 @@ const SVC_GAP = 10;
 const SVC_H_PAD = 20;
 const SVC_VISIBLE = 4;
 
-const TOP = [
-  {
-    initial: 'D',
-    name: 'Davron Mirzayev',
-    trade: 'Duradgor',
-    rating: '5.0',
-    jobs: '210',
-    bgColor: '#2fa37a',
-    isFirst: true,
-    location: 'Yunusobod',
-    experience: '9 yil',
-    repeatRate: '99%',
-    startingPrice: '50 000',
-  },
-  {
-    initial: 'A',
-    name: 'Alisher Usmonov',
-    trade: 'Santexnik',
-    rating: '4.9',
-    jobs: '184',
-    bgColor: '#e87a45',
-    location: 'Chilonzor',
-    experience: '7 yil',
-    repeatRate: '98%',
-    startingPrice: '30 000',
-  },
-  {
-    initial: 'B',
-    name: 'Bobur Karimov',
-    trade: 'Elektrik',
-    rating: '4.8',
-    jobs: '180',
-    bgColor: '#3f7fd4',
-    location: "Mirzo Ulug'bek",
-    experience: '5 yil',
-    repeatRate: '96%',
-    startingPrice: '35 000',
-  },
-  {
-    initial: 'S',
-    name: 'Sherzod Nazarov',
-    trade: "Bo'yoqchi",
-    rating: '4.8',
-    jobs: '156',
-    bgColor: '#ec4899',
-    location: 'Shayxontohur',
-    experience: '6 yil',
-    repeatRate: '95%',
-    startingPrice: '45 000',
-  },
-  {
-    initial: 'J',
-    name: 'Jasur Toshmatov',
-    trade: 'Plitachi',
-    rating: '4.7',
-    jobs: '134',
-    bgColor: '#8b5cf6',
-    location: 'Uchtepa',
-    experience: '4 yil',
-    repeatRate: '94%',
-    startingPrice: '48 000',
-  },
-];
-
-const SAVED = [
-  { letter: 'D', name: 'Davron M.', trade: 'Duradgor', color: '#2fa37a' },
-  { letter: 'A', name: 'Alisher U.', trade: 'Santexnik', color: '#e87a45' },
-  { letter: 'B', name: 'Bobur K.', trade: 'Elektrik', color: '#3f7fd4' },
-  { letter: 'S', name: 'Sardor T.', trade: "Bo'yoqchi", color: '#9b6cd1' },
-  { letter: 'J', name: 'Jahongir R.', trade: 'Gipschi', color: '#f5a623' },
-  { letter: 'F', name: 'Farrux N.', trade: 'Plitachi', color: '#26a69a' },
-  { letter: 'M', name: 'Mansur O.', trade: 'Payvandchi', color: '#ef5350' },
-  { letter: 'Z', name: 'Zafar H.', trade: 'Konditsioner', color: '#29b6f6' },
-  { letter: 'O', name: 'Otabek S.', trade: 'Quruvchi', color: '#66bb6a' },
-  { letter: 'K', name: 'Kamol A.', trade: 'Kranovshchik', color: '#7e57c2' },
-];
 const SAVED_CARD_W = 148;
 const SAVED_CARD_GAP = 12;
 
@@ -172,7 +99,10 @@ const LISTINGS = [
   },
 ];
 
-function ServiceCarousel() {
+const ServiceCarousel = forwardRef(function ServiceCarousel(
+  { onSelectCategory },
+  ref
+) {
   const { theme: t } = useTheme();
   const { width: screenW } = useWindowDimensions();
   const [active, setActive] = useState(null);
@@ -180,6 +110,15 @@ function ServiceCarousel() {
   const [loading, setLoading] = useState(true);
   const listRef = useRef(null);
   const idxRef = useRef(0);
+  const pausedRef = useRef(false);
+
+  useImperativeHandle(ref, () => ({
+    resume: () => {
+      pausedRef.current = false;
+      setActive(null);
+      onSelectCategory?.(null);
+    },
+  }));
 
   useEffect(() => {
     let cancelled = false;
@@ -228,6 +167,7 @@ function ServiceCarousel() {
   useEffect(() => {
     if (loopLen === 0) return;
     const timer = setInterval(() => {
+      if (pausedRef.current) return;
       idxRef.current += 1;
       if (idxRef.current >= loopLen * 2) {
         idxRef.current = loopLen;
@@ -259,7 +199,12 @@ function ServiceCarousel() {
               borderColor: isActive ? color : t.border,
             },
           ]}
-          onPress={() => setActive(isActive ? null : item.id)}
+          onPress={() => {
+            pausedRef.current = true;
+            const next = isActive ? null : item.id;
+            setActive(next);
+            onSelectCategory?.(next);
+          }}
           activeOpacity={0.8}
         >
           <View
@@ -287,7 +232,7 @@ function ServiceCarousel() {
         </TouchableOpacity>
       );
     },
-    [active, t, itemW]
+    [active, t, itemW, onSelectCategory]
   );
 
   if (loading) {
@@ -322,7 +267,7 @@ function ServiceCarousel() {
       })}
     />
   );
-}
+});
 
 const WK_CARD_W = 168;
 const WK_GAP = 12;
@@ -588,15 +533,165 @@ const wk = StyleSheet.create({
   dot: { width: 6, height: 6, borderRadius: 3 },
 });
 
+function TopUstalar({ onSelectUsta, categoryId }) {
+  const { theme: t } = useTheme();
+  const [workers, setWorkers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    getWorkers({ limit: 5, offset: 0, categoryId })
+      .then((items) => {
+        // console.log('workers:', items);
+        if (!cancelled) setWorkers(items);
+      })
+      .catch(() => {
+        if (!cancelled) setWorkers([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [categoryId]);
+
+  if (loading) {
+    return (
+      <View
+        style={{ height: 176, alignItems: 'center', justifyContent: 'center' }}
+      >
+        <ActivityIndicator color={t.orange} />
+      </View>
+    );
+  }
+
+  if (workers.length === 0) return null;
+
+  return (
+    <>
+      {workers.map((u, i) => (
+        <TouchableOpacity
+          key={u.id}
+          style={[
+            s.masterCard,
+            {
+              backgroundColor: t.card,
+              borderColor: t.border,
+              marginBottom: i < workers.length - 1 ? 11 : 0,
+            },
+          ]}
+          activeOpacity={0.8}
+          onPress={() => onSelectUsta(u)}
+        >
+          <View style={{ marginRight: 13 }}>
+            <Avatar letter={u.initial} size={48} bgColor={u.color} />
+            {i === 0 && (
+              <View style={s.rankBadge}>
+                <Text
+                  style={{
+                    fontSize: 9,
+                    fontWeight: '800',
+                    color: '#3a2a08',
+                  }}
+                >
+                  #1
+                </Text>
+              </View>
+            )}
+            {u.is_online && (
+              <View style={[s.onlineDot, { borderColor: t.card }]} />
+            )}
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontWeight: '700', fontSize: 14.5, color: t.text }}>
+              {u.name}
+            </Text>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 6,
+                marginTop: 2,
+              }}
+            >
+              <Text
+                style={{ fontSize: 12, color: t.muted, flexShrink: 1 }}
+                numberOfLines={1}
+              >
+                {u.profession || 'Usta'}
+              </Text>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 3,
+                }}
+              >
+                <MaterialCommunityIcons
+                  name="shield-check"
+                  size={11}
+                  color={t.green}
+                />
+                <Text
+                  style={{ fontSize: 11.5, color: t.green }}
+                  numberOfLines={1}
+                >
+                  {u.location}
+                </Text>
+              </View>
+            </View>
+          </View>
+          <View style={s.ratingBadge}>
+            <Ionicons name="star" size={12} color={t.gold} />
+            <Text
+              style={{
+                fontSize: 12.5,
+                fontWeight: '700',
+                color: t.gold,
+                marginLeft: 3,
+              }}
+            >
+              {u.rating.toFixed(1)}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      ))}
+    </>
+  );
+}
+
 function SevimliUstalar({ onSelectUsta }) {
   const { theme: t } = useTheme();
+  const [saved, setSaved] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [savedIdx, setSavedIdx] = useState(0);
   const listRef = useRef(null);
   const idxRef = useRef(0);
 
   useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    getFavorites({ page: 1, size: 10 })
+      .then((items) => {
+        if (!cancelled) setSaved(items);
+      })
+      .catch(() => {
+        if (!cancelled) setSaved([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (saved.length === 0) return;
     const timer = setInterval(() => {
-      idxRef.current = (idxRef.current + 1) % SAVED.length;
+      idxRef.current = (idxRef.current + 1) % saved.length;
       listRef.current?.scrollToOffset({
         offset: idxRef.current * (SAVED_CARD_W + SAVED_CARD_GAP),
         animated: true,
@@ -604,7 +699,15 @@ function SevimliUstalar({ onSelectUsta }) {
       setSavedIdx(idxRef.current);
     }, 2500);
     return () => clearInterval(timer);
-  }, []);
+  }, [saved.length]);
+
+  if (loading) {
+    return (
+      <View style={{ height: 158, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={t.orange} />
+      </View>
+    );
+  }
 
   return (
     <View style={{ paddingTop: 24 }}>
@@ -623,117 +726,163 @@ function SevimliUstalar({ onSelectUsta }) {
             Sevimli ustalar
           </Text>
         </View>
-        <TouchableOpacity activeOpacity={0.7}>
-          <Text style={{ color: t.orange, fontSize: 12.5, fontWeight: '600' }}>
-            Barchasi
-          </Text>
-        </TouchableOpacity>
-      </View>
-      <FlatList
-        ref={listRef}
-        data={SAVED}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        snapToInterval={SAVED_CARD_W + SAVED_CARD_GAP}
-        snapToAlignment="start"
-        decelerationRate="fast"
-        contentContainerStyle={{ paddingLeft: 20, paddingRight: 20 }}
-        keyExtractor={(_, i) => String(i)}
-        onScroll={({ nativeEvent }) => {
-          const i = Math.round(
-            nativeEvent.contentOffset.x / (SAVED_CARD_W + SAVED_CARD_GAP)
-          );
-          idxRef.current = i;
-          setSavedIdx(i);
-        }}
-        scrollEventThrottle={16}
-        renderItem={({ item: u, index }) => (
-          <TouchableOpacity
-            style={[
-              s.savedCard,
-              {
-                backgroundColor: t.card,
-                borderColor: t.border,
-                marginRight: index < SAVED.length - 1 ? SAVED_CARD_GAP : 0,
-              },
-            ]}
-            activeOpacity={0.8}
-            onPress={() =>
-              onSelectUsta({
-                initial: u.letter,
-                name: u.name,
-                trade: u.trade,
-                bgColor: u.color,
-              })
-            }
-          >
-            <View style={{ alignItems: 'center' }}>
-              <Avatar letter={u.letter} size={50} bgColor={u.color} />
-            </View>
-            <Text
-              style={{
-                fontWeight: '700',
-                fontSize: 13,
-                color: t.text,
-                marginTop: 10,
-                textAlign: 'center',
-              }}
-            >
-              {u.name}
-            </Text>
-            <Text
-              style={{
-                fontSize: 11,
-                color: t.muted,
-                marginTop: 2,
-                textAlign: 'center',
-              }}
-            >
-              {u.trade}
+        {saved.length > 0 && (
+          <TouchableOpacity activeOpacity={0.7}>
+            <Text style={{ color: t.orange, fontSize: 12.5, fontWeight: '600' }}>
+              Barchasi
             </Text>
           </TouchableOpacity>
         )}
-      />
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: 5,
-          marginTop: 12,
-        }}
-      >
-        {SAVED.map((_, i) => (
-          <View
-            key={i}
-            style={{
-              width: i === savedIdx ? 18 : 6,
-              height: 6,
-              borderRadius: 3,
-              backgroundColor: i === savedIdx ? t.orange : t.border,
-            }}
-          />
-        ))}
       </View>
+      {saved.length === 0 ? (
+        <View
+          style={{
+            marginHorizontal: 20,
+            paddingVertical: 22,
+            borderRadius: 14,
+            borderWidth: 1,
+            borderColor: t.border,
+            backgroundColor: t.card,
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <Ionicons name="heart-outline" size={22} color={t.muted} />
+          <Text style={{ fontSize: 13, fontWeight: '600', color: t.muted }}>
+            Hali sevimli ustalar yo'q
+          </Text>
+        </View>
+      ) : (
+        <>
+          <FlatList
+            ref={listRef}
+            data={saved}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            snapToInterval={SAVED_CARD_W + SAVED_CARD_GAP}
+            snapToAlignment="start"
+            decelerationRate="fast"
+            contentContainerStyle={{ paddingLeft: 20, paddingRight: 20 }}
+            keyExtractor={(u) => String(u.id)}
+            onScroll={({ nativeEvent }) => {
+              const i = Math.round(
+                nativeEvent.contentOffset.x / (SAVED_CARD_W + SAVED_CARD_GAP)
+              );
+              idxRef.current = i;
+              setSavedIdx(i);
+            }}
+            scrollEventThrottle={16}
+            renderItem={({ item: u, index }) => (
+              <TouchableOpacity
+                style={[
+                  s.savedCard,
+                  {
+                    backgroundColor: t.card,
+                    borderColor: t.border,
+                    marginRight: index < saved.length - 1 ? SAVED_CARD_GAP : 0,
+                  },
+                ]}
+                activeOpacity={0.8}
+                onPress={() => onSelectUsta(u)}
+              >
+                <View style={{ alignItems: 'center' }}>
+                  <Avatar
+                    letter={u.initial}
+                    size={50}
+                    bgColor={u.color}
+                    uri={u.profile_photo}
+                  />
+                </View>
+                <Text
+                  style={{
+                    fontWeight: '700',
+                    fontSize: 13,
+                    color: t.text,
+                    marginTop: 10,
+                    textAlign: 'center',
+                  }}
+                  numberOfLines={1}
+                >
+                  {u.name}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 11,
+                    color: t.muted,
+                    marginTop: 2,
+                    textAlign: 'center',
+                  }}
+                  numberOfLines={1}
+                >
+                  {u.profession || 'Usta'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          />
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: 5,
+              marginTop: 12,
+            }}
+          >
+            {saved.map((_, i) => (
+              <View
+                key={i}
+                style={{
+                  width: i === savedIdx ? 18 : 6,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: i === savedIdx ? t.orange : t.border,
+                }}
+              />
+            ))}
+          </View>
+        </>
+      )}
     </View>
   );
 }
 
-function Avatar({ letter = 'J', size = 42, bgColor = '#e87a45' }) {
+// Android'dagi Image (Fresco/OkHttp) kodlanmagan "+" belgisini URL'da
+// noto'g'ri talqin qilib, rasmni yuklolmasligi mumkin — shu sababli xavfsiz kodlaymiz.
+const encodeImageUri = (uri) => (uri ? uri.replace(/\+/g, '%2B') : uri);
+
+function Avatar({ letter = 'J', size = 42, bgColor = '#e87a45', uri }) {
+  const [failed, setFailed] = useState(false);
+  const showImage = uri && !failed;
+
   return (
     <View
       style={{
         width: size,
         height: size,
         borderRadius: size * 0.32,
-        backgroundColor: bgColor,
+        backgroundColor: showImage ? 'transparent' : bgColor,
         alignItems: 'center',
         justifyContent: 'center',
+        overflow: 'hidden',
       }}
     >
-      <Text style={{ color: '#fff', fontSize: size * 0.4, fontWeight: '700' }}>
-        {letter}
-      </Text>
+      {showImage ? (
+        <Image
+          source={{ uri: encodeImageUri(uri) }}
+          style={{ width: '100%', height: '100%' }}
+          resizeMode="cover"
+          onError={(e) => {
+            console.log('[Avatar] rasm yuklanmadi:', uri, e.nativeEvent?.error);
+            setFailed(true);
+          }}
+        />
+      ) : (
+        <Text
+          style={{ color: '#fff', fontSize: size * 0.4, fontWeight: '700' }}
+        >
+          {letter}
+        </Text>
+      )}
     </View>
   );
 }
@@ -742,7 +891,10 @@ export default function ZakazchiMainScreen({ onLogout }) {
   const [activeTab, setActiveTab] = useState('home');
   const [selectedUsta, setSelectedUsta] = useState(null);
   const [selectedWork, setSelectedWork] = useState(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const { theme: t } = useTheme();
+  const { user } = useUser();
+  const serviceCarouselRef = useRef(null);
 
   useEffect(() => {
     getToken().then((token) => {
@@ -816,7 +968,7 @@ export default function ZakazchiMainScreen({ onLogout }) {
                   color={t.orange}
                 />
                 <Text style={{ fontSize: 12, color: t.muted }}>
-                  Toshkent, Chilonzor
+                  {[user?.region, user?.district].filter(Boolean).join(', ')}
                 </Text>
               </View>
               <Text
@@ -827,26 +979,14 @@ export default function ZakazchiMainScreen({ onLogout }) {
                   marginTop: 3,
                 }}
               >
-                Salom, Jasur 👋
+                Salom, {user?.last_name} 👋
               </Text>
             </View>
-            <Avatar letter="J" bgColor={t.orange} />
-          </View>
-
-          {/* Search bar */}
-          <View
-            style={[
-              s.searchBar,
-              { backgroundColor: t.inputBg, borderColor: t.border },
-            ]}
-          >
-            <Feather name="search" size={16} color={t.faint} />
-            <Text
-              style={{ flex: 1, color: t.faint, fontSize: 14, marginLeft: 8 }}
-            >
-              Qaysi usta kerak?
-            </Text>
-            <Feather name="sliders" size={16} color={t.orange} />
+            <Avatar
+              letter={(user?.last_name).charAt(0).toUpperCase()}
+              bgColor={t.orange}
+              uri={user?.profile_photo}
+            />
           </View>
         </View>
 
@@ -920,13 +1060,21 @@ export default function ZakazchiMainScreen({ onLogout }) {
             <Text style={[s.sectionTitle, { color: t.text }]}>
               Taklif xizmatlar
             </Text>
-            <Text
-              style={{ color: t.orange, fontSize: 12.5, fontWeight: '600' }}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => serviceCarouselRef.current?.resume()}
             >
-              Barchasi
-            </Text>
+              <Text
+                style={{ color: t.orange, fontSize: 12.5, fontWeight: '600' }}
+              >
+                Barchasi
+              </Text>
+            </TouchableOpacity>
           </View>
-          <ServiceCarousel />
+          <ServiceCarousel
+            ref={serviceCarouselRef}
+            onSelectCategory={setSelectedCategoryId}
+          />
         </View>
 
         {/* ── Top ustalar ── */}
@@ -941,86 +1089,10 @@ export default function ZakazchiMainScreen({ onLogout }) {
               Reyting
             </Text>
           </View>
-          {TOP.map((u, i) => (
-            <TouchableOpacity
-              key={u.initial + i}
-              style={[
-                s.masterCard,
-                {
-                  backgroundColor: t.card,
-                  borderColor: t.border,
-                  marginBottom: i < TOP.length - 1 ? 11 : 0,
-                },
-              ]}
-              activeOpacity={0.8}
-              onPress={() => setSelectedUsta(u)}
-            >
-              <View style={{ marginRight: 13 }}>
-                <Avatar letter={u.initial} size={48} bgColor={u.bgColor} />
-                {u.isFirst && (
-                  <View style={s.rankBadge}>
-                    <Text
-                      style={{
-                        fontSize: 9,
-                        fontWeight: '800',
-                        color: '#3a2a08',
-                      }}
-                    >
-                      #1
-                    </Text>
-                  </View>
-                )}
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={{ fontWeight: '700', fontSize: 14.5, color: t.text }}
-                >
-                  {u.name}
-                </Text>
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 6,
-                    marginTop: 2,
-                  }}
-                >
-                  <Text style={{ fontSize: 12, color: t.muted }}>
-                    {u.trade}
-                  </Text>
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      gap: 3,
-                    }}
-                  >
-                    <MaterialCommunityIcons
-                      name="shield-check"
-                      size={11}
-                      color={t.green}
-                    />
-                    <Text style={{ fontSize: 11.5, color: t.green }}>
-                      {u.jobs} ish
-                    </Text>
-                  </View>
-                </View>
-              </View>
-              <View style={s.ratingBadge}>
-                <Ionicons name="star" size={12} color={t.gold} />
-                <Text
-                  style={{
-                    fontSize: 12.5,
-                    fontWeight: '700',
-                    color: t.gold,
-                    marginLeft: 3,
-                  }}
-                >
-                  {u.rating}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+          <TopUstalar
+            onSelectUsta={setSelectedUsta}
+            categoryId={selectedCategoryId}
+          />
         </View>
 
         {/* ── Best works ── */}
@@ -1100,16 +1172,6 @@ export default function ZakazchiMainScreen({ onLogout }) {
 }
 
 const s = StyleSheet.create({
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 13,
-    paddingHorizontal: 15,
-    marginTop: 16,
-  },
-
   activeCard: {
     borderWidth: 1,
     borderColor: 'rgba(232,122,69,0.32)',
@@ -1210,6 +1272,16 @@ const s = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 7,
+  },
+  onlineDot: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 11,
+    height: 11,
+    borderRadius: 6,
+    backgroundColor: '#22C55E',
+    borderWidth: 2,
   },
   ratingBadge: {
     flexDirection: 'row',

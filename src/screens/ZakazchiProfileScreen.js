@@ -16,6 +16,9 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import Feather from '@expo/vector-icons/Feather';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../context/ThemeContext';
+import { useUser } from '../context/UserContext';
+import { getAvatarUploadUrl, confirmAvatar } from '../api/user';
+import { uploadImageToPresignedUrl } from '../api/auth';
 import ZakazchiHelpScreen from './ZakazchiHelpScreen';
 import ZakazchiNotifScreen from './ZakazchiNotifScreen';
 import ZakazchiOrdersScreen from './ZakazchiOrdersScreen';
@@ -30,8 +33,10 @@ import TilBottomSheet, { LANGS } from '../components/TilBottomSheet';
 import AvatarPickerSheet from '../components/AvatarPickerSheet';
 import BottomNav from '../components/BottomNav';
 
-const formatPhoneDisplay = (digits = '') => {
-  const d = digits.replace(/\D/g, '').slice(0, 9);
+const formatPhoneDisplay = (raw = '') => {
+  let d = raw.replace(/\D/g, '');
+  if (d.startsWith('998') && d.length > 9) d = d.slice(3); // to'liq raqamdan (+998...) mamlakat kodini olib tashlaymiz
+  d = d.slice(0, 9);
   let s = '';
   if (d.length > 0) s += d.slice(0, 2);
   if (d.length > 2) s += ' ' + d.slice(2, 5);
@@ -40,6 +45,10 @@ const formatPhoneDisplay = (digits = '') => {
   return `+998 ${s}`.trim();
 };
 
+
+// Android'dagi Image (Fresco/OkHttp) kodlanmagan "+" belgisini URL'da
+// noto'g'ri talqin qilib, rasmni yuklolmasligi mumkin — shu sababli xavfsiz kodlaymiz.
+const encodeImageUri = (uri) => (uri ? uri.replace(/\+/g, '%2B') : uri);
 
 function Avatar({ letter = 'J', size = 80, bgColor, uri }) {
   return (
@@ -55,7 +64,11 @@ function Avatar({ letter = 'J', size = 80, bgColor, uri }) {
       }}
     >
       {uri ? (
-        <Image source={{ uri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+        <Image
+          source={{ uri: encodeImageUri(uri) }}
+          style={{ width: '100%', height: '100%' }}
+          resizeMode="cover"
+        />
       ) : (
         <Text style={{ color: '#fff', fontSize: size * 0.4, fontWeight: '700' }}>
           {letter}
@@ -77,7 +90,10 @@ async function pickFromGallery(onPicked) {
     allowsEditing: true,
     aspect: [1, 1],
   });
-  if (!result.canceled) onPicked(result.assets[0].uri);
+  if (!result.canceled) {
+    const asset = result.assets[0];
+    onPicked(asset.uri, asset.mimeType || 'image/jpeg');
+  }
 }
 
 async function pickFromCamera(onPicked) {
@@ -91,7 +107,10 @@ async function pickFromCamera(onPicked) {
     allowsEditing: true,
     aspect: [1, 1],
   });
-  if (!result.canceled) onPicked(result.assets[0].uri);
+  if (!result.canceled) {
+    const asset = result.assets[0];
+    onPicked(asset.uri, asset.mimeType || 'image/jpeg');
+  }
 }
 
 function SettingsRow({ icon, label, value, danger, color, onPress, t }) {
@@ -128,20 +147,43 @@ function SettingsRow({ icon, label, value, danger, color, onPress, t }) {
 
 export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
   const { theme: t, toggleTheme } = useTheme();
+  const { user, refreshUser } = useUser();
   const [screen, setScreen] = useState('profile');
   const [lang, setLang] = useState('uz');
   const [showTil, setShowTil] = useState(false);
   const [avatarUri, setAvatarUri] = useState(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [showAvatarSheet, setShowAvatarSheet] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState('+998 90 123 45 67');
+  const [phoneNumber, setPhoneNumber] = useState(null);
 
-  const commitAvatar = (uri) => {
+  // Backend'dan kelgan /auth/me ma'lumoti — foydalanuvchi lokal ravishda
+  // (avatar tanlash, telefonni almashtirish orqali) o'zgartirmaguncha shu ko'rsatiladi.
+  const displayName =
+    [user?.first_name, user?.last_name].filter(Boolean).join(' ').trim() || 'Jasur Rahimov';
+  const displayLetter = (user?.first_name || 'J')[0].toUpperCase();
+  const displayPhone =
+    phoneNumber || (user?.phone ? formatPhoneDisplay(user.phone) : '+998 90 123 45 67');
+  const displayAvatarUri = avatarUri || user?.profile_photo || null;
+  const displayLocation = [user?.district, user?.region].filter(Boolean).join(', ');
+
+  const commitAvatar = async (uri, contentType = 'image/jpeg') => {
+    setAvatarUri(uri); // lokal oldindan ko'rsatish — yuklash tugashini kutmaydi
     setAvatarUploading(true);
-    setTimeout(() => {
-      setAvatarUri(uri);
+    try {
+      const { upload_url, temp_key } = await getAvatarUploadUrl(contentType);
+      await uploadImageToPresignedUrl(upload_url, uri, contentType);
+      await confirmAvatar(temp_key);
+      await refreshUser(); // /auth/me'dagi doimiy profile_photo bilan almashtiradi
+      setAvatarUri(null);
+    } catch (e) {
+      setAvatarUri(null);
+      Alert.alert(
+        'Xatolik',
+        e.message || "Avatar yuklanmadi, qayta urinib ko'ring"
+      );
+    } finally {
       setAvatarUploading(false);
-    }, 900);
+    }
   };
 
   const handlePickCamera = () => {
@@ -198,7 +240,7 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
   if (screen === 'changePhone') {
     return (
       <ChangePhoneScreen
-        currentPhone={phoneNumber}
+        currentPhone={displayPhone}
         onBack={() => setScreen('profile')}
         onChanged={(digits) => {
           setPhoneNumber(formatPhoneDisplay(digits));
@@ -228,7 +270,7 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
               onPress={() => setShowAvatarSheet(true)}
               disabled={avatarUploading}
             >
-              <Avatar letter="J" size={72} bgColor={t.orange} uri={avatarUri} />
+              <Avatar letter={displayLetter} size={72} bgColor={t.orange} uri={displayAvatarUri} />
               {avatarUploading && (
                 <View style={[s.avatarOverlay, { borderRadius: 72 * 0.3 }]}>
                   <ActivityIndicator size="small" color="#fff" />
@@ -252,7 +294,7 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
                   style={{ fontWeight: '700', fontSize: 18, color: t.text }}
                   numberOfLines={1}
                 >
-                  Jasur Rahimov
+                  {displayName}
                 </Text>
                 <MaterialCommunityIcons
                   name="shield-check"
@@ -261,8 +303,16 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
                 />
               </View>
               <Text style={{ fontSize: 12.5, color: t.muted, marginTop: 3 }}>
-                {phoneNumber}
+                {displayPhone}
               </Text>
+              {!!displayLocation && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
+                  <MaterialCommunityIcons name="map-marker-outline" size={12} color={t.faint} />
+                  <Text style={{ fontSize: 11.5, color: t.faint }} numberOfLines={1}>
+                    {displayLocation}
+                  </Text>
+                </View>
+              )}
               <TouchableOpacity
                 style={[
                   s.editBtn,
@@ -634,9 +684,9 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
         onPickCamera={handlePickCamera}
         onPickGallery={handlePickGallery}
         onRemove={handleRemoveAvatar}
-        hasPhoto={!!avatarUri}
-        previewUri={avatarUri}
-        previewLetter="J"
+        hasPhoto={!!displayAvatarUri}
+        previewUri={displayAvatarUri}
+        previewLetter={displayLetter}
         previewColor={t.orange}
         t={t}
       />

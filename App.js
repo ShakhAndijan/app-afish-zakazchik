@@ -22,6 +22,7 @@ import UstaMainScreen from './src/screens/UstaMainScreen';
 import ZakazchiMainScreen from './src/screens/ZakazchiMainScreen';
 import UstaDetailScreen from './src/screens/UstaDetailScreen';
 import { ThemeProvider } from './src/context/ThemeContext';
+import { UserProvider, clearCachedUser } from './src/context/UserContext';
 import { getCategories } from './src/api/categories';
 import { getWorkers } from './src/api/workers';
 import { getTopComments, getTopOrders } from './src/api/reviews';
@@ -1095,6 +1096,7 @@ export default function App() {
 
   const handleLogout = async () => {
     await clearTokens();
+    await clearCachedUser();
     setScreen('home');
   };
 
@@ -1110,9 +1112,11 @@ export default function App() {
   if (screen === 'zakazchi-dashboard') {
     return (
       <ThemeProvider>
-        <SafeAreaProvider>
-          <ZakazchiMainScreen onLogout={handleLogout} />
-        </SafeAreaProvider>
+        <UserProvider>
+          <SafeAreaProvider>
+            <ZakazchiMainScreen onLogout={handleLogout} />
+          </SafeAreaProvider>
+        </UserProvider>
       </ThemeProvider>
     );
   }
