@@ -2,41 +2,96 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
+  Image,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import Feather from '@expo/vector-icons/Feather';
+import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../context/ThemeContext';
 import ZakazchiHelpScreen from './ZakazchiHelpScreen';
 import ZakazchiNotifScreen from './ZakazchiNotifScreen';
 import ZakazchiOrdersScreen from './ZakazchiOrdersScreen';
 import ZakazchiPromoScreen from './ZakazchiPromoScreen';
 import ZakazchiReferralScreen from './ZakazchiReferralScreen';
+import ChangePasswordScreen from './ChangePasswordScreen';
+import EditProfileScreen from './EditProfileScreen';
+import PaymentHistoryScreen from './PaymentHistoryScreen';
+import ChangePhoneScreen from './ChangePhoneScreen';
+import CertificatesScreen from './CertificatesScreen';
 import TilBottomSheet, { LANGS } from '../components/TilBottomSheet';
+import AvatarPickerSheet from '../components/AvatarPickerSheet';
 import BottomNav from '../components/BottomNav';
 
+const formatPhoneDisplay = (digits = '') => {
+  const d = digits.replace(/\D/g, '').slice(0, 9);
+  let s = '';
+  if (d.length > 0) s += d.slice(0, 2);
+  if (d.length > 2) s += ' ' + d.slice(2, 5);
+  if (d.length > 5) s += ' ' + d.slice(5, 7);
+  if (d.length > 7) s += ' ' + d.slice(7, 9);
+  return `+998 ${s}`.trim();
+};
 
-function Avatar({ letter = 'J', size = 80, bgColor }) {
+
+function Avatar({ letter = 'J', size = 80, bgColor, uri }) {
   return (
     <View
       style={{
         width: size,
         height: size,
         borderRadius: size * 0.3,
-        backgroundColor: bgColor,
+        backgroundColor: uri ? 'transparent' : bgColor,
         alignItems: 'center',
         justifyContent: 'center',
+        overflow: 'hidden',
       }}
     >
-      <Text style={{ color: '#fff', fontSize: size * 0.4, fontWeight: '700' }}>
-        {letter}
-      </Text>
+      {uri ? (
+        <Image source={{ uri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+      ) : (
+        <Text style={{ color: '#fff', fontSize: size * 0.4, fontWeight: '700' }}>
+          {letter}
+        </Text>
+      )}
     </View>
   );
+}
+
+async function pickFromGallery(onPicked) {
+  const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!perm.granted) {
+    Alert.alert('Ruxsat kerak', 'Galereyadan foydalanish uchun ruxsat bering.');
+    return;
+  }
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ['images'],
+    quality: 0.8,
+    allowsEditing: true,
+    aspect: [1, 1],
+  });
+  if (!result.canceled) onPicked(result.assets[0].uri);
+}
+
+async function pickFromCamera(onPicked) {
+  const perm = await ImagePicker.requestCameraPermissionsAsync();
+  if (!perm.granted) {
+    Alert.alert('Ruxsat kerak', 'Kameradan foydalanish uchun ruxsat bering.');
+    return;
+  }
+  const result = await ImagePicker.launchCameraAsync({
+    quality: 0.8,
+    allowsEditing: true,
+    aspect: [1, 1],
+  });
+  if (!result.canceled) onPicked(result.assets[0].uri);
 }
 
 function SettingsRow({ icon, label, value, danger, color, onPress, t }) {
@@ -76,6 +131,33 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
   const [screen, setScreen] = useState('profile');
   const [lang, setLang] = useState('uz');
   const [showTil, setShowTil] = useState(false);
+  const [avatarUri, setAvatarUri] = useState(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [showAvatarSheet, setShowAvatarSheet] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('+998 90 123 45 67');
+
+  const commitAvatar = (uri) => {
+    setAvatarUploading(true);
+    setTimeout(() => {
+      setAvatarUri(uri);
+      setAvatarUploading(false);
+    }, 900);
+  };
+
+  const handlePickCamera = () => {
+    setShowAvatarSheet(false);
+    pickFromCamera(commitAvatar);
+  };
+
+  const handlePickGallery = () => {
+    setShowAvatarSheet(false);
+    pickFromGallery(commitAvatar);
+  };
+
+  const handleRemoveAvatar = () => {
+    setShowAvatarSheet(false);
+    setAvatarUri(null);
+  };
 
   if (screen === 'help') {
     return <ZakazchiHelpScreen onBack={() => setScreen('profile')} />;
@@ -89,12 +171,41 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
     return <ZakazchiOrdersScreen onBack={() => setScreen('profile')} />;
   }
 
+  if (screen === 'certificates') {
+    return <CertificatesScreen onBack={() => setScreen('profile')} />;
+  }
+
   if (screen === 'promo') {
     return <ZakazchiPromoScreen onBack={() => setScreen('profile')} />;
   }
 
   if (screen === 'referral') {
     return <ZakazchiReferralScreen onBack={() => setScreen('profile')} />;
+  }
+
+  if (screen === 'password') {
+    return <ChangePasswordScreen onBack={() => setScreen('profile')} />;
+  }
+
+  if (screen === 'editProfile') {
+    return <EditProfileScreen onBack={() => setScreen('profile')} />;
+  }
+
+  if (screen === 'paymentHistory') {
+    return <PaymentHistoryScreen onBack={() => setScreen('profile')} />;
+  }
+
+  if (screen === 'changePhone') {
+    return (
+      <ChangePhoneScreen
+        currentPhone={phoneNumber}
+        onBack={() => setScreen('profile')}
+        onChanged={(digits) => {
+          setPhoneNumber(formatPhoneDisplay(digits));
+          setScreen('profile');
+        }}
+      />
+    );
   }
 
   return (
@@ -110,49 +221,47 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
       >
         {/* ── Cover Header ── */}
         <View style={[s.cover, { backgroundColor: t.cover }]}>
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 18,
-            }}
-          >
-            <Text style={{ fontWeight: '700', fontSize: 17, color: t.text }}>
-              Profil
-            </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 14 }}>
             <TouchableOpacity
-              style={[s.iconBtn, { backgroundColor: t.blue }]}
-              activeOpacity={0.8}
-              onPress={toggleTheme}
+              style={s.avatarWrap}
+              activeOpacity={0.85}
+              onPress={() => setShowAvatarSheet(true)}
+              disabled={avatarUploading}
             >
-              <MaterialCommunityIcons
-                name={t.isDark ? 'weather-sunny' : 'weather-night'}
-                size={19}
-                color="#fff"
-              />
+              <Avatar letter="J" size={72} bgColor={t.orange} uri={avatarUri} />
+              {avatarUploading && (
+                <View style={[s.avatarOverlay, { borderRadius: 72 * 0.3 }]}>
+                  <ActivityIndicator size="small" color="#fff" />
+                </View>
+              )}
+              <View
+                style={[
+                  s.avatarBadge,
+                  { backgroundColor: t.orange, borderColor: t.cover },
+                ]}
+              >
+                <MaterialCommunityIcons name="camera" size={12} color="#fff" />
+              </View>
             </TouchableOpacity>
-          </View>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-            <Avatar letter="J" size={80} bgColor={t.orange} />
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: 1, paddingTop: 2 }}>
               <View
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}
               >
                 <Text
-                  style={{ fontWeight: '700', fontSize: 19, color: t.text }}
+                  style={{ fontWeight: '700', fontSize: 18, color: t.text }}
+                  numberOfLines={1}
                 >
                   Jasur Rahimov
                 </Text>
                 <MaterialCommunityIcons
                   name="shield-check"
-                  size={16}
+                  size={15}
                   color={t.green}
                 />
               </View>
-              <Text style={{ fontSize: 13, color: t.muted, marginTop: 3 }}>
-                +998 90 123 45 67
+              <Text style={{ fontSize: 12.5, color: t.muted, marginTop: 3 }}>
+                {phoneNumber}
               </Text>
               <TouchableOpacity
                 style={[
@@ -160,6 +269,7 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
                   { borderColor: t.border, backgroundColor: t.card },
                 ]}
                 activeOpacity={0.8}
+                onPress={() => setScreen('editProfile')}
               >
                 <MaterialCommunityIcons
                   name="pencil-outline"
@@ -178,31 +288,46 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
                 </Text>
               </TouchableOpacity>
             </View>
+
+            <TouchableOpacity
+              style={[
+                s.themeBtn,
+                {
+                  backgroundColor: t.isDark ? 'rgba(245,196,81,0.14)' : 'rgba(63,127,212,0.12)',
+                  borderColor: t.isDark ? 'rgba(245,196,81,0.28)' : 'rgba(63,127,212,0.24)',
+                },
+              ]}
+              activeOpacity={0.8}
+              onPress={toggleTheme}
+            >
+              <Feather
+                name={t.isDark ? 'sun' : 'moon'}
+                size={19}
+                color={t.isDark ? t.gold : t.blue}
+              />
+            </TouchableOpacity>
           </View>
 
           {/* Activity stats */}
-          <View
-            style={[
-              s.statsRow,
-              { backgroundColor: t.card, borderColor: t.border },
-            ]}
-          >
+          <View style={s.statsRow}>
             {[
-              ['18', 'Buyurtma'],
-              ['12', 'Sevimli usta'],
-              ['4.8', 'Bahoyingiz'],
+              { value: '18', label: 'Buyurtma', icon: 'archive-outline', color: t.orange },
+              { value: '12', label: 'Sevimli usta', icon: 'heart-outline', color: t.red },
+              { value: '4.8', label: 'Bahoyingiz', icon: 'star-outline', color: t.gold },
             ].map((st, i) => (
-              <View
-                key={i}
-                style={[
-                  s.statCell,
-                  i < 2 && { borderRightWidth: 1, borderRightColor: t.border },
-                ]}
-              >
-                <Text style={[s.statVal, { color: i === 2 ? t.gold : t.text }]}>
-                  {st[0]}
-                </Text>
-                <Text style={[s.statLbl, { color: t.muted }]}>{st[1]}</Text>
+              <View key={i} style={[s.statPill, { backgroundColor: t.card, borderColor: t.border }]}>
+                <View style={[s.statIcon, { backgroundColor: st.color + '1c' }]}>
+                  <MaterialCommunityIcons name={st.icon} size={13} color={st.color} />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={[s.statVal, { color: t.text }]} numberOfLines={1}>
+                    {st.value}
+                  </Text>
+                  <Text style={[s.statLbl, { color: t.muted }]} numberOfLines={1}>
+                    {st.label}
+                  </Text>
+                </View>
+                <View style={[s.statAccent, { backgroundColor: st.color }]} />
               </View>
             ))}
           </View>
@@ -380,6 +505,15 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
             ]}
           >
             <SettingsRow
+              icon="certificate-outline"
+              label="Sertifikatlarim"
+              value="4 ta"
+              color={t.violet}
+              t={t}
+              onPress={() => setScreen('certificates')}
+            />
+            <View style={[s.divider, { backgroundColor: t.border }]} />
+            <SettingsRow
               icon="format-list-bulleted"
               label="Buyurtmalar tarixi"
               value="18 ta"
@@ -397,9 +531,11 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
             />
             <View style={[s.divider, { backgroundColor: t.border }]} />
             <SettingsRow
-              icon="credit-card-outline"
-              label="To'lov usullari"
+              icon="receipt-text-outline"
+              label="To'lov tarixi"
+              color={t.blue}
               t={t}
+              onPress={() => setScreen('paymentHistory')}
             />
           </View>
         </View>
@@ -421,6 +557,20 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
               value={LANGS.find((l) => l.code === lang)?.name}
               t={t}
               onPress={() => setShowTil(true)}
+            />
+            <View style={[s.divider, { backgroundColor: t.border }]} />
+            <SettingsRow
+              icon="phone-outline"
+              label="Telefon raqamini almashtirish"
+              t={t}
+              onPress={() => setScreen('changePhone')}
+            />
+            <View style={[s.divider, { backgroundColor: t.border }]} />
+            <SettingsRow
+              icon="lock-outline"
+              label="Parolni almashtirish"
+              t={t}
+              onPress={() => setScreen('password')}
             />
             <View style={[s.divider, { backgroundColor: t.border }]} />
             <SettingsRow
@@ -478,6 +628,18 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
         onSelect={setLang}
         onClose={() => setShowTil(false)}
       />
+      <AvatarPickerSheet
+        visible={showAvatarSheet}
+        onClose={() => setShowAvatarSheet(false)}
+        onPickCamera={handlePickCamera}
+        onPickGallery={handlePickGallery}
+        onRemove={handleRemoveAvatar}
+        hasPhoto={!!avatarUri}
+        previewUri={avatarUri}
+        previewLetter="J"
+        previewColor={t.orange}
+        t={t}
+      />
     </SafeAreaView>
   );
 }
@@ -488,10 +650,34 @@ const s = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 22,
   },
-  iconBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 11,
+  themeBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  avatarWrap: { position: 'relative' },
+  avatarOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(10,19,34,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarBadge: {
+    position: 'absolute',
+    bottom: -3,
+    right: -3,
+    width: 27,
+    height: 27,
+    borderRadius: 14,
+    borderWidth: 2.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -507,13 +693,40 @@ const s = StyleSheet.create({
   },
   statsRow: {
     flexDirection: 'row',
-    marginTop: 22,
-    borderRadius: 18,
-    borderWidth: 1,
+    gap: 9,
+    marginTop: 18,
   },
-  statCell: { flex: 1, alignItems: 'center', paddingVertical: 14 },
-  statVal: { fontWeight: '800', fontSize: 19 },
-  statLbl: { fontSize: 11, marginTop: 3 },
+  statPill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: 15,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    paddingBottom: 12,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  statIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  statVal: { fontWeight: '800', fontSize: 14 },
+  statLbl: { fontSize: 9.5, marginTop: 1 },
+  statAccent: {
+    position: 'absolute',
+    left: 10,
+    right: 10,
+    bottom: 0,
+    height: 2.5,
+    borderRadius: 2,
+  },
 
   walletCard: {
     borderRadius: 18,

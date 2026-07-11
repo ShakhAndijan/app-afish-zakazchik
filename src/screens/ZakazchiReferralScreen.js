@@ -20,23 +20,53 @@ const YOU_GET = 50000;
 const FRIEND_GETS = 30000;
 
 const INVITED = [
-  { name: 'Sherzod A.', initial: 'S', color: '#3E8BE8', status: 'earned',  note: "+50 000 so'm" },
-  { name: 'Madina R.',  initial: 'M', color: '#E85B9A', status: 'pending', note: 'Buyurtma kutilmoqda' },
-  { name: 'Otabek K.', initial: 'O', color: '#34B57C', status: 'earned',  note: "+50 000 so'm" },
-  { name: 'Lola T.',    initial: 'L', color: '#9B6FE3', status: 'joined',  note: "Ro'yxatdan o'tdi" },
+  {
+    name: 'Sherzod A.',
+    initial: 'S',
+    color: '#3E8BE8',
+    status: 'earned',
+    note: "+50 000 so'm",
+  },
+  {
+    name: 'Madina R.',
+    initial: 'M',
+    color: '#E85B9A',
+    status: 'pending',
+    note: 'Buyurtma kutilmoqda',
+  },
+  {
+    name: 'Otabek K.',
+    initial: 'O',
+    color: '#34B57C',
+    status: 'earned',
+    note: "+50 000 so'm",
+  },
+  {
+    name: 'Lola T.',
+    initial: 'L',
+    color: '#9B6FE3',
+    status: 'joined',
+    note: "Ro'yxatdan o'tdi",
+  },
 ];
 
 const STEPS = [
-  { title: 'Kodni ulashing',           desc: "Do'stingizga havola yoki kodni yuboring" },
-  { title: "Do'st ro'yxatdan o'tadi",  desc: 'Sizning kodingiz bilan ilovaga kiradi' },
-  { title: 'Ikkalangiz bonus olasiz',   desc: 'U birinchi buyurtma bergach pul keladi' },
+  { title: 'Kodni ulashing', desc: "Do'stingizga havola yoki kodni yuboring" },
+  {
+    title: "Do'st ro'yxatdan o'tadi",
+    desc: 'Sizning kodingiz bilan ilovaga kiradi',
+  },
+  {
+    title: 'Ikkalangiz bonus olasiz',
+    desc: 'U birinchi buyurtma bergach pul keladi',
+  },
 ];
 
 const SHARE_APPS = [
-  { icon: 'send',                 label: 'Telegram', bg: '#2AABEE', fg: '#fff' },
-  { icon: 'whatsapp',            label: 'WhatsApp', bg: '#25D366', fg: '#fff' },
-  { icon: 'message-text-outline',label: 'SMS',      bg: null,      fg: null   },
-  { icon: 'link-variant',        label: 'Havola',   bg: null,      fg: null   },
+  { icon: 'send', label: 'Telegram', bg: '#2AABEE', fg: '#fff' },
+  { icon: 'whatsapp', label: 'WhatsApp', bg: '#25D366', fg: '#fff' },
+  { icon: 'message-text-outline', label: 'SMS', bg: null, fg: null },
+  { icon: 'link-variant', label: 'Havola', bg: null, fg: null },
 ];
 
 function genCode() {
@@ -62,15 +92,28 @@ function CodeBox({ t }) {
     setCode(genCode());
     setCopied(false);
     Animated.sequence([
-      Animated.timing(spinAnim, { toValue: 1, duration: 480, useNativeDriver: true }),
-      Animated.timing(spinAnim, { toValue: 0, duration: 0,   useNativeDriver: true }),
+      Animated.timing(spinAnim, {
+        toValue: 1,
+        duration: 480,
+        useNativeDriver: true,
+      }),
+      Animated.timing(spinAnim, {
+        toValue: 0,
+        duration: 0,
+        useNativeDriver: true,
+      }),
     ]).start();
   };
 
-  const spin = spinAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+  const spin = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
 
   return (
-    <View style={[s.codeWrap, { backgroundColor: t.card, borderColor: t.border }]}>
+    <View
+      style={[s.codeWrap, { backgroundColor: t.card, borderColor: t.border }]}
+    >
       {/* QR code */}
       <View style={s.qrSection}>
         <View style={s.qrBox}>
@@ -114,7 +157,14 @@ function CodeBox({ t }) {
         <TouchableOpacity
           onPress={onRefresh}
           activeOpacity={0.8}
-          style={[s.codeBtn, { backgroundColor: t.rowIconBg, borderWidth: 1.5, borderColor: t.border }]}
+          style={[
+            s.codeBtn,
+            {
+              backgroundColor: t.rowIconBg,
+              borderWidth: 1.5,
+              borderColor: t.border,
+            },
+          ]}
         >
           <Animated.View style={{ transform: [{ rotate: spin }] }}>
             <MaterialCommunityIcons name="refresh" size={16} color={t.text} />
@@ -130,7 +180,11 @@ function ShareRow({ t }) {
   return (
     <View style={s.shareRow}>
       {SHARE_APPS.map((app) => (
-        <TouchableOpacity key={app.label} style={s.shareItem} activeOpacity={0.8}>
+        <TouchableOpacity
+          key={app.label}
+          style={s.shareItem}
+          activeOpacity={0.8}
+        >
           <View
             style={[
               s.shareIcon,
@@ -155,14 +209,19 @@ function ShareRow({ t }) {
 
 function InvitedRow({ item, border, t }) {
   const statusColors = {
-    earned:  { color: t.green,  bg: 'rgba(47,163,122,0.15)' },
+    earned: { color: t.green, bg: 'rgba(47,163,122,0.15)' },
     pending: { color: t.orange, bg: 'rgba(232,122,69,0.15)' },
-    joined:  { color: t.muted,  bg: t.rowIconBg },
+    joined: { color: t.muted, bg: t.rowIconBg },
   };
   const m = statusColors[item.status] || statusColors.joined;
 
   return (
-    <View style={[s.invRow, border && { borderTopWidth: 1, borderTopColor: t.border }]}>
+    <View
+      style={[
+        s.invRow,
+        border && { borderTopWidth: 1, borderTopColor: t.border },
+      ]}
+    >
       <View style={[s.invAvatar, { backgroundColor: item.color }]}>
         <Text style={s.invInitial}>{item.initial}</Text>
       </View>
@@ -187,13 +246,22 @@ export default function ZakazchiReferralScreen({ onBack }) {
       {/* Header */}
       <View style={[s.header, { backgroundColor: t.bg }]}>
         <TouchableOpacity
-          style={[s.backBtn, { backgroundColor: t.card, borderColor: t.border }]}
+          style={[
+            s.backBtn,
+            { backgroundColor: t.card, borderColor: t.border },
+          ]}
           onPress={onBack}
           activeOpacity={0.8}
         >
-          <MaterialCommunityIcons name="chevron-left" size={24} color={t.text} />
+          <MaterialCommunityIcons
+            name="chevron-left"
+            size={24}
+            color={t.text}
+          />
         </TouchableOpacity>
-        <Text style={[s.headerTitle, { color: t.text }]}>Do'stni taklif et</Text>
+        <Text style={[s.headerTitle, { color: t.text }]}>
+          Do'stni taklif et
+        </Text>
       </View>
 
       <ScrollView
@@ -204,9 +272,16 @@ export default function ZakazchiReferralScreen({ onBack }) {
         <View style={[s.hero, { backgroundColor: t.orange }]}>
           <View style={s.heroCircle} />
           <View style={s.heroGiftBox}>
-            <MaterialCommunityIcons name="gift-outline" size={26} color="#fff" />
+            <MaterialCommunityIcons
+              name="gift-outline"
+              size={26}
+              color="#fff"
+            />
           </View>
-          <Text style={s.heroTitle}>Do'st chaqiring,{'\n'}{fmt(YOU_GET)} so'm oling</Text>
+          <Text style={s.heroTitle}>
+            Do'st chaqiring,{'\n'}
+            {fmt(YOU_GET)} so'm oling
+          </Text>
           <Text style={s.heroSub}>
             Do'stingiz ham {fmt(FRIEND_GETS)} so'mlik chegirma oladi
           </Text>
@@ -214,15 +289,22 @@ export default function ZakazchiReferralScreen({ onBack }) {
 
         {/* ── You / Friend split ── */}
         <View style={s.splitRow}>
-          {[['Siz olasiz', YOU_GET, t.green], ["Do'stingiz oladi", FRIEND_GETS, t.orange]].map(
-            ([label, val, col]) => (
-              <View key={label} style={[s.splitCard, { backgroundColor: t.card, borderColor: t.border }]}>
-                <Text style={[s.splitLabel, { color: t.muted }]}>{label}</Text>
-                <Text style={[s.splitValue, { color: col }]}>{fmt(val)}</Text>
-                <Text style={[s.splitSub, { color: t.faint }]}>so'm</Text>
-              </View>
-            )
-          )}
+          {[
+            ['Siz olasiz', YOU_GET, t.green],
+            ["Do'stingiz oladi", FRIEND_GETS, t.orange],
+          ].map(([label, val, col]) => (
+            <View
+              key={label}
+              style={[
+                s.splitCard,
+                { backgroundColor: t.card, borderColor: t.border },
+              ]}
+            >
+              <Text style={[s.splitLabel, { color: t.muted }]}>{label}</Text>
+              <Text style={[s.splitValue, { color: col }]}>{fmt(val)}</Text>
+              <Text style={[s.splitSub, { color: t.faint }]}>so'm</Text>
+            </View>
+          ))}
         </View>
 
         {/* ── Code box ── */}
@@ -238,11 +320,17 @@ export default function ZakazchiReferralScreen({ onBack }) {
             {STEPS.map((st, i) => (
               <View key={i} style={s.stepRow}>
                 <View style={s.stepNum}>
-                  <Text style={[s.stepNumText, { color: t.orange }]}>{i + 1}</Text>
+                  <Text style={[s.stepNumText, { color: t.orange }]}>
+                    {i + 1}
+                  </Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[s.stepTitle, { color: t.text }]}>{st.title}</Text>
-                  <Text style={[s.stepDesc, { color: t.muted }]}>{st.desc}</Text>
+                  <Text style={[s.stepTitle, { color: t.text }]}>
+                    {st.title}
+                  </Text>
+                  <Text style={[s.stepDesc, { color: t.muted }]}>
+                    {st.desc}
+                  </Text>
                 </View>
               </View>
             ))}
@@ -250,13 +338,28 @@ export default function ZakazchiReferralScreen({ onBack }) {
         </View>
 
         {/* ── Invited list ── */}
-        <View style={[s.invCard, { backgroundColor: t.card, borderColor: t.border }]}>
+        <View
+          style={[
+            s.invCard,
+            { backgroundColor: t.card, borderColor: t.border },
+          ]}
+        >
           <View style={[s.invHeader, { borderBottomColor: t.border }]}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-              <MaterialCommunityIcons name="account-group-outline" size={18} color={t.orange} />
-              <Text style={[s.invTitle, { color: t.text }]}>Taklif qilinganlar</Text>
+            <View
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}
+            >
+              <MaterialCommunityIcons
+                name="account-group-outline"
+                size={18}
+                color={t.orange}
+              />
+              <Text style={[s.invTitle, { color: t.text }]}>
+                Taklif qilinganlar
+              </Text>
             </View>
-            <Text style={[s.invCount, { color: t.muted }]}>{INVITED.length} ta</Text>
+            <Text style={[s.invCount, { color: t.muted }]}>
+              {INVITED.length} ta
+            </Text>
           </View>
           {INVITED.map((item, i) => (
             <InvitedRow key={item.name} item={item} border={i > 0} t={t} />
@@ -336,8 +439,13 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   splitLabel: { fontSize: 12, fontWeight: '700', textAlign: 'center' },
-  splitValue: { fontSize: 22, fontWeight: '800', letterSpacing: -0.6, marginTop: 5 },
-  splitSub:   { fontSize: 11, fontWeight: '700', marginTop: 1 },
+  splitValue: {
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: -0.6,
+    marginTop: 5,
+  },
+  splitSub: { fontSize: 11, fontWeight: '700', marginTop: 1 },
 
   // ── QR ──
   qrSection: { alignItems: 'center', gap: 10 },
@@ -365,9 +473,9 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
-  codeMono:     { fontSize: 18, fontWeight: '700', letterSpacing: 2.5 },
-  codeHint:     { fontSize: 10.5, fontWeight: '700' },
-  codeBtns:     { flexDirection: 'row', gap: 9 },
+  codeMono: { fontSize: 18, fontWeight: '700', letterSpacing: 2.5 },
+  codeHint: { fontSize: 10.5, fontWeight: '700' },
+  codeBtns: { flexDirection: 'row', gap: 9 },
   codeBtn: {
     flex: 1,
     flexDirection: 'row',
@@ -377,10 +485,10 @@ const s = StyleSheet.create({
     paddingVertical: 13,
     borderRadius: 13,
   },
-  codeBtnText:  { fontSize: 13.5, fontWeight: '700' },
+  codeBtnText: { fontSize: 13.5, fontWeight: '700' },
 
   // ── Share ──
-  shareRow:  { flexDirection: 'row', gap: 9 },
+  shareRow: { flexDirection: 'row', gap: 9 },
   shareItem: { flex: 1, alignItems: 'center', gap: 7 },
   shareIcon: {
     width: 52,
@@ -394,8 +502,8 @@ const s = StyleSheet.create({
 
   // ── Steps ──
   secTitle: { fontSize: 13.5, fontWeight: '800', marginBottom: 10 },
-  stepsCol:  { gap: 12 },
-  stepRow:   { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
+  stepsCol: { gap: 12 },
+  stepRow: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
   stepNum: {
     width: 28,
     height: 28,
@@ -406,8 +514,8 @@ const s = StyleSheet.create({
     flexShrink: 0,
   },
   stepNumText: { fontWeight: '800', fontSize: 13 },
-  stepTitle:   { fontSize: 13.5, fontWeight: '700' },
-  stepDesc:    { fontSize: 12.5, fontWeight: '600', marginTop: 1 },
+  stepTitle: { fontSize: 13.5, fontWeight: '700' },
+  stepDesc: { fontSize: 12.5, fontWeight: '600', marginTop: 1 },
 
   // ── Invited list ──
   invCard: {
@@ -440,8 +548,15 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     flexShrink: 0,
   },
-  invInitial:    { color: '#fff', fontSize: 15, fontWeight: '800' },
-  invName:       { flex: 1, fontSize: 14, fontWeight: '700' },
-  invBadge:      { borderRadius: 8, paddingHorizontal: 9, paddingVertical: 4, flexShrink: 0 },
-  invBadgeText:  { fontSize: 12, fontWeight: '700' },
+  invInitial: { color: '#fff', fontSize: 15, fontWeight: '800' },
+  invName: { flex: 1, fontSize: 14, fontWeight: '700' },
+  invBadge: {
+    borderRadius: 8,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    flexShrink: 0,
+  },
+  invBadgeText: { fontSize: 12, fontWeight: '700' },
 });
+
+// https://www.youtube.com/watch?v=DZteznd47B4&list=RDDZteznd47B4&start_radio=1

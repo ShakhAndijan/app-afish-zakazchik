@@ -24,7 +24,10 @@ import Feather from '@expo/vector-icons/Feather';
 import ZakazchiProfileScreen from './ZakazchiProfileScreen';
 import UstaDetailScreen from './UstaDetailScreen';
 import XizmatlarScreen from './XizmatlarScreen';
+import WorkDetailScreen from './WorkDetailScreen';
+import ZakazchiChatScreen from './ZakazchiChatScreen';
 import BottomNav from '../components/BottomNav';
+import ListingCard from '../components/ListingCard';
 import { useTheme } from '../context/ThemeContext';
 import { getCategories } from '../api/categories';
 import { getTopOrders } from '../api/reviews';
@@ -122,7 +125,7 @@ const LISTINGS = [
     trade: 'Duradgor',
     color: '#2fa37a',
     rating: '5.0',
-    price: '50 000',
+    price: 50000,
     location: 'Yunusobod',
     postedAgo: '2 soat oldin',
     title: "Yog'och mebel va eshik ustasi",
@@ -135,7 +138,7 @@ const LISTINGS = [
     trade: 'Santexnik',
     color: '#e87a45',
     rating: '4.9',
-    price: '30 000',
+    price: 30000,
     location: 'Chilonzor',
     postedAgo: '5 soat oldin',
     title: "Santexnika ta'mirlash va o'rnatish",
@@ -148,7 +151,7 @@ const LISTINGS = [
     trade: 'Elektrik',
     color: '#3f7fd4',
     rating: '4.8',
-    price: '35 000',
+    price: 35000,
     location: "Mirzo Ulug'bek",
     postedAgo: '1 kun oldin',
     title: 'Elektr montaj va LED yoritish',
@@ -161,7 +164,7 @@ const LISTINGS = [
     trade: "Bo'yoqchi",
     color: '#f5c451',
     rating: '4.8',
-    price: '45 000',
+    price: 45000,
     location: 'Shayxontohur',
     postedAgo: '3 soat oldin',
     title: "Devor va shift bo'yash ustasi",
@@ -390,7 +393,7 @@ function WorkPhotoCarousel({ photos, t, onManualNav }) {
   );
 }
 
-function WorksCarousel() {
+function WorksCarousel({ onSelectWork }) {
   const { theme: t } = useTheme();
   const listRef = useRef(null);
   const idxRef = useRef(0);
@@ -467,6 +470,7 @@ function WorksCarousel() {
               { backgroundColor: t.card, borderColor: t.border },
             ]}
             activeOpacity={0.8}
+            onPress={() => onSelectWork(item)}
           >
             <View
               style={[
@@ -737,6 +741,7 @@ function Avatar({ letter = 'J', size = 42, bgColor = '#e87a45' }) {
 export default function ZakazchiMainScreen({ onLogout }) {
   const [activeTab, setActiveTab] = useState('home');
   const [selectedUsta, setSelectedUsta] = useState(null);
+  const [selectedWork, setSelectedWork] = useState(null);
   const { theme: t } = useTheme();
 
   useEffect(() => {
@@ -755,6 +760,16 @@ export default function ZakazchiMainScreen({ onLogout }) {
     );
   }
 
+  if (selectedWork) {
+    return (
+      <WorkDetailScreen
+        work={selectedWork}
+        onBack={() => setSelectedWork(null)}
+        onSelectUsta={setSelectedUsta}
+      />
+    );
+  }
+
   if (activeTab === 'profile') {
     return (
       <ZakazchiProfileScreen onTabChange={setActiveTab} onLogout={onLogout} />
@@ -763,6 +778,10 @@ export default function ZakazchiMainScreen({ onLogout }) {
 
   if (activeTab === 'services') {
     return <XizmatlarScreen activeTab={activeTab} onTabChange={setActiveTab} />;
+  }
+
+  if (activeTab === 'chat') {
+    return <ZakazchiChatScreen onTabChange={setActiveTab} />;
   }
 
   return (
@@ -1016,7 +1035,7 @@ export default function ZakazchiMainScreen({ onLogout }) {
               Galereya
             </Text>
           </View>
-          <WorksCarousel />
+          <WorksCarousel onSelectWork={setSelectedWork} />
         </View>
 
         {/* ── Sevimli ustalar ── */}
@@ -1038,117 +1057,30 @@ export default function ZakazchiMainScreen({ onLogout }) {
           </View>
           <View style={{ gap: 12 }}>
             {LISTINGS.map((l) => (
-              <View
+              <ListingCard
                 key={l.id}
-                style={[
-                  el.card,
-                  { backgroundColor: t.card, borderColor: t.border },
-                ]}
-              >
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 10,
-                  }}
-                >
-                  <Avatar letter={l.initial} size={38} bgColor={l.color} />
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={{
-                        fontWeight: '700',
-                        fontSize: 13.5,
-                        color: t.text,
-                      }}
-                    >
-                      {l.name}
-                    </Text>
-                    <Text
-                      style={{ fontSize: 11, color: t.muted, marginTop: 1 }}
-                    >
-                      {l.trade} · {l.location}
-                    </Text>
-                  </View>
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      gap: 3,
-                    }}
-                  >
-                    <Ionicons name="star" size={11} color={t.gold} />
-                    <Text
-                      style={{
-                        fontSize: 11.5,
-                        fontWeight: '700',
-                        color: t.gold,
-                      }}
-                    >
-                      {l.rating}
-                    </Text>
-                  </View>
-                </View>
-
-                <Text
-                  style={{
-                    fontWeight: '800',
-                    fontSize: 14,
-                    color: t.text,
-                    marginTop: 10,
-                  }}
-                >
-                  {l.title}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 12,
-                    color: t.muted,
-                    marginTop: 3,
-                    lineHeight: 17,
-                  }}
-                  numberOfLines={2}
-                >
-                  {l.desc}
-                </Text>
-
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginTop: 12,
-                  }}
-                >
-                  <View>
-                    <Text
-                      style={{
-                        fontSize: 12.5,
-                        fontWeight: '700',
-                        color: t.text,
-                      }}
-                    >
-                      {l.price} so'm dan
-                    </Text>
-                    <Text
-                      style={{ fontSize: 10.5, color: t.faint, marginTop: 1 }}
-                    >
-                      {l.postedAgo}
-                    </Text>
-                  </View>
-                  <TouchableOpacity style={el.chatBtn} activeOpacity={0.85}>
-                    <Ionicons
-                      name="chatbubble-ellipses"
-                      size={13}
-                      color="#fff"
-                    />
-                    <Text
-                      style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}
-                    >
-                      Yozish
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+                listing={l}
+                accent={t.orange}
+                colors={{
+                  card: t.card,
+                  border: t.border,
+                  text: t.text,
+                  muted: t.muted,
+                  gold: t.gold,
+                  ratingBg: 'rgba(245,196,81,0.13)',
+                }}
+                onPress={() =>
+                  setSelectedUsta({
+                    initial: l.initial,
+                    name: l.name,
+                    trade: l.trade,
+                    bgColor: l.color,
+                    rating: l.rating,
+                    location: l.location,
+                    startingPrice: String(l.price),
+                  })
+                }
+              />
             ))}
           </View>
         </View>
@@ -1166,19 +1098,6 @@ export default function ZakazchiMainScreen({ onLogout }) {
     </SafeAreaView>
   );
 }
-
-const el = StyleSheet.create({
-  card: { borderWidth: 1, borderRadius: 18, padding: 14 },
-  chatBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: '#e87a45',
-    paddingVertical: 9,
-    paddingHorizontal: 14,
-    borderRadius: 11,
-  },
-});
 
 const s = StyleSheet.create({
   searchBar: {

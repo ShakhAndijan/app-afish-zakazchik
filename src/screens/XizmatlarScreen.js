@@ -8,11 +8,14 @@ import {
   FlatList,
   Modal,
   StyleSheet,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Feather from '@expo/vector-icons/Feather';
 import BottomNav from '../components/BottomNav';
+import ListingCard from '../components/ListingCard';
+import UstaDetailScreen from './UstaDetailScreen';
 
 // ─── Ma'lumotlar ───────────────────────────────────────────────
 
@@ -40,6 +43,17 @@ const LISTINGS = [
   { id: 8, initial: 'K', name: 'Kamol Yusupov', category: "Bog'bon", color: '#66bb6a', rating: '5.0', price: 40000, location: "Bog'bon tumani", postedAgo: '1 kun oldin', title: "Bog' va hovli obodonlashtirish", desc: 'Gulzor, maysazor, daraxt ekish va parvarish ishlari.', experience: 10, certified: true, languages: ['Uzbek'], phone: '+998 90 890 12 34', education: 'Qishloq xoʻjalik instituti', memberSince: '2016', completedJobs: 260, portfolio: [{ title: 'Hovli landshafti' }, { title: 'Gulzor dizayni' }] },
   { id: 9, initial: 'F', name: 'Farrux Nazarov', category: 'Gipschi', color: '#78909c', rating: '4.8', price: 55000, location: 'Sergeli', postedAgo: '8 soat oldin', title: 'Gips karton va shift ishlari', desc: 'Natyajnoy potolok, gipsokarton devor va bezaklar.', experience: 4, certified: false, languages: ['Uzbek', 'Rus'], phone: '+998 91 901 23 45', education: 'Qurilish-montaj kolleji', memberSince: '2021', completedJobs: 90, portfolio: [{ title: 'Ofis shift dizayni' }, { title: 'Natyajnoy potolok' }] },
   { id: 10, initial: 'O', name: 'Otabek Sodiqov', category: 'Quruvchi', color: '#5c6bc0', rating: '4.8', price: 70000, location: 'Mirobod', postedAgo: '12 soat oldin', title: "Qurilish va ta'mirlash brigadasi", desc: "To'liq ta'mirlash, devor ko'tarish, fasad ishlari.", experience: 9, certified: true, languages: ['Uzbek', 'Rus', 'Ingliz'], phone: '+998 93 012 34 56', education: 'Qurilish muhandisligi instituti', memberSince: '2017', completedJobs: 230, portfolio: [{ title: "Ko'p qavatli bino ta'miri" }, { title: 'Fasad ishlari' }] },
+  { id: 11, initial: 'S', name: 'Sardor Aliyev', category: 'Duradgor', color: '#2fa37a', rating: '4.7', price: 42000, location: 'Sergeli', postedAgo: '1 kun oldin', title: 'Metall va yogʻoch konstruksiya', desc: 'Balkon, ombor uchun maxsus yogʻoch va metall konstruksiyalar yasayman.', experience: 5, certified: false, languages: ['Uzbek', 'Rus'], phone: '+998 90 111 22 33', education: 'Qurilish kasb-hunar kolleji', memberSince: '2020', completedJobs: 88, portfolio: [{ title: 'Balkon konstruksiyasi' }, { title: 'Ombor javoni' }] },
+  { id: 12, initial: 'U', name: 'Umid Qodirov', category: 'Konditsioner', color: '#9b6cd1', rating: '4.7', price: 38000, location: 'Chilonzor', postedAgo: '4 soat oldin', title: "Konditsioner diagnostika va ta'mir", desc: "Barcha markali konditsionerlarni tez va sifatli ta'mirlayman.", experience: 6, certified: true, languages: ['Uzbek'], phone: '+998 91 222 33 44', education: 'Sovutish texnikasi kolleji', memberSince: '2018', completedJobs: 140, portfolio: [{ title: 'Ofis split tizimi' }, { title: 'Uy konditsioneri diagnostikasi' }] },
+  { id: 13, initial: 'D', name: 'Diyor Rashidov', category: "Bo'yoqchi", color: '#f5c451', rating: '4.6', price: 38000, location: 'Yunusobod', postedAgo: '7 soat oldin', title: "Fasad va ichki bo'yoq ishlari", desc: "Zamonaviy materiallar bilan tez va toza bo'yash xizmati.", experience: 4, certified: false, languages: ['Uzbek', 'Rus'], phone: '+998 93 333 44 55', education: "Dizayn va amaliy san'at kolleji", memberSince: '2021', completedJobs: 76, portfolio: [{ title: 'Fasad boʻyash' }, { title: 'Ichki xona boʻyash' }] },
+  { id: 14, initial: 'S', name: 'Shoxrux Ibragimov', category: 'Tozalash', color: '#26a69a', rating: '4.8', price: 22000, location: "Mirzo Ulug'bek", postedAgo: '2 soat oldin', title: 'Ofis va kvartira tozalash', desc: 'Tez va sifatli tozalash, barcha kerakli jihozlar bilan.', experience: 3, certified: true, languages: ['Uzbek'], phone: '+998 94 444 55 66', education: 'Xizmat koʻrsatish kasb-hunar kolleji', memberSince: '2022', completedJobs: 60, portfolio: [{ title: 'Kvartira tozalash' }, { title: "Ko'chish oldi tozalash" }] },
+  { id: 15, initial: 'R', name: 'Rustam Yoldashev', category: 'Santexnik', color: '#e87a45', rating: '4.7', price: 32000, location: 'Uchtepa', postedAgo: '6 soat oldin', title: "Isitish va suv tizimlari o'rnatish", desc: 'Radiator, quvur va isitish qozonlarini oʻrnataman.', experience: 6, certified: true, languages: ['Uzbek', 'Rus'], phone: '+998 95 555 66 77', education: 'Kommunal xoʻjalik kasb-hunar kolleji', memberSince: '2019', completedJobs: 110, portfolio: [{ title: 'Isitish tizimi' }, { title: 'Suv quvurlari almashtirish' }] },
+  { id: 16, initial: 'A', name: 'Aziz Nematov', category: 'Elektrik', color: '#3f7fd4', rating: '4.9', price: 40000, location: 'Yashnobod', postedAgo: '3 soat oldin', title: 'Avtomatika va elektr xavfsizligi', desc: "Elektr shchit, avtomat va yerga ulash tizimlarini o'rnataman.", experience: 8, certified: true, languages: ['Uzbek', 'Ingliz'], phone: '+998 97 666 77 88', education: 'Energetika politexnika kolleji', memberSince: '2016', completedJobs: 195, portfolio: [{ title: 'Elektr shchit almashtirish' }, { title: 'Yerga ulash tizimi' }] },
+  { id: 17, initial: 'B', name: 'Bahodir Yusupov', category: 'Haydovchi', color: '#42a5f5', rating: '4.8', price: 60000, location: 'Sergeli', postedAgo: '1 soat oldin', title: "Yuk tashish va ko'chirish xizmati", desc: "Kvartiradan-kvartiraga, ofisdan-omborga yuk tashish, yuklovchilar bilan.", experience: 5, certified: false, languages: ['Uzbek', 'Rus'], phone: '+998 99 777 88 99', education: 'Avtotransport kolleji', memberSince: '2020', completedJobs: 130, portfolio: [{ title: "Ko'chish xizmati" }, { title: 'Mebel tashish' }] },
+  { id: 18, initial: 'S', name: 'Sanjar Ergashev', category: "Bog'bon", color: '#66bb6a', rating: '4.9', price: 44000, location: "Bog'bon tumani", postedAgo: '5 soat oldin', title: "Sug'orish tizimlari va landshaft dizayni", desc: "Avtomatik sug'orish, maysazor va gulzor loyihalash ishlari.", experience: 7, certified: true, languages: ['Uzbek'], phone: '+998 90 888 99 00', education: 'Qishloq xoʻjalik instituti', memberSince: '2017', completedJobs: 150, portfolio: [{ title: "Sug'orish tizimi" }, { title: 'Landshaft loyihasi' }] },
+  { id: 19, initial: 'I', name: 'Ilxom Tursunov', category: 'Plitachi', color: '#8d6e63', rating: '4.6', price: 46000, location: 'Chilonzor', postedAgo: '9 soat oldin', title: 'Natural tosh va kafel yotqizish', desc: 'Hovli, fasad va ichki xonalar uchun tosh va kafel ishlari.', experience: 5, certified: false, languages: ['Uzbek', 'Rus'], phone: '+998 91 999 00 11', education: 'Qurilish kasb-hunar kolleji', memberSince: '2019', completedJobs: 82, portfolio: [{ title: 'Hovli toshi' }, { title: 'Fasad kafeli' }] },
+  { id: 20, initial: 'J', name: 'Jamshid Qosimov', category: 'Quruvchi', color: '#5c6bc0', rating: '4.7', price: 65000, location: 'Yakkasaroy', postedAgo: '10 soat oldin', title: "Poydevor va devor ko'tarish ishlari", desc: 'Yangi qurilish va rekonstruksiya ishlarini boshidan oxirigacha bajaraman.', experience: 8, certified: true, languages: ['Uzbek', 'Rus'], phone: '+998 93 000 11 22', education: 'Qurilish muhandisligi instituti', memberSince: '2015', completedJobs: 175, portfolio: [{ title: 'Poydevor ishlari' }, { title: "Devor ko'tarish" }] },
+  { id: 21, initial: 'M', name: 'Murod Sattorov', category: 'Haydovchi', color: '#42a5f5', rating: '4.6', price: 55000, location: "Mirzo Ulug'bek", postedAgo: '3 kun oldin', title: "Shahar bo'ylab yuk tashish", desc: "Gazel va kichik yuk mashinasi bilan tez va ehtiyotkorona yetkazib beraman.", experience: 4, certified: false, languages: ['Uzbek'], phone: '+998 94 111 33 55', education: 'Avtotransport kolleji', memberSince: '2021', completedJobs: 96, portfolio: [{ title: "Ofis ko'chirish" }, { title: 'Texnika tashish' }] },
 ];
 
 const EXP_OPTIONS = [
@@ -113,22 +127,17 @@ function categoryColorFor() {
   return CATEGORY_DETAIL_ACCENT;
 }
 
-function specialtyFor(l) {
+function toUstaProfile(listing) {
   return {
-    label: l.category,
-    experienceYears: l.experience,
-    price: l.price,
-    isPrimary: true,
-  };
-}
-
-function certificateFor(l) {
-  if (!l.certified) return null;
-  return {
-    title: `${l.category} ustasi sertifikati`,
-    issuedBy: 'Hunarmandchilik markazi',
-    issuedAt: l.memberSince,
-    expiresAt: String(Number(l.memberSince) + 8),
+    initial: listing.initial,
+    name: listing.name,
+    trade: listing.category,
+    rating: listing.rating,
+    jobs: listing.completedJobs,
+    bgColor: listing.color,
+    location: listing.location,
+    experience: `${listing.experience} yil`,
+    startingPrice: formatPrice(listing.price),
   };
 }
 
@@ -184,239 +193,10 @@ function PopularCategories({ categories, onSelect }) {
   );
 }
 
-// ─── Chat overlay ───────────────────────────────────────────────
-
-function ChatOverlay({ listing, onClose }) {
-  if (!listing) return null;
-  return (
-    <View style={styles.chatOverlay}>
-      <View style={styles.chatHeader}>
-        <TouchableOpacity style={styles.backBtn} onPress={onClose}>
-          <Text style={{ color: '#fff', fontSize: 16 }}>‹</Text>
-        </TouchableOpacity>
-        <View style={[styles.avatar, { backgroundColor: listing.color }]}>
-          <Text style={styles.avatarText}>{listing.initial}</Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.masterName}>{listing.name}</Text>
-          <Text style={styles.masterMeta}>{listing.category}</Text>
-        </View>
-      </View>
-      <ScrollView style={{ flex: 1, padding: 16 }}>
-        <View style={[styles.chatBubble, styles.chatBubbleLeft]}>
-          <Text style={styles.chatBubbleText}>Salom! "{listing.title}" e'loningizni ko'rdim.</Text>
-        </View>
-        <View style={[styles.chatBubble, styles.chatBubbleRight]}>
-          <Text style={styles.chatBubbleText}>Assalomu alaykum! Albatta, qaysi manzilga xizmat kerak?</Text>
-        </View>
-        <View style={[styles.chatBubble, styles.chatBubbleLeft]}>
-          <Text style={styles.chatBubbleText}>{listing.location}dagi uyimga. Qachon kelishingiz mumkin?</Text>
-        </View>
-        <View style={[styles.chatBubble, styles.chatBubbleRight]}>
-          <Text style={styles.chatBubbleText}>
-            Ertaga soat 10:00 da kelishim mumkin, narxi {formatPrice(listing.price)} so'mdan boshlanadi.
-          </Text>
-        </View>
-      </ScrollView>
-    </View>
-  );
-}
-
-// ─── Usta kartasi (ro'yxatda) ──────────────────────────────────
-
-function MasterListCard({ listing, accent, onPress }) {
-  return (
-    <TouchableOpacity style={styles.masterCard} onPress={onPress} activeOpacity={0.85}>
-      <View style={[styles.accentBar, { backgroundColor: accent }]} />
-      <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
-          <View>
-            <View style={[styles.avatar46, { backgroundColor: listing.color }]}>
-              <Text style={styles.avatarText}>{listing.initial}</Text>
-            </View>
-            {listing.certified && (
-              <View style={styles.verifiedBadge}>
-                <Feather name="check" size={9} color="#fff" />
-              </View>
-            )}
-          </View>
-          <View>
-            <Text style={styles.masterName}>{listing.name}</Text>
-            <Text style={styles.masterMeta}>
-              {listing.location} · {listing.postedAgo}
-            </Text>
-          </View>
-        </View>
-        <View style={styles.ratingPill}>
-          <Text style={styles.ratingText}>★ {listing.rating}</Text>
-        </View>
-      </View>
-
-      <Text style={styles.masterTitle}>{listing.title}</Text>
-      <Text style={styles.masterDesc}>{listing.desc}</Text>
-
-      <View style={{ flexDirection: 'row', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
-        <View style={styles.tagChip}>
-          <Text style={styles.tagChipText}>{listing.experience} yil tajriba</Text>
-        </View>
-        <View style={styles.tagChip}>
-          <Text style={styles.tagChipText}>{listing.languages.join(', ')}</Text>
-        </View>
-      </View>
-
-      <View style={styles.masterFooter}>
-        <View>
-          <Text style={styles.masterPrice}>{formatPrice(listing.price)} so'm</Text>
-          <Text style={styles.masterPriceSub}>dan boshlab</Text>
-        </View>
-        <View style={[styles.viewProfileBtn, { backgroundColor: accent }]}>
-          <Text style={styles.viewProfileText}>Profilni ko'rish</Text>
-          <Feather name="chevron-right" size={13} color="#fff" />
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-}
-
-// ─── Usta profili ──────────────────────────────────────────────
-
-function MasterProfileScreen({ master, accent, onBack, onChat }) {
-  const specialty = specialtyFor(master);
-  const certificate = certificateFor(master);
-
-  return (
-    <View style={{ flex: 1 }}>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 8 }}>
-        <View style={[styles.profileHero, { backgroundColor: accent }]}>
-          <TouchableOpacity style={styles.backBtnDark} onPress={onBack}>
-            <Text style={{ color: '#fff', fontSize: 16 }}>‹</Text>
-          </TouchableOpacity>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 18 }}>
-            <View>
-              <View style={[styles.avatar64, { backgroundColor: master.color }]}>
-                <Text style={styles.avatarText64}>{master.initial}</Text>
-              </View>
-              {master.certified && (
-                <View style={[styles.verifiedBadgeLg, { borderColor: accent }]}>
-                  <Feather name="check" size={11} color="#fff" />
-                </View>
-              )}
-            </View>
-            <View>
-              <Text style={styles.profileName}>{master.name}</Text>
-              <Text style={styles.profileMeta}>
-                {master.category} · {master.location}
-              </Text>
-              <Text style={styles.profileRating}>★ {master.rating}</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.profileBody}>
-          <View style={styles.statsCardFlat}>
-            <View style={styles.statCell}>
-              <Text style={styles.statValue}>{master.completedJobs}</Text>
-              <Text style={styles.statLabel}>Bajarilgan ish</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statCell}>
-              <Text style={styles.statValue}>{master.experience} yil</Text>
-              <Text style={styles.statLabel}>Tajriba</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statCell}>
-              <Text style={styles.statValue}>{master.memberSince}</Text>
-              <Text style={styles.statLabel}>Saytda</Text>
-            </View>
-          </View>
-
-          <Text style={styles.sectionHeading}>Usta haqida</Text>
-          <Text style={styles.bodyText}>{master.desc}</Text>
-
-          <View style={styles.contactRow}>
-            <Feather name="phone" size={14} color="rgba(255,255,255,0.7)" />
-            <Text style={styles.contactText}>{master.phone}</Text>
-          </View>
-
-          <Text style={styles.sectionHeading}>Mutaxassisligi</Text>
-          <View style={styles.specCard}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-                <Text style={styles.specLabel}>{specialty.label}</Text>
-                {specialty.isPrimary && (
-                  <View style={[styles.primaryBadge, { backgroundColor: accent + '29' }]}>
-                    <Text style={[styles.primaryBadgeText, { color: accent }]}>Asosiy</Text>
-                  </View>
-                )}
-              </View>
-              <Text style={styles.specExp}>{specialty.experienceYears} yil tajriba</Text>
-            </View>
-            <Text style={styles.specPrice}>{formatPrice(specialty.price)} so'm dan</Text>
-          </View>
-
-          <Text style={styles.sectionHeading}>O'qigan yo'nalishi</Text>
-          <View style={styles.eduRow}>
-            <Feather name="award" size={14} color="rgba(255,255,255,0.7)" />
-            <Text style={styles.eduText}>{master.education}</Text>
-          </View>
-
-          <Text style={styles.sectionHeading}>Bilgan tillari</Text>
-          <View style={{ flexDirection: 'row', gap: 6 }}>
-            {master.languages.map((l) => (
-              <View key={l} style={styles.langChip}>
-                <Text style={styles.langChipText}>{l}</Text>
-              </View>
-            ))}
-          </View>
-
-          <Text style={styles.sectionHeading}>Ishlar galereyasi</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
-            {master.portfolio.map((p, i) => (
-              <View key={i} style={styles.portfolioItem}>
-                <View style={styles.portfolioThumb}>
-                  <Feather name="image" size={22} color="rgba(255,255,255,0.3)" />
-                </View>
-                <Text style={styles.portfolioLabel} numberOfLines={2}>
-                  {p.title}
-                </Text>
-              </View>
-            ))}
-          </ScrollView>
-
-          <Text style={styles.sectionHeading}>Sertifikatlar</Text>
-          {certificate ? (
-            <View style={styles.certCard}>
-              <View style={styles.certIconWrap}>
-                <Text style={{ fontSize: 17 }}>🏅</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.certTitle}>{certificate.title}</Text>
-                <Text style={styles.certMeta}>
-                  {certificate.issuedBy} · {certificate.issuedAt} — {certificate.expiresAt}
-                </Text>
-              </View>
-            </View>
-          ) : (
-            <View style={styles.emptyCertCard}>
-              <Text style={styles.emptyCertText}>Sertifikatlar mavjud emas</Text>
-            </View>
-          )}
-        </View>
-      </ScrollView>
-
-      <View style={styles.ctaBar}>
-        <TouchableOpacity style={[styles.ctaBtn, { backgroundColor: accent }]} onPress={onChat} activeOpacity={0.85}>
-          <Feather name="message-circle" size={16} color="#fff" />
-          <Text style={styles.ctaBtnText}>Ustaga yozish</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-}
-
 // ─── Ekran ─────────────────────────────────────────────────────
 
 export default function XizmatlarScreen({ activeTab, onTabChange }) {
+  const { height: windowH } = useWindowDimensions();
   const [catFilter, setCatFilter] = useState(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const [sort, setSort] = useState(null);
@@ -428,7 +208,6 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
   const [district, setDistrict] = useState(null);
   const [pickerFor, setPickerFor] = useState(null);
   const [profileMaster, setProfileMaster] = useState(null);
-  const [chatListing, setChatListing] = useState(null);
   const [query, setQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
 
@@ -518,15 +297,11 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
 
   if (catFilter && profileMaster) {
     return (
-      <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
-        <MasterProfileScreen
-          master={profileMaster}
-          accent={categoryColorFor(catFilter)}
-          onBack={() => setProfileMaster(null)}
-          onChat={() => setChatListing(profileMaster)}
-        />
-        <ChatOverlay listing={chatListing} onClose={() => setChatListing(null)} />
-      </SafeAreaView>
+      <UstaDetailScreen
+        usta={toUstaProfile(profileMaster)}
+        onBack={() => setProfileMaster(null)}
+        isLoggedIn
+      />
     );
   }
 
@@ -682,11 +457,26 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
     </View>
   );
 
+  const filterTopOffset = catFilter ? 68 : 64;
+  const filterMaxHeight = windowH - filterTopOffset - 56;
+
+  const filterModal = (
+    <Modal visible={filterOpen} transparent animationType="fade" onRequestClose={() => setFilterOpen(false)}>
+      <TouchableOpacity style={styles.filterBackdrop} activeOpacity={1} onPress={() => setFilterOpen(false)}>
+        <SafeAreaView edges={['top', 'bottom']} style={{ marginTop: filterTopOffset }}>
+          <View style={{ maxHeight: filterMaxHeight }} onStartShouldSetResponder={() => true}>
+            <ScrollView showsVerticalScrollIndicator={false}>{filterPanelBlock}</ScrollView>
+          </View>
+        </SafeAreaView>
+      </TouchableOpacity>
+    </Modal>
+  );
+
   if (!catFilter) {
     return (
       <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
         {searchFilterRow}
-        {filterOpen && filterPanelBlock}
+        {filterModal}
 
         <ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: 90 }} showsVerticalScrollIndicator={false}>
           <View>
@@ -760,8 +550,6 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
           muted="#6c7f9a"
         />
 
-        <ChatOverlay listing={chatListing} onClose={() => setChatListing(null)} />
-
         <Modal visible={!!pickerFor} transparent animationType="slide" onRequestClose={() => setPickerFor(null)}>
           <TouchableOpacity style={styles.sheetOverlay} activeOpacity={1} onPress={() => setPickerFor(null)}>
             <View style={styles.sheet} onStartShouldSetResponder={() => true}>
@@ -806,7 +594,6 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
                 </Text>
 
                 {searchFilterRow}
-                {filterOpen && filterPanelBlock}
 
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 20 }}>
                   <View style={styles.heroIconWrap}>
@@ -845,7 +632,7 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
             {categoryResults.length > 0 ? (
               <View style={styles.listWrap}>
                 {categoryResults.map((l) => (
-                  <MasterListCard
+                  <ListingCard
                     key={l.id}
                     listing={l}
                     accent={categoryColorFor(catFilter)}
@@ -876,7 +663,7 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
         muted="#6c7f9a"
       />
 
-      <ChatOverlay listing={chatListing} onClose={() => setChatListing(null)} />
+      {filterModal}
 
       <Modal
         visible={!!pickerFor}
@@ -986,9 +773,9 @@ const styles = StyleSheet.create({
     borderColor: '#0c1828',
   },
 
+  filterBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
   filterPanel: {
     margin: 16,
-    marginBottom: 0,
     backgroundColor: '#142639',
     borderRadius: 18,
     borderWidth: 1,
@@ -1125,16 +912,6 @@ const styles = StyleSheet.create({
   },
   categoryLabel: { color: '#fff', fontSize: 11.5, fontWeight: '700', textAlign: 'center' },
 
-  backBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: '#142639',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   backBtnDark: {
     width: 44,
     height: 44,
@@ -1166,11 +943,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
-
-  avatar: { width: 38, height: 38, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { color: '#fff', fontWeight: '800', fontSize: 13.5 },
-  masterName: { color: '#fff', fontSize: 14.5, fontWeight: '800' },
-  masterMeta: { color: 'rgba(255,255,255,0.45)', fontSize: 11, marginTop: 1 },
 
   // ── Yo'nalish hero ──
   heroShadowWrap: {
@@ -1238,191 +1010,9 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 8,
   },
-  statsCardFlat: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#142639',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 16,
-    padding: 12,
-    marginBottom: 18,
-  },
 
   // ── Usta kartasi ──
   listWrap: { paddingTop: 16, gap: 14 },
-  masterCard: {
-    position: 'relative',
-    backgroundColor: '#142639',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    borderRadius: 20,
-    padding: 16,
-    paddingLeft: 20,
-    overflow: 'hidden',
-  },
-  accentBar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4 },
-  avatar46: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.12)',
-  },
-  avatar64: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.3)',
-  },
-  avatarText64: { color: '#fff', fontWeight: '800', fontSize: 22 },
-  verifiedBadge: {
-    position: 'absolute',
-    bottom: -3,
-    right: -3,
-    width: 17,
-    height: 17,
-    borderRadius: 9,
-    backgroundColor: '#3f7fd4',
-    borderWidth: 2,
-    borderColor: '#142639',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  verifiedBadgeLg: {
-    position: 'absolute',
-    bottom: -3,
-    right: -3,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#3f7fd4',
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ratingPill: { backgroundColor: 'rgba(245,196,81,0.14)', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 999 },
-  ratingText: { color: '#f5c451', fontSize: 12, fontWeight: '700' },
-  masterTitle: { color: '#fff', fontSize: 15, fontWeight: '800', marginTop: 12 },
-  masterDesc: { color: 'rgba(255,255,255,0.45)', fontSize: 12, marginTop: 4, lineHeight: 17 },
-  tagChip: { backgroundColor: 'rgba(255,255,255,0.06)', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 8 },
-  tagChipText: { color: 'rgba(255,255,255,0.65)', fontSize: 10.5, fontWeight: '700' },
-  masterFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 14,
-    paddingTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
-  },
-  masterPrice: { color: '#fff', fontSize: 15, fontWeight: '800' },
-  masterPriceSub: { color: 'rgba(255,255,255,0.4)', fontSize: 10.5, fontWeight: '600', marginTop: 1 },
-  viewProfileBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 14,
-  },
-  viewProfileText: { color: '#fff', fontSize: 12, fontWeight: '700' },
-
-  // ── Usta profili ──
-  profileHero: { padding: 20, paddingBottom: 22 },
-  profileName: { color: '#fff', fontSize: 19, fontWeight: '800' },
-  profileMeta: { color: 'rgba(255,255,255,0.75)', fontSize: 12.5, fontWeight: '600', marginTop: 2 },
-  profileRating: { color: '#f5c451', fontSize: 12.5, fontWeight: '700', marginTop: 6 },
-  profileBody: { padding: 20, gap: 4 },
-  sectionHeading: { color: '#fff', fontSize: 14, fontWeight: '800', marginTop: 14, marginBottom: 8 },
-  bodyText: { color: 'rgba(255,255,255,0.55)', fontSize: 12.5, lineHeight: 19 },
-
-  contactRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: '#142639',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    borderRadius: 14,
-    padding: 12,
-    marginTop: 12,
-  },
-  contactText: { color: 'rgba(255,255,255,0.75)', fontSize: 13, fontWeight: '700' },
-
-  specCard: {
-    backgroundColor: '#142639',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    borderRadius: 14,
-    padding: 12,
-  },
-  specLabel: { color: '#fff', fontSize: 13, fontWeight: '800' },
-  specExp: { color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: '600' },
-  specPrice: { color: '#fff', fontSize: 13, fontWeight: '700', marginTop: 8 },
-  primaryBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
-  primaryBadgeText: { fontSize: 9.5, fontWeight: '800' },
-
-  eduRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: '#142639',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    borderRadius: 14,
-    padding: 12,
-  },
-  eduText: { color: 'rgba(255,255,255,0.7)', fontSize: 12.5, fontWeight: '600', flex: 1 },
-
-  langChip: { backgroundColor: 'rgba(255,255,255,0.07)', paddingHorizontal: 11, paddingVertical: 6, borderRadius: 999 },
-  langChipText: { color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: '700' },
-
-  portfolioItem: { width: 120, marginRight: 10, gap: 6 },
-  portfolioThumb: {
-    width: 120,
-    height: 88,
-    borderRadius: 14,
-    backgroundColor: '#142639',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  portfolioLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: '600', textAlign: 'center' },
-
-  certCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 11,
-    backgroundColor: '#142639',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    borderRadius: 14,
-    padding: 12,
-  },
-  certIconWrap: { width: 38, height: 38, borderRadius: 11, backgroundColor: 'rgba(63,125,212,0.14)', alignItems: 'center', justifyContent: 'center' },
-  certTitle: { color: '#fff', fontSize: 12.5, fontWeight: '700' },
-  certMeta: { color: 'rgba(255,255,255,0.45)', fontSize: 11, marginTop: 1 },
-  emptyCertCard: {
-    backgroundColor: '#142639',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    borderRadius: 14,
-    padding: 14,
-    alignItems: 'center',
-  },
-  emptyCertText: { color: 'rgba(255,255,255,0.4)', fontSize: 12, fontWeight: '600' },
-
-  ctaBar: { padding: 20, paddingTop: 14, backgroundColor: '#0c1828', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.07)' },
-  ctaBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 14 },
-  ctaBtnText: { color: '#fff', fontSize: 14, fontWeight: '800' },
-
   emptyState: {
     alignItems: 'center',
     gap: 8,
@@ -1434,25 +1024,4 @@ const styles = StyleSheet.create({
     borderRadius: 18,
   },
   emptyText: { color: 'rgba(255,255,255,0.55)', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-
-  chatOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#0c1828',
-  },
-  chatHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.07)',
-  },
-  chatBubble: { maxWidth: '78%', marginBottom: 10, borderRadius: 16, padding: 12 },
-  chatBubbleLeft: { alignSelf: 'flex-start', backgroundColor: '#1A2540' },
-  chatBubbleRight: { alignSelf: 'flex-end', backgroundColor: '#e87a45' },
-  chatBubbleText: { color: '#fff', fontSize: 13.5, lineHeight: 18 },
 });
