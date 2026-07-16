@@ -9,7 +9,6 @@ import {
   ScrollView,
   FlatList,
   Image,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -27,6 +26,7 @@ import { getCategories } from './src/api/categories';
 import { getWorkers } from './src/api/workers';
 import { getTopComments, getTopOrders } from './src/api/reviews';
 import { getToken, getActorType, clearTokens } from './src/utils/token';
+import AfishLoader from './src/components/AfishLoader';
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -1054,7 +1054,7 @@ export default function App() {
             { alignItems: 'center', justifyContent: 'center' },
           ]}
         >
-          <ActivityIndicator size="large" color={COLORS.orange} />
+          <AfishLoader size={160} />
         </View>
       </SafeAreaProvider>
     );

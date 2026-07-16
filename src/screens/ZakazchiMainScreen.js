@@ -16,7 +16,6 @@ import {
   FlatList,
   Image,
   useWindowDimensions,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -29,6 +28,7 @@ import WorkDetailScreen from './WorkDetailScreen';
 import ZakazchiChatScreen from './ZakazchiChatScreen';
 import BottomNav from '../components/BottomNav';
 import ListingCard from '../components/ListingCard';
+import AfishLoader from '../components/AfishLoader';
 import { useTheme } from '../context/ThemeContext';
 import { useUser } from '../context/UserContext';
 import { getCategories } from '../api/categories';
@@ -100,14 +100,12 @@ const LISTINGS = [
 ];
 
 const ServiceCarousel = forwardRef(function ServiceCarousel(
-  { onSelectCategory },
+  { categories, onSelectCategory },
   ref
 ) {
   const { theme: t } = useTheme();
   const { width: screenW } = useWindowDimensions();
   const [active, setActive] = useState(null);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
   const listRef = useRef(null);
   const idxRef = useRef(0);
   const pausedRef = useRef(false);
@@ -119,23 +117,6 @@ const ServiceCarousel = forwardRef(function ServiceCarousel(
       onSelectCategory?.(null);
     },
   }));
-
-  useEffect(() => {
-    let cancelled = false;
-    getCategories()
-      .then((items) => {
-        if (!cancelled) setCategories(items);
-      })
-      .catch(() => {
-        if (!cancelled) setCategories([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const loopLen = categories.length;
   const servicesLoop = useMemo(() => {
@@ -235,16 +216,6 @@ const ServiceCarousel = forwardRef(function ServiceCarousel(
     [active, t, itemW, onSelectCategory]
   );
 
-  if (loading) {
-    return (
-      <View
-        style={{ height: 92, alignItems: 'center', justifyContent: 'center' }}
-      >
-        <ActivityIndicator color={t.orange} />
-      </View>
-    );
-  }
-
   if (loopLen === 0) return null;
 
   return (
@@ -338,31 +309,12 @@ function WorkPhotoCarousel({ photos, t, onManualNav }) {
   );
 }
 
-function WorksCarousel({ onSelectWork }) {
+function WorksCarousel({ works, onSelectWork }) {
   const { theme: t } = useTheme();
   const listRef = useRef(null);
   const idxRef = useRef(0);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [works, setWorks] = useState([]);
-  const [loading, setLoading] = useState(true);
   const pausedRef = useRef(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    getTopOrders({ limit: 10 })
-      .then((items) => {
-        if (!cancelled) setWorks(items);
-      })
-      .catch(() => {
-        if (!cancelled) setWorks([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const total = works.length;
 
@@ -380,16 +332,6 @@ function WorksCarousel({ onSelectWork }) {
     }, 2000);
     return () => clearInterval(timer);
   }, [total]);
-
-  if (loading) {
-    return (
-      <View
-        style={{ height: 176, alignItems: 'center', justifyContent: 'center' }}
-      >
-        <ActivityIndicator color={t.orange} />
-      </View>
-    );
-  }
 
   if (total === 0) return null;
 
@@ -533,24 +475,30 @@ const wk = StyleSheet.create({
   dot: { width: 6, height: 6, borderRadius: 3 },
 });
 
-function TopUstalar({ onSelectUsta, categoryId }) {
+function TopUstalar({ onSelectUsta, categoryId, initialWorkers }) {
   const { theme: t } = useTheme();
-  const [workers, setWorkers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [workers, setWorkers] = useState(initialWorkers);
+  const [loading, setLoading] = useState(false);
+  const isFirstRun = useRef(true);
 
   useEffect(() => {
+    // Boshlang'ich ma'lumot allaqachon umumiy loader orqali kelgan
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+      return;
+    }
     let cancelled = false;
     setLoading(true);
     getWorkers({ limit: 5, offset: 0, categoryId })
       .then((items) => {
         // console.log('workers:', items);
-        if (!cancelled) setWorkers(items);
+        if (!cancelled) {
+          setWorkers(items);
+          setLoading(false);
+        }
       })
       .catch(() => {
-        if (!cancelled) setWorkers([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
+        // Backenddan ma'lumot kelmasa, loading holatida qoldiramiz
       });
     return () => {
       cancelled = true;
@@ -562,7 +510,7 @@ function TopUstalar({ onSelectUsta, categoryId }) {
       <View
         style={{ height: 176, alignItems: 'center', justifyContent: 'center' }}
       >
-        <ActivityIndicator color={t.orange} />
+        <AfishLoader size={90} />
       </View>
     );
   }
@@ -662,31 +610,11 @@ function TopUstalar({ onSelectUsta, categoryId }) {
   );
 }
 
-function SevimliUstalar({ onSelectUsta }) {
+function SevimliUstalar({ onSelectUsta, saved }) {
   const { theme: t } = useTheme();
-  const [saved, setSaved] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [savedIdx, setSavedIdx] = useState(0);
   const listRef = useRef(null);
   const idxRef = useRef(0);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    getFavorites({ page: 1, size: 10 })
-      .then((items) => {
-        if (!cancelled) setSaved(items);
-      })
-      .catch(() => {
-        if (!cancelled) setSaved([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     if (saved.length === 0) return;
@@ -700,14 +628,6 @@ function SevimliUstalar({ onSelectUsta }) {
     }, 2500);
     return () => clearInterval(timer);
   }, [saved.length]);
-
-  if (loading) {
-    return (
-      <View style={{ height: 158, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={t.orange} />
-      </View>
-    );
-  }
 
   return (
     <View style={{ paddingTop: 24 }}>
@@ -896,10 +816,40 @@ export default function ZakazchiMainScreen({ onLogout }) {
   const { user } = useUser();
   const serviceCarouselRef = useRef(null);
 
+  const [categories, setCategories] = useState([]);
+  const [workers, setWorkers] = useState([]);
+  const [works, setWorks] = useState([]);
+  const [favorites, setFavorites] = useState([]);
+  const [initialLoading, setInitialLoading] = useState(true);
+
   useEffect(() => {
     getToken().then((token) => {
       // console.log('access_token:', token);
     });
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      getCategories(),
+      getWorkers({ limit: 5, offset: 0, categoryId: null }),
+      getTopOrders({ limit: 10 }),
+      getFavorites({ page: 1, size: 10 }),
+    ])
+      .then(([cats, wkrs, wrks, favs]) => {
+        if (cancelled) return;
+        setCategories(cats);
+        setWorkers(wkrs);
+        setWorks(wrks);
+        setFavorites(favs);
+        setInitialLoading(false);
+      })
+      .catch(() => {
+        // Backend bilan aloqa bo'lmasa, umumiy loader holatida kutamiz
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (selectedUsta) {
@@ -983,7 +933,7 @@ export default function ZakazchiMainScreen({ onLogout }) {
               </Text>
             </View>
             <Avatar
-              letter={(user?.last_name).charAt(0).toUpperCase()}
+              letter={(user?.last_name ?? '').charAt(0).toUpperCase()}
               bgColor={t.orange}
               uri={user?.profile_photo}
             />
@@ -1054,64 +1004,84 @@ export default function ZakazchiMainScreen({ onLogout }) {
           </View>
         )}
 
-        {/* ── Services ── */}
-        <View style={{ marginTop: 24 }}>
-          <View style={[s.sectionHeader, { paddingHorizontal: 20 }]}>
-            <Text style={[s.sectionTitle, { color: t.text }]}>
-              Taklif xizmatlar
-            </Text>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => serviceCarouselRef.current?.resume()}
-            >
-              <Text
-                style={{ color: t.orange, fontSize: 12.5, fontWeight: '600' }}
-              >
-                Barchasi
-              </Text>
-            </TouchableOpacity>
+        {initialLoading ? (
+          <View
+            style={{
+              paddingVertical: 140,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <AfishLoader size={180} />
           </View>
-          <ServiceCarousel
-            ref={serviceCarouselRef}
-            onSelectCategory={setSelectedCategoryId}
-          />
-        </View>
+        ) : (
+          <>
+            {/* ── Services ── */}
+            <View style={{ marginTop: 24 }}>
+              <View style={[s.sectionHeader, { paddingHorizontal: 20 }]}>
+                <Text style={[s.sectionTitle, { color: t.text }]}>
+                  Taklif xizmatlar
+                </Text>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => serviceCarouselRef.current?.resume()}
+                >
+                  <Text
+                    style={{
+                      color: t.orange,
+                      fontSize: 12.5,
+                      fontWeight: '600',
+                    }}
+                  >
+                    Barchasi
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <ServiceCarousel
+                ref={serviceCarouselRef}
+                categories={categories}
+                onSelectCategory={setSelectedCategoryId}
+              />
+            </View>
 
-        {/* ── Top ustalar ── */}
-        <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
-          <View style={s.sectionHeader}>
-            <Text style={[s.sectionTitle, { color: t.text }]}>
-              Eng zo'r ustalar
-            </Text>
-            <Text
-              style={{ color: t.orange, fontSize: 12.5, fontWeight: '600' }}
-            >
-              Reyting
-            </Text>
-          </View>
-          <TopUstalar
-            onSelectUsta={setSelectedUsta}
-            categoryId={selectedCategoryId}
-          />
-        </View>
+            {/* ── Top ustalar ── */}
+            <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
+              <View style={s.sectionHeader}>
+                <Text style={[s.sectionTitle, { color: t.text }]}>
+                  Eng zo'r ustalar
+                </Text>
+                <Text
+                  style={{ color: t.orange, fontSize: 12.5, fontWeight: '600' }}
+                >
+                  Reyting
+                </Text>
+              </View>
+              <TopUstalar
+                onSelectUsta={setSelectedUsta}
+                categoryId={selectedCategoryId}
+                initialWorkers={workers}
+              />
+            </View>
 
-        {/* ── Best works ── */}
-        <View style={{ marginTop: 24 }}>
-          <View style={[s.sectionHeader, { paddingHorizontal: 20 }]}>
-            <Text style={[s.sectionTitle, { color: t.text }]}>
-              Eng zo'r ishlar
-            </Text>
-            <Text
-              style={{ color: t.orange, fontSize: 12.5, fontWeight: '600' }}
-            >
-              Galereya
-            </Text>
-          </View>
-          <WorksCarousel onSelectWork={setSelectedWork} />
-        </View>
+            {/* ── Best works ── */}
+            <View style={{ marginTop: 24 }}>
+              <View style={[s.sectionHeader, { paddingHorizontal: 20 }]}>
+                <Text style={[s.sectionTitle, { color: t.text }]}>
+                  Eng zo'r ishlar
+                </Text>
+                <Text
+                  style={{ color: t.orange, fontSize: 12.5, fontWeight: '600' }}
+                >
+                  Galereya
+                </Text>
+              </View>
+              <WorksCarousel works={works} onSelectWork={setSelectedWork} />
+            </View>
 
-        {/* ── Sevimli ustalar ── */}
-        <SevimliUstalar onSelectUsta={setSelectedUsta} />
+            {/* ── Sevimli ustalar ── */}
+            <SevimliUstalar onSelectUsta={setSelectedUsta} saved={favorites} />
+          </>
+        )}
 
         {/* ── Yangi e'lonlar ── */}
         <View style={{ paddingHorizontal: 20, marginTop: 24 }}>

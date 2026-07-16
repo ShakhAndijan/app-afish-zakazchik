@@ -17,7 +17,7 @@ import Feather from '@expo/vector-icons/Feather';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../context/ThemeContext';
 import { useUser } from '../context/UserContext';
-import { getAvatarUploadUrl, confirmAvatar } from '../api/user';
+import { getAvatarUploadUrl, confirmAvatar, deleteAvatar } from '../api/user';
 import { uploadImageToPresignedUrl } from '../api/auth';
 import ZakazchiHelpScreen from './ZakazchiHelpScreen';
 import ZakazchiNotifScreen from './ZakazchiNotifScreen';
@@ -45,7 +45,6 @@ const formatPhoneDisplay = (raw = '') => {
   return `+998 ${s}`.trim();
 };
 
-
 // Android'dagi Image (Fresco/OkHttp) kodlanmagan "+" belgisini URL'da
 // noto'g'ri talqin qilib, rasmni yuklolmasligi mumkin — shu sababli xavfsiz kodlaymiz.
 const encodeImageUri = (uri) => (uri ? uri.replace(/\+/g, '%2B') : uri);
@@ -70,7 +69,9 @@ function Avatar({ letter = 'J', size = 80, bgColor, uri }) {
           resizeMode="cover"
         />
       ) : (
-        <Text style={{ color: '#fff', fontSize: size * 0.4, fontWeight: '700' }}>
+        <Text
+          style={{ color: '#fff', fontSize: size * 0.4, fontWeight: '700' }}
+        >
           {letter}
         </Text>
       )}
@@ -156,24 +157,26 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
   const [showAvatarSheet, setShowAvatarSheet] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState(null);
 
-  // Backend'dan kelgan /auth/me ma'lumoti — foydalanuvchi lokal ravishda
-  // (avatar tanlash, telefonni almashtirish orqali) o'zgartirmaguncha shu ko'rsatiladi.
   const displayName =
-    [user?.first_name, user?.last_name].filter(Boolean).join(' ').trim() || 'Jasur Rahimov';
+    [user?.first_name, user?.last_name].filter(Boolean).join(' ').trim() ||
+    'Jasur Rahimov';
   const displayLetter = (user?.first_name || 'J')[0].toUpperCase();
   const displayPhone =
-    phoneNumber || (user?.phone ? formatPhoneDisplay(user.phone) : '+998 90 123 45 67');
+    phoneNumber ||
+    (user?.phone ? formatPhoneDisplay(user.phone) : '+998 90 123 45 67');
   const displayAvatarUri = avatarUri || user?.profile_photo || null;
-  const displayLocation = [user?.district, user?.region].filter(Boolean).join(', ');
+  const displayLocation = [user?.district, user?.region]
+    .filter(Boolean)
+    .join(', ');
 
   const commitAvatar = async (uri, contentType = 'image/jpeg') => {
-    setAvatarUri(uri); // lokal oldindan ko'rsatish — yuklash tugashini kutmaydi
+    setAvatarUri(uri);
     setAvatarUploading(true);
     try {
       const { upload_url, temp_key } = await getAvatarUploadUrl(contentType);
       await uploadImageToPresignedUrl(upload_url, uri, contentType);
       await confirmAvatar(temp_key);
-      await refreshUser(); // /auth/me'dagi doimiy profile_photo bilan almashtiradi
+      await refreshUser();
       setAvatarUri(null);
     } catch (e) {
       setAvatarUri(null);
@@ -196,9 +199,21 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
     pickFromGallery(commitAvatar);
   };
 
-  const handleRemoveAvatar = () => {
+  const handleRemoveAvatar = async () => {
     setShowAvatarSheet(false);
     setAvatarUri(null);
+    setAvatarUploading(true);
+    try {
+      await deleteAvatar();
+      await refreshUser();
+    } catch (e) {
+      Alert.alert(
+        'Xatolik',
+        e.message || "Rasmni o'chirib bo'lmadi, qayta urinib ko'ring"
+      );
+    } finally {
+      setAvatarUploading(false);
+    }
   };
 
   if (screen === 'help') {
@@ -263,14 +278,21 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
       >
         {/* ── Cover Header ── */}
         <View style={[s.cover, { backgroundColor: t.cover }]}>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 14 }}>
+          <View
+            style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 14 }}
+          >
             <TouchableOpacity
               style={s.avatarWrap}
               activeOpacity={0.85}
               onPress={() => setShowAvatarSheet(true)}
               disabled={avatarUploading}
             >
-              <Avatar letter={displayLetter} size={72} bgColor={t.orange} uri={displayAvatarUri} />
+              <Avatar
+                letter={displayLetter}
+                size={72}
+                bgColor={t.orange}
+                uri={displayAvatarUri}
+              />
               {avatarUploading && (
                 <View style={[s.avatarOverlay, { borderRadius: 72 * 0.3 }]}>
                   <ActivityIndicator size="small" color="#fff" />
@@ -306,9 +328,23 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
                 {displayPhone}
               </Text>
               {!!displayLocation && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
-                  <MaterialCommunityIcons name="map-marker-outline" size={12} color={t.faint} />
-                  <Text style={{ fontSize: 11.5, color: t.faint }} numberOfLines={1}>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 4,
+                    marginTop: 3,
+                  }}
+                >
+                  <MaterialCommunityIcons
+                    name="map-marker-outline"
+                    size={12}
+                    color={t.faint}
+                  />
+                  <Text
+                    style={{ fontSize: 11.5, color: t.faint }}
+                    numberOfLines={1}
+                  >
                     {displayLocation}
                   </Text>
                 </View>
@@ -343,8 +379,12 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
               style={[
                 s.themeBtn,
                 {
-                  backgroundColor: t.isDark ? 'rgba(245,196,81,0.14)' : 'rgba(63,127,212,0.12)',
-                  borderColor: t.isDark ? 'rgba(245,196,81,0.28)' : 'rgba(63,127,212,0.24)',
+                  backgroundColor: t.isDark
+                    ? 'rgba(245,196,81,0.14)'
+                    : 'rgba(63,127,212,0.12)',
+                  borderColor: t.isDark
+                    ? 'rgba(245,196,81,0.28)'
+                    : 'rgba(63,127,212,0.24)',
                 },
               ]}
               activeOpacity={0.8}
@@ -361,19 +401,52 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
           {/* Activity stats */}
           <View style={s.statsRow}>
             {[
-              { value: '18', label: 'Buyurtma', icon: 'archive-outline', color: t.orange },
-              { value: '12', label: 'Sevimli usta', icon: 'heart-outline', color: t.red },
-              { value: '4.8', label: 'Bahoyingiz', icon: 'star-outline', color: t.gold },
+              {
+                value: '18',
+                label: 'Buyurtma',
+                icon: 'archive-outline',
+                color: t.orange,
+              },
+              {
+                value: '12',
+                label: 'Sevimli usta',
+                icon: 'heart-outline',
+                color: t.red,
+              },
+              {
+                value: '4.8',
+                label: 'Bahoyingiz',
+                icon: 'star-outline',
+                color: t.gold,
+              },
             ].map((st, i) => (
-              <View key={i} style={[s.statPill, { backgroundColor: t.card, borderColor: t.border }]}>
-                <View style={[s.statIcon, { backgroundColor: st.color + '1c' }]}>
-                  <MaterialCommunityIcons name={st.icon} size={13} color={st.color} />
+              <View
+                key={i}
+                style={[
+                  s.statPill,
+                  { backgroundColor: t.card, borderColor: t.border },
+                ]}
+              >
+                <View
+                  style={[s.statIcon, { backgroundColor: st.color + '1c' }]}
+                >
+                  <MaterialCommunityIcons
+                    name={st.icon}
+                    size={13}
+                    color={st.color}
+                  />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={[s.statVal, { color: t.text }]} numberOfLines={1}>
+                  <Text
+                    style={[s.statVal, { color: t.text }]}
+                    numberOfLines={1}
+                  >
                     {st.value}
                   </Text>
-                  <Text style={[s.statLbl, { color: t.muted }]} numberOfLines={1}>
+                  <Text
+                    style={[s.statLbl, { color: t.muted }]}
+                    numberOfLines={1}
+                  >
                     {st.label}
                   </Text>
                 </View>
@@ -599,7 +672,12 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
               { backgroundColor: t.card, borderColor: t.border },
             ]}
           >
-            <SettingsRow icon="bell-outline" label="Bildirishnomalar" t={t} onPress={() => setScreen('notif')} />
+            <SettingsRow
+              icon="bell-outline"
+              label="Bildirishnomalar"
+              t={t}
+              onPress={() => setScreen('notif')}
+            />
             <View style={[s.divider, { backgroundColor: t.border }]} />
             <SettingsRow
               icon="earth"

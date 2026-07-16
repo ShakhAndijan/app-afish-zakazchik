@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "mobile-app-afish",
+    "name": "afish.uz",
     "slug": "mobile-app-afish",
     "scheme": "mobile-app-afish",
     "version": "1.0.0",
@@ -14,10 +14,8 @@
       "package": "uz.afish.zakazchik",
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/afish-logo-icon.png"
       },
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
@@ -30,7 +28,8 @@
     "plugins": [
       "expo-web-browser",
       "expo-location",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-image"
     ],
     "extra": {
       "eas": {

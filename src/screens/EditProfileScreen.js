@@ -17,14 +17,20 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import Feather from '@expo/vector-icons/Feather';
+import * as Location from 'expo-location';
 import { useTheme } from '../context/ThemeContext';
+import { useUser } from '../context/UserContext';
 import { getGenders, getRegions, getDistricts } from '../api/reference';
+import { getCustomerMe, updateCustomerMe } from '../api/user';
+import SuccessModal from '../components/SuccessModal';
+import AfishLoader from '../components/AfishLoader';
 
 // Backend hali javob bermasa ham forma bo'sh qolmasligi uchun mahalliy zaxira
 // ro'yxatlar — real API javob bersa, ular ustidan yoziladi.
 const FALLBACK_GENDERS = [
-  { id: 1, name: 'Erkak' },
-  { id: 2, name: 'Ayol' },
+  { id: 1, code: 'male', name: 'Erkak' },
+  { id: 2, code: 'female', name: 'Ayol' },
 ];
 const FALLBACK_REGIONS = [
   { id: 1, name: 'Toshkent shahri' },
@@ -40,12 +46,6 @@ const FALLBACK_DISTRICTS = [
   { id: 4, name: 'Sergeli' },
   { id: 5, name: 'Shayxontohur' },
 ];
-const LANGUAGE_OPTIONS = [
-  { id: 1, code: 'uz', name: "O'zbekcha", flag: '🇺🇿' },
-  { id: 2, code: 'ru', name: 'Ruscha', flag: '🇷🇺' },
-  { id: 3, code: 'en', name: 'Inglizcha', flag: '🇬🇧' },
-];
-
 const MONTH_NAMES_UZ = [
   'Yanvar',
   'Fevral',
@@ -112,6 +112,56 @@ function TextField({
           {(value || '').length}/{maxLength}
         </Text>
       ) : null}
+    </View>
+  );
+}
+
+/* ── Ikkita tugmali jins tanlash ── */
+function GenderToggle({ genders, selectedId, onSelect, loading, t }) {
+  const iconFor = (code) =>
+    code === 'female' ? 'gender-female' : code === 'male' ? 'gender-male' : 'account';
+
+  return (
+    <View style={{ gap: 8 }}>
+      <Text style={[s.fieldLabel, { color: t.muted }]}>Jinsi</Text>
+      {loading ? (
+        <ActivityIndicator
+          size="small"
+          color={t.orange}
+          style={{ alignSelf: 'flex-start' }}
+        />
+      ) : (
+        <View style={s.genderRow}>
+          {genders.map((g) => {
+            const on = g.id === selectedId;
+            return (
+              <TouchableOpacity
+                key={g.id}
+                style={[
+                  s.genderBtn,
+                  {
+                    backgroundColor: on ? t.orange : t.inputBg,
+                    borderColor: on ? t.orange : t.border,
+                  },
+                ]}
+                activeOpacity={0.8}
+                onPress={() => onSelect(g.id)}
+              >
+                <MaterialCommunityIcons
+                  name={iconFor(g.code)}
+                  size={17}
+                  color={on ? '#fff' : t.muted}
+                />
+                <Text
+                  style={[s.genderBtnText, { color: on ? '#fff' : t.text }]}
+                >
+                  {g.name}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
     </View>
   );
 }
@@ -373,59 +423,33 @@ function BirthDateSheet({ visible, onClose, value, onChange, t }) {
   );
 }
 
-/* ── Language multi-select chips ── */
-function LanguageChips({ selectedIds, onToggle, t }) {
+/* ── GPS joylashuvni aniqlash tugmasi ── */
+function LocationField({ lat, lng, locating, onLocate, t }) {
+  const hasCoords = lat != null && lat !== '' && lng != null && lng !== '';
   return (
-    <View style={s.chipsRow}>
-      {LANGUAGE_OPTIONS.map((opt) => {
-        const on = selectedIds.includes(opt.id);
-        return (
-          <TouchableOpacity
-            key={opt.id}
-            onPress={() => onToggle(opt.id)}
-            activeOpacity={0.8}
-            style={[
-              s.chip,
-              {
-                backgroundColor: on ? t.orange : t.inputBg,
-                borderColor: on ? t.orange : t.border,
-              },
-            ]}
-          >
-            <Text style={{ fontSize: 13 }}>{opt.flag}</Text>
-            <Text style={[s.chipText, { color: on ? '#fff' : t.text }]}>
-              {opt.name}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
-  );
-}
-
-/* ── Numeric stepper (experience_years) ── */
-function Stepper({ value, onChange, t, min = 0, max = 80 }) {
-  return (
-    <View
-      style={[
-        s.stepperWrap,
-        { backgroundColor: t.inputBg, borderColor: t.border },
-      ]}
-    >
+    <View style={{ gap: 8 }}>
+      <Text style={[s.fieldLabel, { color: t.muted }]}>Joylashuv (GPS)</Text>
       <TouchableOpacity
-        style={s.stepperBtn}
+        style={[
+          s.locateBtn,
+          { backgroundColor: t.inputBg, borderColor: t.border },
+        ]}
+        onPress={onLocate}
         activeOpacity={0.7}
-        onPress={() => onChange(Math.max(min, value - 1))}
+        disabled={locating}
       >
-        <MaterialCommunityIcons name="minus" size={18} color={t.text} />
-      </TouchableOpacity>
-      <Text style={[s.stepperValue, { color: t.text }]}>{value} yil</Text>
-      <TouchableOpacity
-        style={s.stepperBtn}
-        activeOpacity={0.7}
-        onPress={() => onChange(Math.min(max, value + 1))}
-      >
-        <MaterialCommunityIcons name="plus" size={18} color={t.text} />
+        <Feather name="navigation" size={16} color={t.orange} />
+        <Text
+          style={[s.locateBtnText, { color: t.text }]}
+          numberOfLines={1}
+        >
+          {locating
+            ? 'Aniqlanmoqda...'
+            : hasCoords
+            ? `${Number(lat).toFixed(5)}, ${Number(lng).toFixed(5)}`
+            : 'Joriy joylashuvni aniqlash'}
+        </Text>
+        {locating && <ActivityIndicator size="small" color={t.orange} />}
       </TouchableOpacity>
     </View>
   );
@@ -437,18 +461,19 @@ function GroupLabel({ children, t }) {
 
 export default function EditProfileScreen({ onBack }) {
   const { theme: t } = useTheme();
+  const { refreshUser } = useUser();
 
-  const [firstName, setFirstName] = useState('Jasur');
-  const [lastName, setLastName] = useState('Rahimov');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [genderId, setGenderId] = useState(null);
   const [birthDate, setBirthDate] = useState('');
-  const [bio, setBio] = useState('');
   const [regionId, setRegionId] = useState(null);
   const [districtId, setDistrictId] = useState(null);
   const [address, setAddress] = useState('');
-  const [languageIds, setLanguageIds] = useState([1]);
-  const [experienceYears, setExperienceYears] = useState(0);
+  const [gpsLat, setGpsLat] = useState(null);
+  const [gpsLng, setGpsLng] = useState(null);
+  const [landmark, setLandmark] = useState('');
 
   const [genders, setGenders] = useState(FALLBACK_GENDERS);
   const [regions, setRegions] = useState(FALLBACK_REGIONS);
@@ -457,11 +482,58 @@ export default function EditProfileScreen({ onBack }) {
   const [regionsLoading, setRegionsLoading] = useState(true);
   const [districtsLoading, setDistrictsLoading] = useState(false);
 
-  const [showGenderSheet, setShowGenderSheet] = useState(false);
   const [showRegionSheet, setShowRegionSheet] = useState(false);
   const [showDistrictSheet, setShowDistrictSheet] = useState(false);
   const [showDateSheet, setShowDateSheet] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    getCustomerMe()
+      .then((data) => {
+        if (!alive || !data) return;
+        setFirstName(data.first_name || '');
+        setLastName(data.last_name || '');
+        setEmail(data.email || '');
+        setGenderId(
+          data.gender && typeof data.gender === 'object'
+            ? data.gender.id ?? null
+            : data.gender ?? null
+        );
+        setBirthDate(data.birth_date || '');
+        setRegionId(
+          data.region && typeof data.region === 'object'
+            ? data.region.id ?? null
+            : data.region ?? null
+        );
+        setDistrictId(
+          data.district && typeof data.district === 'object'
+            ? data.district.id ?? null
+            : data.district ?? null
+        );
+        setAddress(data.address || '');
+        setGpsLat(
+          data.default_gps_lat != null ? Number(data.default_gps_lat) : null
+        );
+        setGpsLng(
+          data.default_gps_lng != null ? Number(data.default_gps_lng) : null
+        );
+        setLandmark(data.default_landmark || '');
+      })
+      .catch((e) => {
+        Alert.alert(
+          'Xatolik',
+          e.message || "Profil ma'lumotlarini yuklab bo'lmadi"
+        );
+      })
+      .finally(() => alive && setInitialLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -502,20 +574,36 @@ export default function EditProfileScreen({ onBack }) {
     };
   }, [regionId]);
 
-  const selectedGender = genders.find((g) => g.id === genderId);
   const selectedRegion = regions.find((r) => r.id === regionId);
   const selectedDistrict = districts.find((d) => d.id === districtId);
-
-  const toggleLanguage = (id) => {
-    setLanguageIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
 
   const isReady =
     firstName.trim().length > 0 && lastName.trim().length > 0 && !saving;
 
-  const handleSave = () => {
+  const handleLocate = async () => {
+    setLocating(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Ruxsat kerak', 'Joylashuv uchun ruxsat bering.');
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+      setGpsLat(pos.coords.latitude);
+      setGpsLng(pos.coords.longitude);
+    } catch {
+      Alert.alert(
+        'Xato',
+        "Joylashuvni aniqlab bo'lmadi. Qayta urinib ko'ring."
+      );
+    } finally {
+      setLocating(false);
+    }
+  };
+
+  const handleSave = async () => {
     if (!isReady) return;
     const payload = {
       first_name: firstName.trim(),
@@ -523,24 +611,60 @@ export default function EditProfileScreen({ onBack }) {
       email: email.trim(),
       gender_id: genderId,
       birth_date: birthDate,
-      bio: bio.trim(),
       region_id: regionId,
       district_id: districtId,
       address: address.trim(),
-      languages: languageIds,
-      experience_years: experienceYears,
+      default_gps_lat: gpsLat,
+      default_gps_lng: gpsLng,
+      default_landmark: landmark.trim(),
     };
-    // console.log('profile update payload', payload);
     setSaving(true);
-    setTimeout(() => {
-      setSaving(false);
+    try {
+      await updateCustomerMe(payload);
+      await refreshUser();
+      setShowSuccess(true);
+    } catch (e) {
       Alert.alert(
-        'Saqlandi',
-        "Profil ma'lumotlari muvaffaqiyatli yangilandi.",
-        [{ text: 'OK', onPress: onBack }]
+        'Xatolik',
+        e.message || 'Profilni saqlashda xatolik yuz berdi'
       );
-    }, 1000);
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (initialLoading) {
+    return (
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: t.bg }}
+        edges={['top', 'left', 'right']}
+      >
+        <StatusBar style={t.isDark ? 'light' : 'dark'} />
+        <View style={[s.header, { backgroundColor: t.bg }]}>
+          <TouchableOpacity
+            style={[
+              s.backBtn,
+              { backgroundColor: t.card, borderColor: t.border },
+            ]}
+            onPress={onBack}
+            activeOpacity={0.8}
+          >
+            <MaterialCommunityIcons
+              name="chevron-left"
+              size={24}
+              color={t.text}
+            />
+          </TouchableOpacity>
+          <Text style={[s.headerTitle, { color: t.text }]}>
+            Profilni tahrirlash
+          </Text>
+        </View>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <AfishLoader size={120} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView
@@ -596,11 +720,11 @@ export default function EditProfileScreen({ onBack }) {
               placeholder="Familiyangiz"
               t={t}
             />
-            <SelectField
-              label="Jinsi"
-              value={selectedGender?.name}
-              placeholder="Tanlang"
-              onPress={() => setShowGenderSheet(true)}
+            <GenderToggle
+              genders={genders}
+              selectedId={genderId}
+              onSelect={setGenderId}
+              loading={gendersLoading}
               t={t}
             />
             <SelectField
@@ -609,15 +733,6 @@ export default function EditProfileScreen({ onBack }) {
               placeholder="Kun.Oy.Yil"
               onPress={() => setShowDateSheet(true)}
               t={t}
-            />
-            <TextField
-              label="O'zingiz haqingizda"
-              value={bio}
-              onChangeText={setBio}
-              placeholder="Qisqacha ma'lumot yozing"
-              t={t}
-              multiline
-              maxLength={200}
             />
           </View>
 
@@ -663,32 +778,20 @@ export default function EditProfileScreen({ onBack }) {
               placeholder="Ko'cha, uy raqami"
               t={t}
             />
-          </View>
-
-          <GroupLabel t={t}>KASBIY MA'LUMOT</GroupLabel>
-          <View
-            style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}
-          >
-            <View style={{ gap: 8 }}>
-              <Text style={[s.fieldLabel, { color: t.muted }]}>
-                Bilgan tillari
-              </Text>
-              <LanguageChips
-                selectedIds={languageIds}
-                onToggle={toggleLanguage}
-                t={t}
-              />
-            </View>
-            <View style={{ gap: 8 }}>
-              <Text style={[s.fieldLabel, { color: t.muted }]}>
-                Ish tajribasi
-              </Text>
-              <Stepper
-                value={experienceYears}
-                onChange={setExperienceYears}
-                t={t}
-              />
-            </View>
+            <LocationField
+              lat={gpsLat}
+              lng={gpsLng}
+              locating={locating}
+              onLocate={handleLocate}
+              t={t}
+            />
+            <TextField
+              label="Mo'ljal"
+              value={landmark}
+              onChangeText={setLandmark}
+              placeholder="Masalan: Mega Planet ro'parasida"
+              t={t}
+            />
           </View>
 
           <TouchableOpacity
@@ -709,16 +812,6 @@ export default function EditProfileScreen({ onBack }) {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <OptionSheet
-        visible={showGenderSheet}
-        onClose={() => setShowGenderSheet(false)}
-        title="Jinsni tanlang"
-        options={genders}
-        selectedId={genderId}
-        onSelect={(item) => setGenderId(item.id)}
-        t={t}
-        loading={gendersLoading}
-      />
       <OptionSheet
         visible={showRegionSheet}
         onClose={() => setShowRegionSheet(false)}
@@ -745,6 +838,15 @@ export default function EditProfileScreen({ onBack }) {
         value={birthDate}
         onChange={setBirthDate}
         t={t}
+      />
+      <SuccessModal
+        visible={showSuccess}
+        onClose={() => {
+          setShowSuccess(false);
+          onBack();
+        }}
+        t={t}
+        message="Profil ma'lumotlari muvaffaqiyatli yangilandi."
       />
     </SafeAreaView>
   );
@@ -805,35 +907,29 @@ const s = StyleSheet.create({
   inputMultiline: { height: '100%' },
   counter: { fontSize: 11, textAlign: 'right' },
 
-  chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: {
+  genderRow: { flexDirection: 'row', gap: 10 },
+  genderBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'center',
+    gap: 8,
+    height: 48,
+    borderRadius: 13,
     borderWidth: 1.5,
-    borderRadius: 999,
-    paddingHorizontal: 13,
-    paddingVertical: 9,
   },
-  chipText: { fontSize: 12.5, fontWeight: '700' },
+  genderBtnText: { fontSize: 14, fontWeight: '700' },
 
-  stepperWrap: {
+  locateBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 10,
     height: 52,
     borderRadius: 13,
     borderWidth: 1.5,
-    paddingHorizontal: 8,
+    paddingHorizontal: 14,
   },
-  stepperBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepperValue: { fontSize: 15, fontWeight: '700' },
+  locateBtnText: { flex: 1, fontSize: 13.5, fontWeight: '600' },
 
   saveBtn: {
     height: 54,

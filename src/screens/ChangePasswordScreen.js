@@ -14,6 +14,8 @@ import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Feather from '@expo/vector-icons/Feather';
 import { useTheme } from '../context/ThemeContext';
+import { setPassword } from '../api/user';
+import SuccessModal from '../components/SuccessModal';
 
 const HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 };
 
@@ -83,21 +85,30 @@ export default function ChangePasswordScreen({ onBack }) {
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
   const [loading, setLoading] = useState(false);
+  const [currentPwError, setCurrentPwError] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const passwordOk = PASSWORD_RULES.every((r) => r.test(newPw));
   const matchOk = confirmPw.length > 0 && confirmPw === newPw;
   const sameAsOld = newPw.length > 0 && newPw === currentPw;
   const isReady = currentPw.length >= 4 && passwordOk && matchOk && !sameAsOld && !loading;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!isReady) return;
+    setCurrentPwError('');
     setLoading(true);
-    setTimeout(() => {
+    try {
+      await setPassword(currentPw, newPw);
+      setShowSuccess(true);
+    } catch (e) {
+      if (e.status === 400 || e.status === 401 || e.status === 403) {
+        setCurrentPwError("Joriy parol noto'g'ri");
+      } else {
+        Alert.alert('Xatolik', e.message || 'Parolni yangilashda xatolik yuz berdi');
+      }
+    } finally {
       setLoading(false);
-      Alert.alert('Muvaffaqiyatli', 'Parolingiz muvaffaqiyatli yangilandi.', [
-        { text: 'OK', onPress: onBack },
-      ]);
-    }, 1100);
+    }
   };
 
   return (
@@ -129,9 +140,13 @@ export default function ChangePasswordScreen({ onBack }) {
           <PasswordField
             label="Joriy parol"
             value={currentPw}
-            onChangeText={setCurrentPw}
+            onChangeText={(v) => {
+              setCurrentPw(v);
+              if (currentPwError) setCurrentPwError('');
+            }}
             placeholder="Joriy parolingizni kiriting"
             t={t}
+            error={currentPwError}
           />
 
           <View style={{ gap: 8 }}>
@@ -172,6 +187,16 @@ export default function ChangePasswordScreen({ onBack }) {
           )}
         </TouchableOpacity>
       </ScrollView>
+
+      <SuccessModal
+        visible={showSuccess}
+        onClose={() => {
+          setShowSuccess(false);
+          onBack();
+        }}
+        t={t}
+        message="Parolingiz muvaffaqiyatli yangilandi."
+      />
     </SafeAreaView>
   );
 }

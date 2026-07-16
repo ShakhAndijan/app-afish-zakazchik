@@ -14,6 +14,8 @@ import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../context/ThemeContext';
 import PhoneInput from '../components/login/PhoneInput';
+import { requestChangePhoneOtp, verifyChangePhoneOtp } from '../api/user';
+import SuccessModal from '../components/SuccessModal';
 
 const formatPhone = (raw = '') => {
   const d = raw.replace(/\D/g, '').slice(0, 9);
@@ -79,9 +81,14 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
   const [step, setStep] = useState('input');
   const [phone, setPhone] = useState('');
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState('');
   const [code, setCode] = useState('');
   const [verifying, setVerifying] = useState(false);
+  const [confirmError, setConfirmError] = useState('');
+  const [devCode, setDevCode] = useState('');
   const [timer, setTimer] = useState(60);
+  const [resending, setResending] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
     if (step !== 'otp' || timer === 0) return;
@@ -92,32 +99,51 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
   const isPhoneReady = phone.length === 9 && !sending;
   const isCodeReady = code.length === 6 && !verifying;
 
-  const handleSendCode = () => {
+  const fullPhone = () => '+998' + phone.replace(/\D/g, '');
+
+  const handleSendCode = async () => {
     if (!isPhoneReady) return;
+    setSendError('');
     setSending(true);
-    setTimeout(() => {
-      setSending(false);
+    try {
+      const data = await requestChangePhoneOtp(fullPhone());
+      setDevCode(data?.dev_code || '');
       setCode('');
       setTimer(60);
       setStep('otp');
-    }, 900);
+    } catch (e) {
+      setSendError(e.message || 'Kod yuborishda xatolik yuz berdi');
+    } finally {
+      setSending(false);
+    }
   };
 
-  const handleResend = () => {
-    setCode('');
-    setTimer(60);
+  const handleResend = async () => {
+    setResending(true);
+    try {
+      const data = await requestChangePhoneOtp(fullPhone());
+      setDevCode(data?.dev_code || '');
+      setCode('');
+      setTimer(60);
+    } catch (e) {
+      Alert.alert('Xato', e.message || 'Kod yuborishda xatolik yuz berdi');
+    } finally {
+      setResending(false);
+    }
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!isCodeReady) return;
+    setConfirmError('');
     setVerifying(true);
-    setTimeout(() => {
+    try {
+      await verifyChangePhoneOtp(fullPhone(), code);
+      setShowSuccess(true);
+    } catch (e) {
+      setConfirmError(e.message || 'Kod noto\'g\'ri, qayta urinib ko\'ring');
+    } finally {
       setVerifying(false);
-      onChanged?.(phone);
-      Alert.alert('Muvaffaqiyatli', 'Telefon raqamingiz muvaffaqiyatli yangilandi.', [
-        { text: 'OK', onPress: onBack },
-      ]);
-    }, 900);
+    }
   };
 
   return (
@@ -160,6 +186,9 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
             <View style={{ marginTop: 18, gap: 8 }}>
               <Text style={[s.fieldLabel, { color: t.muted }]}>Yangi telefon raqami</Text>
               <PhoneInput value={phone} onChangeText={setPhone} theme={t} />
+              {!!sendError && (
+                <Text style={[s.errorText, { color: t.red }]}>{sendError}</Text>
+              )}
             </View>
 
             <TouchableOpacity
@@ -190,6 +219,18 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
 
             <OtpCells value={code} onChange={setCode} t={t} />
 
+            {!!confirmError && (
+              <Text style={[s.errorText, { textAlign: 'center', marginTop: 10, color: t.red }]}>
+                {confirmError}
+              </Text>
+            )}
+
+            {!!devCode && (
+              <Text style={[s.devCode, { color: t.muted }]}>
+                Dev kod: <Text style={{ color: t.orange, fontWeight: '700' }}>{devCode}</Text>
+              </Text>
+            )}
+
             <Text style={[s.timerText, { color: t.muted }]}>
               {timer > 0 ? (
                 <>
@@ -198,6 +239,8 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
                     00:{String(timer).padStart(2, '0')}
                   </Text>
                 </>
+              ) : resending ? (
+                <ActivityIndicator size="small" color={t.orange} />
               ) : (
                 <Text style={{ color: t.orange, fontWeight: '700' }} onPress={handleResend}>
                   Kodni qayta yuborish
@@ -220,6 +263,17 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
           </>
         )}
       </ScrollView>
+
+      <SuccessModal
+        visible={showSuccess}
+        onClose={() => {
+          setShowSuccess(false);
+          if (onChanged) onChanged(phone);
+          else onBack();
+        }}
+        t={t}
+        message="Telefon raqamingiz muvaffaqiyatli yangilandi."
+      />
     </SafeAreaView>
   );
 }
@@ -274,6 +328,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 14,
   },
   currentText: { fontSize: 14.5, fontWeight: '600' },
+  errorText: { fontSize: 12, fontWeight: '600', marginTop: 1 },
 
   submitBtn: {
     height: 54,
@@ -300,4 +355,5 @@ const s = StyleSheet.create({
   },
 
   timerText: { fontSize: 13, textAlign: 'center', marginTop: 16 },
+  devCode: { fontSize: 13, textAlign: 'center', marginTop: 10 },
 });
