@@ -15,6 +15,7 @@ import {
   StyleSheet,
   FlatList,
   Image,
+  RefreshControl,
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -821,6 +822,7 @@ export default function ZakazchiMainScreen({ onLogout }) {
   const [works, setWorks] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     getToken().then((token) => {
@@ -828,21 +830,25 @@ export default function ZakazchiMainScreen({ onLogout }) {
     });
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    Promise.all([
+  const loadHomeData = useCallback(() => {
+    return Promise.all([
       getCategories(),
       getWorkers({ limit: 5, offset: 0, categoryId: null }),
       getTopOrders({ limit: 10 }),
       getFavorites({ page: 1, size: 10 }),
-    ])
-      .then(([cats, wkrs, wrks, favs]) => {
-        if (cancelled) return;
-        setCategories(cats);
-        setWorkers(wkrs);
-        setWorks(wrks);
-        setFavorites(favs);
-        setInitialLoading(false);
+    ]).then(([cats, wkrs, wrks, favs]) => {
+      setCategories(cats);
+      setWorkers(wkrs);
+      setWorks(wrks);
+      setFavorites(favs);
+    });
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadHomeData()
+      .then(() => {
+        if (!cancelled) setInitialLoading(false);
       })
       .catch(() => {
         // Backend bilan aloqa bo'lmasa, umumiy loader holatida kutamiz
@@ -850,7 +856,14 @@ export default function ZakazchiMainScreen({ onLogout }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadHomeData]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadHomeData()
+      .catch(() => {})
+      .finally(() => setRefreshing(false));
+  }, [loadHomeData]);
 
   if (selectedUsta) {
     return (
@@ -896,6 +909,14 @@ export default function ZakazchiMainScreen({ onLogout }) {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 90 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={t.orange}
+            colors={[t.orange]}
+          />
+        }
       >
         {/* ── Header ── */}
         <View

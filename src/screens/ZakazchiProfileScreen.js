@@ -22,13 +22,10 @@ import { uploadImageToPresignedUrl } from '../api/auth';
 import ZakazchiHelpScreen from './ZakazchiHelpScreen';
 import ZakazchiNotifScreen from './ZakazchiNotifScreen';
 import ZakazchiOrdersScreen from './ZakazchiOrdersScreen';
-import ZakazchiPromoScreen from './ZakazchiPromoScreen';
-import ZakazchiReferralScreen from './ZakazchiReferralScreen';
 import ChangePasswordScreen from './ChangePasswordScreen';
 import EditProfileScreen from './EditProfileScreen';
 import PaymentHistoryScreen from './PaymentHistoryScreen';
 import ChangePhoneScreen from './ChangePhoneScreen';
-import CertificatesScreen from './CertificatesScreen';
 import TilBottomSheet, { LANGS } from '../components/TilBottomSheet';
 import AvatarPickerSheet from '../components/AvatarPickerSheet';
 import BottomNav from '../components/BottomNav';
@@ -226,18 +223,6 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
 
   if (screen === 'orders') {
     return <ZakazchiOrdersScreen onBack={() => setScreen('profile')} />;
-  }
-
-  if (screen === 'certificates') {
-    return <CertificatesScreen onBack={() => setScreen('profile')} />;
-  }
-
-  if (screen === 'promo') {
-    return <ZakazchiPromoScreen onBack={() => setScreen('profile')} />;
-  }
-
-  if (screen === 'referral') {
-    return <ZakazchiReferralScreen onBack={() => setScreen('profile')} />;
   }
 
   if (screen === 'password') {
@@ -540,85 +525,6 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
           </View>
         </View>
 
-        {/* ── Promokod / taklif ── */}
-        <View
-          style={{
-            paddingHorizontal: 20,
-            paddingTop: 16,
-            flexDirection: 'row',
-            gap: 12,
-          }}
-        >
-          <TouchableOpacity
-            style={[
-              s.miniCard,
-              { backgroundColor: t.card, borderColor: t.border },
-            ]}
-            activeOpacity={0.8}
-            onPress={() => setScreen('promo')}
-          >
-            <View
-              style={[
-                s.miniIcon,
-                { backgroundColor: 'rgba(155,108,209,0.16)' },
-              ]}
-            >
-              <MaterialCommunityIcons name="gift" size={20} color={t.violet} />
-            </View>
-            <Text
-              style={{
-                fontWeight: '700',
-                fontSize: 13.5,
-                color: t.text,
-                marginTop: 11,
-              }}
-            >
-              Promokodlarim
-            </Text>
-            <Text
-              style={{
-                fontSize: 11.5,
-                color: t.green,
-                marginTop: 2,
-                fontWeight: '600',
-              }}
-            >
-              2 ta faol
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              s.miniCard,
-              { backgroundColor: t.card, borderColor: t.border },
-            ]}
-            activeOpacity={0.8}
-            onPress={() => setScreen('referral')}
-          >
-            <View
-              style={[s.miniIcon, { backgroundColor: 'rgba(47,163,122,0.16)' }]}
-            >
-              <MaterialCommunityIcons
-                name="account-plus"
-                size={20}
-                color={t.green}
-              />
-            </View>
-            <Text
-              style={{
-                fontWeight: '700',
-                fontSize: 13.5,
-                color: t.text,
-                marginTop: 11,
-              }}
-            >
-              Do'stni taklif et
-            </Text>
-            <Text style={{ fontSize: 11.5, color: t.muted, marginTop: 2 }}>
-              20 000 so'm oling
-            </Text>
-          </TouchableOpacity>
-        </View>
-
         {/* ── Asosiy menyu ── */}
         <View style={{ paddingHorizontal: 20, paddingTop: 22 }}>
           <View
@@ -627,15 +533,6 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
               { backgroundColor: t.card, borderColor: t.border },
             ]}
           >
-            <SettingsRow
-              icon="certificate-outline"
-              label="Sertifikatlarim"
-              value="4 ta"
-              color={t.violet}
-              t={t}
-              onPress={() => setScreen('certificates')}
-            />
-            <View style={[s.divider, { backgroundColor: t.border }]} />
             <SettingsRow
               icon="format-list-bulleted"
               label="Buyurtmalar tarixi"
