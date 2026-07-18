@@ -20,6 +20,8 @@ export const ENDPOINTS = {
   DISTRICTS: (regionId) =>
     `${API_BASE_URL}/api/v1/regions/${regionId}/districts`,
   WORKERS: `${API_BASE_URL}/api/v1/workers`,
+  LISTINGS: (limit = 10, offset = 0) =>
+    `${API_BASE_URL}/api/v1/listings?limit=${limit}&offset=${offset}`,
   SYSTEM_STATS: `${API_BASE_URL}/api/v1/system/stats`,
   TOP_COMMENTS: (limit = 10) =>
     `${API_BASE_URL}/api/v1/reviews/top-comments?limit=${limit}`,

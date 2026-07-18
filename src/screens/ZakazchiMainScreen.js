@@ -35,6 +35,7 @@ import { useUser } from '../context/UserContext';
 import { getCategories } from '../api/categories';
 import { getWorkers, getFavorites } from '../api/workers';
 import { getTopOrders } from '../api/reviews';
+import { getListings } from '../api/listings';
 import { getToken } from '../utils/token';
 
 const SVC_GAP = 10;
@@ -43,62 +44,6 @@ const SVC_VISIBLE = 4;
 
 const SAVED_CARD_W = 148;
 const SAVED_CARD_GAP = 12;
-
-// ── Yangi e'lonlar uchun ma'lumot ──
-const LISTINGS = [
-  {
-    id: 1,
-    initial: 'D',
-    name: 'Davron Mirzayev',
-    trade: 'Duradgor',
-    color: '#2fa37a',
-    rating: '5.0',
-    price: 50000,
-    location: 'Yunusobod',
-    postedAgo: '2 soat oldin',
-    title: "Yog'och mebel va eshik ustasi",
-    desc: 'Kvartira va ofis uchun maxsus mebel, eshik tayyorlayman. Tez va sifatli.',
-  },
-  {
-    id: 2,
-    initial: 'A',
-    name: 'Alisher Usmonov',
-    trade: 'Santexnik',
-    color: '#e87a45',
-    rating: '4.9',
-    price: 30000,
-    location: 'Chilonzor',
-    postedAgo: '5 soat oldin',
-    title: "Santexnika ta'mirlash va o'rnatish",
-    desc: "Kran, unitaz, isitish tizimlarini o'rnataman va ta'mirlayman.",
-  },
-  {
-    id: 3,
-    initial: 'B',
-    name: 'Bobur Karimov',
-    trade: 'Elektrik',
-    color: '#3f7fd4',
-    rating: '4.8',
-    price: 35000,
-    location: "Mirzo Ulug'bek",
-    postedAgo: '1 kun oldin',
-    title: 'Elektr montaj va LED yoritish',
-    desc: 'Uy va ofislarda elektr simlari, rozetka, yoritish tizimlari.',
-  },
-  {
-    id: 4,
-    initial: 'S',
-    name: 'Sherzod Nazarov',
-    trade: "Bo'yoqchi",
-    color: '#f5c451',
-    rating: '4.8',
-    price: 45000,
-    location: 'Shayxontohur',
-    postedAgo: '3 soat oldin',
-    title: "Devor va shift bo'yash ustasi",
-    desc: "Zamonaviy bo'yoq texnikalari, tez muddatda sifatli ish.",
-  },
-];
 
 const ServiceCarousel = forwardRef(function ServiceCarousel(
   { categories, onSelectCategory },
@@ -821,6 +766,7 @@ export default function ZakazchiMainScreen({ onLogout }) {
   const [workers, setWorkers] = useState([]);
   const [works, setWorks] = useState([]);
   const [favorites, setFavorites] = useState([]);
+  const [listings, setListings] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -836,11 +782,13 @@ export default function ZakazchiMainScreen({ onLogout }) {
       getWorkers({ limit: 5, offset: 0, categoryId: null }),
       getTopOrders({ limit: 10 }),
       getFavorites({ page: 1, size: 10 }),
-    ]).then(([cats, wkrs, wrks, favs]) => {
+      getListings({ limit: 10, offset: 0 }),
+    ]).then(([cats, wkrs, wrks, favs, lstngs]) => {
       setCategories(cats);
       setWorkers(wkrs);
       setWorks(wrks);
       setFavorites(favs);
+      setListings(lstngs);
     });
   }, []);
 
@@ -1101,52 +1049,54 @@ export default function ZakazchiMainScreen({ onLogout }) {
 
             {/* ── Sevimli ustalar ── */}
             <SevimliUstalar onSelectUsta={setSelectedUsta} saved={favorites} />
+
+            {/* ── Yangi e'lonlar ── */}
+            <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
+              <View style={s.sectionHeader}>
+                <Text style={[s.sectionTitle, { color: t.text }]}>
+                  Yangi e'lonlar
+                </Text>
+                <TouchableOpacity activeOpacity={0.7}>
+                  <Text
+                    style={{ color: t.orange, fontSize: 12.5, fontWeight: '600' }}
+                  >
+                    Barchasi
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <View style={{ gap: 12 }}>
+                {listings.map((l) => (
+                  <ListingCard
+                    key={l.id}
+                    listing={l}
+                    accent={t.orange}
+                    colors={{
+                      card: t.card,
+                      border: t.border,
+                      text: t.text,
+                      muted: t.muted,
+                      gold: t.gold,
+                      ratingBg: 'rgba(245,196,81,0.13)',
+                    }}
+                    onPress={() =>
+                      setSelectedUsta({
+                        id: l.workerId,
+                        initial: l.initial,
+                        name: l.name,
+                        bgColor: l.color,
+                        profile_photo: l.profile_photo,
+                        rating: l.rating,
+                        startingPrice: String(l.price),
+                        reliability_badge: l.reliability_badge,
+                        is_online: l.is_online,
+                      })
+                    }
+                  />
+                ))}
+              </View>
+            </View>
           </>
         )}
-
-        {/* ── Yangi e'lonlar ── */}
-        <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
-          <View style={s.sectionHeader}>
-            <Text style={[s.sectionTitle, { color: t.text }]}>
-              Yangi e'lonlar
-            </Text>
-            <TouchableOpacity activeOpacity={0.7}>
-              <Text
-                style={{ color: t.orange, fontSize: 12.5, fontWeight: '600' }}
-              >
-                Barchasi
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <View style={{ gap: 12 }}>
-            {LISTINGS.map((l) => (
-              <ListingCard
-                key={l.id}
-                listing={l}
-                accent={t.orange}
-                colors={{
-                  card: t.card,
-                  border: t.border,
-                  text: t.text,
-                  muted: t.muted,
-                  gold: t.gold,
-                  ratingBg: 'rgba(245,196,81,0.13)',
-                }}
-                onPress={() =>
-                  setSelectedUsta({
-                    initial: l.initial,
-                    name: l.name,
-                    trade: l.trade,
-                    bgColor: l.color,
-                    rating: l.rating,
-                    location: l.location,
-                    startingPrice: String(l.price),
-                  })
-                }
-              />
-            ))}
-          </View>
-        </View>
       </ScrollView>
 
       {/* ── Bottom nav ── */}

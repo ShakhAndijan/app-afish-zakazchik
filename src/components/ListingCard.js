@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 
 const DEFAULT_COLORS = {
@@ -17,6 +17,9 @@ function formatPrice(n) {
 
 export default function ListingCard({ listing, accent, onPress, colors }) {
   const c = { ...DEFAULT_COLORS, ...colors };
+  const [photoFailed, setPhotoFailed] = useState(false);
+  const showPhoto = listing.profile_photo && !photoFailed;
+  const meta = [listing.location, listing.postedAgo].filter(Boolean).join(' · ');
 
   return (
     <TouchableOpacity
@@ -30,7 +33,16 @@ export default function ListingCard({ listing, accent, onPress, colors }) {
         <View style={styles.headerLeft}>
           <View>
             <View style={[styles.avatar, { backgroundColor: listing.color }]}>
-              <Text style={styles.avatarText}>{listing.initial}</Text>
+              {showPhoto ? (
+                <Image
+                  source={{ uri: listing.profile_photo }}
+                  style={styles.avatarImg}
+                  resizeMode="cover"
+                  onError={() => setPhotoFailed(true)}
+                />
+              ) : (
+                <Text style={styles.avatarText}>{listing.initial}</Text>
+              )}
             </View>
             {listing.certified && (
               <View style={[styles.verifiedBadge, { borderColor: c.card }]}>
@@ -40,13 +52,11 @@ export default function ListingCard({ listing, accent, onPress, colors }) {
           </View>
           <View>
             <Text style={[styles.name, { color: c.text }]}>{listing.name}</Text>
-            <Text style={[styles.meta, { color: c.muted }]}>
-              {listing.location} · {listing.postedAgo}
-            </Text>
+            {!!meta && <Text style={[styles.meta, { color: c.muted }]}>{meta}</Text>}
           </View>
         </View>
         <View style={[styles.ratingPill, { backgroundColor: c.ratingBg }]}>
-          <Text style={[styles.ratingText, { color: c.gold }]}>★ {listing.rating}</Text>
+          <Text style={[styles.ratingText, { color: c.gold }]}>★ {listing.rating.toFixed(1)}</Text>
         </View>
       </View>
 
@@ -89,7 +99,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.12)',
+    overflow: 'hidden',
   },
+  avatarImg: { width: '100%', height: '100%' },
   avatarText: { color: '#fff', fontWeight: '800', fontSize: 13.5 },
   verifiedBadge: {
     position: 'absolute',
