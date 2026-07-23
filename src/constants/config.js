@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'https://engraver-garnet-scalded.ngrok-free.dev';
+export const API_BASE_URL = 'http://10.240.8.109:9494';
 
 export const ENDPOINTS = {
   AUTH_GOOGLE_LOGIN: `${API_BASE_URL}/api/v1/auth/google/login`,
@@ -20,6 +20,11 @@ export const ENDPOINTS = {
   DISTRICTS: (regionId) =>
     `${API_BASE_URL}/api/v1/regions/${regionId}/districts`,
   WORKERS: `${API_BASE_URL}/api/v1/workers`,
+  WORKER_DETAIL: (workerId) => `${API_BASE_URL}/api/v1/workers/${workerId}`,
+  WORKER_CERTIFICATES: (workerId, categoryId) =>
+    categoryId
+      ? `${API_BASE_URL}/api/v1/workers/${workerId}/certificates?category_id=${categoryId}`
+      : `${API_BASE_URL}/api/v1/workers/${workerId}/certificates`,
   LISTINGS: (limit = 10, offset = 0) =>
     `${API_BASE_URL}/api/v1/listings?limit=${limit}&offset=${offset}`,
   SYSTEM_STATS: `${API_BASE_URL}/api/v1/system/stats`,

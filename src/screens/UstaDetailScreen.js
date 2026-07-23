@@ -1,7 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
+  Image,
   ScrollView,
   FlatList,
   TouchableOpacity,
@@ -16,6 +17,8 @@ import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Feather from '@expo/vector-icons/Feather';
+import { getWorkerById, getWorkerCertificates } from '../api/workers';
+import AfishLoader from '../components/AfishLoader';
 
 // ─── Colors ──────────────────────────────────────────────────────────────────
 
@@ -36,109 +39,77 @@ const C = {
   dim2: '#5e6e80',
 };
 
-// ─── Default Data ─────────────────────────────────────────────────────────────
+const RELIABILITY_BADGES = {
+  bronze: { emoji: '🥉', label: 'Bronza usta', color: '#cd7f32', bg: 'rgba(205,127,50,0.14)' },
+  silver: { emoji: '🥈', label: 'Kumush usta', color: '#b0b8c1', bg: 'rgba(176,184,193,0.14)' },
+  gold: { emoji: '🥇', label: 'Oltin usta', color: '#f0b429', bg: 'rgba(240,180,41,0.14)' },
+};
 
-const DEFAULT_SPECS = [
-  'Kran va smesitel',
-  'Quvur tizimlari',
-  'Isitish tizimi',
-  'Sanitariya jihozlari',
-];
+// Android'dagi Image (Fresco/OkHttp) kodlanmagan "+" belgisini URL'da
+// noto'g'ri talqin qilib, rasmni yuklolmasligi mumkin — shu sababli xavfsiz kodlaymiz.
+const encodeImageUri = (uri) => (uri ? uri.replace(/\+/g, '%2B') : uri);
 
-const DEFAULT_SERVICES = [
-  { name: "Kran ta'miri", price: '30 000', spec: 'Kran va smesitel' },
-  { name: 'Smesitel almashtirish', price: '35 000', spec: 'Kran va smesitel' },
-  { name: 'Quvur almashtirish', price: '60 000', spec: 'Quvur tizimlari' },
-  { name: 'Quvur payvandlash', price: '45 000', spec: 'Quvur tizimlari' },
-  { name: 'Qozon ulanishi', price: '80 000', spec: 'Isitish tizimi' },
-  { name: "Radiator o'rnatish", price: '55 000', spec: 'Isitish tizimi' },
-  { name: "Unitaz o'rnatish", price: '120 000', spec: 'Sanitariya jihozlari' },
-  {
-    name: "Dush kabinasi o'rnatish",
-    price: '95 000',
-    spec: 'Sanitariya jihozlari',
-  },
-];
+const pad2 = (n) => String(n).padStart(2, '0');
+function formatDate(isoDate) {
+  if (!isoDate) return '';
+  const d = new Date(isoDate);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${pad2(d.getDate())}.${pad2(d.getMonth() + 1)}.${d.getFullYear()}`;
+}
 
-const DEFAULT_TIMES = [
-  { label: 'Bugun 14:00', spec: 'Kran va smesitel' },
-  { label: 'Bugun 16:30', spec: 'Quvur tizimlari' },
-  { label: 'Ertaga 09:00', spec: 'Isitish tizimi' },
-  { label: 'Ertaga 11:00', spec: 'Sanitariya jihozlari' },
-];
+// ─── Empty State ──────────────────────────────────────────────────────────────
 
-const DEFAULT_CERTS = [
-  {
-    name: 'Santexnika litsenziyasi',
-    year: '2021',
-    spec: 'Sanitariya jihozlari',
-  },
-  { name: 'Gaz xavfsizligi', year: '2023', spec: 'Isitish tizimi' },
-];
+function EmptyState({ icon, iconSet: IconSet = MaterialCommunityIcons, title, subtitle }) {
+  return (
+    <View style={[st.card, st.emptyCard]}>
+      <View style={st.emptyIconWrap}>
+        <IconSet name={icon} size={22} color={C.dim} />
+      </View>
+      <Text style={st.emptyTitle}>{title}</Text>
+      {!!subtitle && <Text style={st.emptyText}>{subtitle}</Text>}
+    </View>
+  );
+}
 
-const DEFAULT_REVIEWS = [
-  {
-    initial: 'M',
-    name: 'Madina K.',
-    rating: 5,
-    time: '2 hafta oldin',
-    hasPhoto: true,
-    text: 'Juda xushmuomala usta, narxi ham arzon. Ishni tez va sifatli bajardi, albatta yana chaqiraman.',
-    bgColor: C.green,
-    spec: 'Kran va smesitel',
-  },
-  {
-    initial: 'J',
-    name: 'Jasur R.',
-    rating: 5,
-    time: '3 hafta oldin',
-    hasPhoto: false,
-    text: 'Tez keldi, hammasini puxta qildi. Rahmat!',
-    bgColor: C.green,
-    spec: 'Quvur tizimlari',
-  },
-  {
-    initial: 'O',
-    name: 'Otabek S.',
-    rating: 4,
-    time: '1 oy oldin',
-    hasPhoto: false,
-    text: 'Yaxshi usta, vaqtida keldi. Ishdan mamnunman.',
-    bgColor: C.blue,
-    spec: 'Isitish tizimi',
-  },
-  {
-    initial: 'N',
-    name: 'Nilufar A.',
-    rating: 5,
-    time: '1 oy oldin',
-    hasPhoto: true,
-    text: "Zo'r usta! Muammoni tezda hal qildi.",
-    bgColor: C.purple,
-    spec: 'Sanitariya jihozlari',
-  },
-  {
-    initial: 'B',
-    name: 'Bobur T.',
-    rating: 5,
-    time: '2 oy oldin',
-    hasPhoto: false,
-    text: 'Narxi adolatli, sifat yuqori. Tavsiya qilaman!',
-    bgColor: C.orange,
-    spec: 'Kran va smesitel',
-  },
-];
+// ─── Rating Bar ───────────────────────────────────────────────────────────────
 
-function ratingBarsFor(reviewList) {
-  const total = reviewList.length;
-  return [5, 4, 3, 2, 1].map((star) => ({
-    label: `${star}★`,
-    pct: total
-      ? Math.round(
-          (reviewList.filter((r) => r.rating === star).length / total) * 100
-        )
-      : 0,
-  }));
+function RatingBar({ label, pct }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      <Text style={st.barLabel}>{label}</Text>
+      <View style={st.barTrack}>
+        {pct > 0 && <View style={[st.barFill, { width: pct + '%' }]} />}
+      </View>
+      <Text style={st.barPct}>{pct}%</Text>
+    </View>
+  );
+}
+
+// ─── Avatar ───────────────────────────────────────────────────────────────────
+
+function Avatar({ initial, size, bgColor, uri }) {
+  const [failed, setFailed] = useState(false);
+  const showImage = uri && !failed;
+
+  return (
+    <View
+      style={[
+        st.avatar,
+        { width: size, height: size, backgroundColor: showImage ? C.card3 : bgColor },
+      ]}
+    >
+      {showImage ? (
+        <Image
+          source={{ uri: encodeImageUri(uri) }}
+          style={{ width: '100%', height: '100%' }}
+          resizeMode="cover"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <Text style={st.avatarTxt}>{initial}</Text>
+      )}
+    </View>
+  );
 }
 
 // ─── Works Carousel ───────────────────────────────────────────────────────────
@@ -146,89 +117,6 @@ function ratingBarsFor(reviewList) {
 const CARD_W = 148;
 const CARD_GAP = 10;
 const CARD_SLOT = CARD_W + CARD_GAP;
-
-const DEFAULT_WORKS = [
-  {
-    id: 1,
-    title: "Vannaxona ta'miri",
-    icon: 'water-pump',
-    color: '#e87b3e',
-    rating: 5.0,
-    spec: 'Sanitariya jihozlari',
-  },
-  {
-    id: 2,
-    title: 'Quvur almashtirish',
-    icon: 'pipe',
-    color: '#3d82d4',
-    rating: 4.9,
-    spec: 'Quvur tizimlari',
-  },
-  {
-    id: 3,
-    title: "Kran o'rnatish",
-    icon: 'wrench',
-    color: '#27a567',
-    rating: 5.0,
-    spec: 'Kran va smesitel',
-  },
-  {
-    id: 4,
-    title: 'Qozon ulanishi',
-    icon: 'radiator',
-    color: '#9466cf',
-    rating: 4.8,
-    spec: 'Isitish tizimi',
-  },
-  {
-    id: 5,
-    title: "Dush o'rnatish",
-    icon: 'shower',
-    color: '#f0b429',
-    rating: 4.9,
-    spec: 'Sanitariya jihozlari',
-  },
-  {
-    id: 6,
-    title: 'Unitaz almashtirish',
-    icon: 'toilet',
-    color: '#e8533e',
-    rating: 5.0,
-    spec: 'Sanitariya jihozlari',
-  },
-  {
-    id: 7,
-    title: "Suv o'tkazgich",
-    icon: 'water',
-    color: '#42a5f5',
-    rating: 4.8,
-    spec: 'Quvur tizimlari',
-  },
-  {
-    id: 8,
-    title: "Filtr o'rnatish",
-    icon: 'water-pump',
-    color: '#26a69a',
-    rating: 4.9,
-    spec: 'Kran va smesitel',
-  },
-  {
-    id: 9,
-    title: 'Isitish tizimi',
-    icon: 'fire',
-    color: '#ff7043',
-    rating: 5.0,
-    spec: 'Isitish tizimi',
-  },
-  {
-    id: 10,
-    title: "Sanitariya ta'miri",
-    icon: 'hammer-wrench',
-    color: '#78909c',
-    rating: 4.7,
-    spec: 'Sanitariya jihozlari',
-  },
-];
 
 function WorksCarousel({ works }) {
   const listRef = useRef(null);
@@ -266,21 +154,30 @@ function WorksCarousel({ works }) {
         }}
         renderItem={({ item }) => (
           <TouchableOpacity style={st.workCard} activeOpacity={0.85}>
-            <View style={[st.workImg, { backgroundColor: item.color + '22' }]}>
-              <MaterialCommunityIcons
-                name={item.icon}
-                size={44}
-                color={item.color + 'bb'}
-              />
-              <View style={st.workBadge}>
-                <Ionicons name="star" size={11} color={C.gold} />
-                <Text style={st.workBadgeTxt}>{item.rating.toFixed(1)}</Text>
-              </View>
+            <View style={[st.workImg, !item.photo && { backgroundColor: C.card3 }]}>
+              {item.photo ? (
+                <Image
+                  source={{ uri: encodeImageUri(item.photo) }}
+                  style={{ width: '100%', height: '100%' }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <MaterialCommunityIcons name="image-outline" size={36} color={C.dim2} />
+              )}
+              {item.rating != null && (
+                <View style={st.workBadge}>
+                  <Ionicons name="star" size={11} color={C.gold} />
+                  <Text style={st.workBadgeTxt}>{Number(item.rating).toFixed(1)}</Text>
+                </View>
+              )}
             </View>
             <View style={{ padding: 10 }}>
               <Text style={st.workTitle} numberOfLines={2}>
                 {item.title}
               </Text>
+              {!!item.workDate && (
+                <Text style={st.workDate}>{formatDate(item.workDate)}</Text>
+              )}
             </View>
           </TouchableOpacity>
         )}
@@ -290,57 +187,6 @@ function WorksCarousel({ works }) {
           <View key={i} style={[st.dot, i === active && st.dotActive]} />
         ))}
       </View>
-    </View>
-  );
-}
-
-// ─── Rating Bar ───────────────────────────────────────────────────────────────
-
-function RatingBar({ label, pct }) {
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-      <Text
-        style={{
-          width: 28,
-          color: C.dim,
-          fontSize: 12,
-          fontWeight: '700',
-          textAlign: 'right',
-        }}
-      >
-        {label}
-      </Text>
-      <View
-        style={{
-          flex: 1,
-          height: 7,
-          borderRadius: 9,
-          backgroundColor: C.card3,
-          overflow: 'hidden',
-        }}
-      >
-        {pct > 0 && (
-          <View
-            style={{
-              width: pct + '%',
-              height: 7,
-              borderRadius: 9,
-              backgroundColor: C.gold,
-            }}
-          />
-        )}
-      </View>
-      <Text
-        style={{
-          width: 30,
-          color: C.dim,
-          fontSize: 12,
-          fontWeight: '600',
-          textAlign: 'right',
-        }}
-      >
-        {pct}%
-      </Text>
     </View>
   );
 }
@@ -355,48 +201,141 @@ export default function UstaDetailScreen({
 }) {
   const insets = useSafeAreaInsets();
   const [reviewFilter, setReviewFilter] = useState('all');
-  const [selectedSpec, setSelectedSpec] = useState(null);
   const [liked, setLiked] = useState(false);
+  const [detail, setDetail] = useState(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [certificates, setCertificates] = useState([]);
+  const [loadingCertificates, setLoadingCertificates] = useState(false);
 
-  const initial = usta?.initial || 'A';
-  const name = usta?.name || 'Alisher Usmonov';
-  const trade = usta?.trade || usta?.profession || 'Santexnik';
-  const rawRating = usta?.rating;
+  useEffect(() => {
+    if (!usta?.id) return;
+    let cancelled = false;
+    setLoadingDetail(true);
+    setCertificates([]);
+    getWorkerById(usta.id)
+      .then((data) => {
+        if (!cancelled) setDetail(data);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoadingDetail(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [usta?.id]);
+
+  useEffect(() => {
+    if (!detail?.id) return;
+    let cancelled = false;
+    setLoadingCertificates(true);
+    getWorkerCertificates(detail.id, detail.mainCategoryId)
+      .then((data) => {
+        if (!cancelled) setCertificates(data);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoadingCertificates(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [detail?.id, detail?.mainCategoryId]);
+
+  const d = detail || usta || {};
+
+  const initial = d.initial || 'A';
+  const name = d.name || '';
+  const trade = d.trade || d.profession || '';
+  const rawRating = d.rating;
   const rating =
-    typeof rawRating === 'number' ? rawRating.toFixed(1) : rawRating || '4.9';
-  const jobs = String(usta?.jobs || '184');
-  const bgColor = usta?.bgColor || usta?.color || C.orange;
-  const location = usta?.location || 'Chilonzor';
-  const experience = usta?.experience || '7 yil';
-  const repeatRate = usta?.repeatRate || '98%';
-  const reviewCount = usta?.reviewCount || jobs;
-  const startingPrice = usta?.startingPrice || '30 000';
-  const reviews = usta?.reviews || DEFAULT_REVIEWS;
-  const works = usta?.works || DEFAULT_WORKS;
-  const specs = usta?.specializations || DEFAULT_SPECS;
-  const services = usta?.services || DEFAULT_SERVICES;
-  const times = usta?.availableTimes || DEFAULT_TIMES;
-  const certs = usta?.certificates || DEFAULT_CERTS;
+    typeof rawRating === 'number' ? rawRating.toFixed(1) : rawRating || '—';
+  const bgColor = d.bgColor || d.color || C.orange;
+  const location = d.location || '';
+  const experience = d.experience || '';
+  const bio = d.bio || '';
+  const isOnline = !!d.is_online;
+  const startingPrice = d.startingPrice || '0';
 
-  const bySpec = (item) => !selectedSpec || item.spec === selectedSpec;
-  const specServices = services.filter(bySpec);
-  const specTimes = times.filter(bySpec);
-  const specCerts = certs.filter(bySpec);
-  const specWorks = works.filter(bySpec);
-  const specReviews = reviews.filter(bySpec);
+  const categories = detail?.categories || [];
+  const portfolio = detail?.portfolio || [];
+  const schedule = detail?.schedule || null;
 
-  const bars = usta?.ratingBars || ratingBarsFor(specReviews);
-  const ratingValue = specReviews.length
-    ? (
-        specReviews.reduce((sum, r) => sum + r.rating, 0) / specReviews.length
-      ).toFixed(1)
-    : rating;
-  const ratingCount = selectedSpec ? specReviews.length : reviewCount;
+  const weekDays = useMemo(() => {
+    if (!schedule) return [];
+    const byId = new Map();
+    schedule.workingDays.forEach((wd) =>
+      byId.set(wd.id, { id: wd.id, name: wd.name, isWorking: true, workStart: wd.workStart, workEnd: wd.workEnd })
+    );
+    schedule.daysOff.forEach((off) => {
+      if (!byId.has(off.id)) byId.set(off.id, { id: off.id, name: off.name, isWorking: false });
+    });
+    return [...byId.values()].sort((a, b) => a.id - b.id);
+  }, [schedule]);
+  const workHours = useMemo(() => {
+    const working = weekDays.filter((d) => d.isWorking);
+    if (working.length === 0) return null;
+    const key = (d) => `${d.workStart}-${d.workEnd}`;
+    const allSame = working.every((d) => key(d) === key(working[0]));
+    if (!allSame) return null;
+    return `${working[0].workStart.slice(0, 5)} – ${working[0].workEnd.slice(0, 5)}`;
+  }, [weekDays]);
+  const offDates = schedule?.offDates || [];
 
+  const badges = [];
+  const reliabilityMeta = RELIABILITY_BADGES[d.reliability_badge];
+  if (reliabilityMeta) badges.push(reliabilityMeta);
+  if (d.vip_status && d.vip_status !== 'none') {
+    badges.push({ emoji: '👑', label: 'VIP usta', color: C.purple, bg: 'rgba(148,102,207,0.14)' });
+  }
+
+  const secondaryStat =
+    d.repeatClientRate != null
+      ? {
+          value: `${Math.round(d.repeatClientRate)}%`,
+          label: 'Qayta chaqiruv',
+          icon: 'repeat-variant',
+          color: C.blue,
+        }
+      : d.acceptanceRate != null
+        ? {
+            value: `${Math.round(d.acceptanceRate)}%`,
+            label: 'Qabul qilish',
+            icon: 'thumb-up-outline',
+            color: C.blue,
+          }
+        : null;
+  const statItems = [
+    experience
+      ? { value: experience, label: 'Tajriba', icon: 'briefcase-outline', color: C.orange }
+      : null,
+    secondaryStat,
+    detail?.completedJobsCount
+      ? {
+          value: String(detail.completedJobsCount),
+          label: 'Bajarilgan ish',
+          icon: 'hammer-wrench',
+          color: C.purple,
+        }
+      : {
+          value: String(portfolio.length),
+          label: 'Namuna ishlar',
+          icon: 'image-multiple-outline',
+          color: C.purple,
+        },
+  ].filter(Boolean);
+
+  const languages = Array.isArray(d.languages) ? d.languages : [];
+  const avgResponseMin = detail?.avgResponseMin;
+  const reviewCount = detail?.reviewCount ?? 0;
+  const ratingBreakdown = detail?.ratingBreakdown ?? null;
+  const isIdentityVerified = !!detail?.isIdentityVerified;
+
+  const reviewItems = portfolio.filter((p) => p.comment || p.rating != null);
   const shownReviews =
     reviewFilter === 'photo'
-      ? specReviews.filter((r) => r.hasPhoto)
-      : specReviews;
+      ? reviewItems.filter((p) => p.photos?.length)
+      : reviewItems;
 
   return (
     <SafeAreaView style={st.safe} edges={['top', 'left', 'right']}>
@@ -457,9 +396,7 @@ export default function UstaDetailScreen({
               alignItems: 'center',
             }}
           >
-            <View style={[st.avatar, { backgroundColor: bgColor }]}>
-              <Text style={st.avatarTxt}>{initial}</Text>
-            </View>
+            <Avatar initial={initial} size={68} bgColor={bgColor} uri={d.profile_photo} />
             <View style={{ flex: 1 }}>
               <View
                 style={{
@@ -469,14 +406,22 @@ export default function UstaDetailScreen({
                   flexWrap: 'wrap',
                 }}
               >
+                {isOnline && (
+                  <View style={st.onlinePill}>
+                    <View style={st.onlineDot} />
+                    <Text style={st.onlinePillTxt}>Onlayn</Text>
+                  </View>
+                )}
                 <Text style={{ fontSize: 19, fontWeight: '800', color: C.txt }}>
                   {name}
                 </Text>
-                <MaterialCommunityIcons
-                  name="shield-check"
-                  size={18}
-                  color={C.green}
-                />
+                {isIdentityVerified && (
+                  <MaterialCommunityIcons
+                    name="shield-check"
+                    size={18}
+                    color={C.green}
+                  />
+                )}
               </View>
               <View
                 style={{
@@ -488,7 +433,7 @@ export default function UstaDetailScreen({
               >
                 <Ionicons name="location-outline" size={13} color={C.dim} />
                 <Text style={{ fontSize: 13, color: C.dim }} numberOfLines={1}>
-                  {trade} · {location} · 1.2 km
+                  {[trade, location].filter(Boolean).join(' · ')}
                 </Text>
               </View>
               <View
@@ -507,186 +452,150 @@ export default function UstaDetailScreen({
                     {rating}
                   </Text>
                 </View>
-                <Text style={{ fontSize: 12.5, color: C.dim }}>
-                  · {reviewCount} ta sharh
-                </Text>
+                {avgResponseMin != null && (
+                  <Text style={{ fontSize: 12.5, color: C.dim }}>
+                    · ~{avgResponseMin} daq javob
+                  </Text>
+                )}
               </View>
             </View>
           </View>
 
-          {/* ── Online status ── */}
-          {isLoggedIn && (
-            <View
-              style={[
-                st.card2,
-                {
-                  marginTop: 14,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: 12,
-                  paddingHorizontal: 15,
-                },
-              ]}
-            >
-              <View
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
-              >
-                <View
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: 4,
-                    backgroundColor: C.green,
-                  }}
-                />
-                <Text
-                  style={{ fontSize: 13.5, fontWeight: '700', color: C.green }}
-                >
-                  Hozir onlayn
-                </Text>
-              </View>
-              <View
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}
-              >
-                <Ionicons name="time-outline" size={14} color={C.dim} />
-                <Text style={{ fontSize: 12.5, color: C.dim }}>
-                  ~5 daqiqada javob beradi
-                </Text>
-              </View>
-            </View>
+          {!!bio && (
+            <Text style={{ fontSize: 13.5, color: '#c4cdd8', marginTop: 12, lineHeight: 19 }}>
+              {bio}
+            </Text>
+          )}
+
+          {loadingDetail && !detail && (
+            <AfishLoader size={64} style={{ alignItems: 'center', marginTop: 14 }} />
           )}
 
           {/* ── Stats ── */}
-          <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
-            {[
-              [jobs, 'Bajarilgan'],
-              [experience, 'Tajriba'],
-              [repeatRate, 'Qayta chaqiruv'],
-            ].map(([v, l], i) => (
-              <View
-                key={i}
-                style={[
-                  st.card,
-                  { flex: 1, alignItems: 'center', paddingVertical: 13 },
-                ]}
-              >
-                <Text style={{ fontSize: 17, fontWeight: '800', color: C.txt }}>
-                  {v}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 11.5,
-                    color: C.dim,
-                    marginTop: 2,
-                    textAlign: 'center',
-                  }}
-                >
-                  {l}
-                </Text>
-              </View>
-            ))}
-          </View>
-
-          {/* ── Badges ── */}
-          <View
-            style={{
-              flexDirection: 'row',
-              gap: 8,
-              marginTop: 12,
-              flexWrap: 'wrap',
-            }}
-          >
-            {[
-              {
-                emoji: '🏆',
-                label: 'Top 5%',
-                bg: 'rgba(240,180,41,0.14)',
-                color: C.gold,
-              },
-              {
-                emoji: '⚡',
-                label: 'Tezkor',
-                bg: 'rgba(61,130,212,0.14)',
-                color: C.blue,
-              },
-              {
-                emoji: '🛡',
-                label: 'Kafolatli',
-                bg: 'rgba(39,165,103,0.14)',
-                color: C.green,
-              },
-            ].map((b, i) => (
-              <View
-                key={i}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 5,
-                  backgroundColor: b.bg,
-                  paddingHorizontal: 11,
-                  paddingVertical: 7,
-                  borderRadius: 10,
-                }}
-              >
-                <Text style={{ fontSize: 13 }}>{b.emoji}</Text>
-                <Text
-                  style={{ fontSize: 12.5, fontWeight: '800', color: b.color }}
-                >
-                  {b.label}
-                </Text>
-              </View>
-            ))}
-          </View>
-
-          {/* ── Mutaxassislik ── */}
-          <Text style={st.secTitle}>Mutaxassislik</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-            <TouchableOpacity
-              style={[st.chip, !selectedSpec && st.chipActive]}
-              onPress={() => setSelectedSpec(null)}
-              activeOpacity={0.8}
-            >
-              <Text
-                style={{
-                  fontSize: 13,
-                  fontWeight: '700',
-                  color: !selectedSpec ? C.orange : C.txt,
-                }}
-              >
-                Barchasi
-              </Text>
-            </TouchableOpacity>
-            {specs.map((s, i) => (
-              <TouchableOpacity
-                key={i}
-                style={[st.chip, selectedSpec === s && st.chipActive]}
-                onPress={() => setSelectedSpec(s)}
-                activeOpacity={0.8}
-              >
-                <Text
-                  style={{
-                    fontSize: 13,
-                    fontWeight: '700',
-                    color: selectedSpec === s ? C.orange : C.txt,
-                  }}
-                >
-                  {s}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* ── Xizmatlar narxi ── */}
-          <Text style={st.secTitle}>Xizmatlar narxi</Text>
-          {specServices.length > 0 ? (
-            <View style={st.card}>
-              {specServices.map((svc, i) => (
+          {statItems.length > 0 && (
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
+              {statItems.map((s, i) => (
                 <View
                   key={i}
                   style={[
+                    st.card,
+                    { flex: 1, alignItems: 'center', paddingVertical: 13 },
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name={s.icon}
+                    size={17}
+                    color={s.color}
+                    style={{ marginBottom: 5 }}
+                  />
+                  <Text style={{ fontSize: 17, fontWeight: '800', color: C.txt }}>
+                    {s.value}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 11.5,
+                      color: C.dim,
+                      marginTop: 2,
+                      textAlign: 'center',
+                    }}
+                  >
+                    {s.label}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* ── Badges ── */}
+          {badges.length > 0 && (
+            <View
+              style={{
+                flexDirection: 'row',
+                gap: 8,
+                marginTop: 12,
+                flexWrap: 'wrap',
+              }}
+            >
+              {badges.map((b, i) => (
+                <View
+                  key={i}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 5,
+                    backgroundColor: b.bg,
+                    paddingHorizontal: 11,
+                    paddingVertical: 7,
+                    borderRadius: 10,
+                  }}
+                >
+                  <Text style={{ fontSize: 13 }}>{b.emoji}</Text>
+                  <Text
+                    style={{ fontSize: 12.5, fontWeight: '800', color: b.color }}
+                  >
+                    {b.label}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* ── Tillar ── */}
+          {languages.length > 0 && (
+            <>
+              <Text style={st.secTitle}>Biladigan tillari</Text>
+              <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+                {languages.map((lang, i) => (
+                  <View key={i} style={st.langChip}>
+                    <View style={st.langIconWrap}>
+                      <MaterialCommunityIcons name="translate" size={13} color={C.blue} />
+                    </View>
+                    <Text style={st.langChipTxt}>{lang}</Text>
+                  </View>
+                ))}
+              </View>
+            </>
+          )}
+
+          {/* ── Mutaxassislik ── */}
+          <Text style={st.secTitle}>Mutaxassislik</Text>
+          {categories.length > 0 ? (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {categories.map((c) => (
+                <View
+                  key={c.id}
+                  style={[st.chip, c.isPrimary && st.chipActive]}
+                >
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: '700',
+                      color: c.isPrimary ? C.orange : C.txt,
+                    }}
+                  >
+                    {c.name}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <View style={[st.card, { padding: 16, alignItems: 'center' }]}>
+              <Text style={{ fontSize: 12.5, color: C.dim }}>
+                {loadingDetail ? 'Yuklanmoqda...' : "Mutaxassisliklar hali qo'shilmagan"}
+              </Text>
+            </View>
+          )}
+
+          {/* ── Xizmatlar narxi ── */}
+          <Text style={st.secTitle}>Xizmatlar narxi</Text>
+          {categories.length > 0 ? (
+            <View style={st.card}>
+              {categories.map((c, i) => (
+                <View
+                  key={c.id}
+                  style={[
                     st.svcRow,
-                    i < specServices.length - 1 && {
+                    i < categories.length - 1 && {
                       borderBottomWidth: 1,
                       borderBottomColor: C.line,
                     },
@@ -701,7 +610,7 @@ export default function UstaDetailScreen({
                       marginRight: 8,
                     }}
                   >
-                    {svc.name}
+                    {c.name}
                   </Text>
                   <View
                     style={{
@@ -710,15 +619,27 @@ export default function UstaDetailScreen({
                       gap: 2,
                     }}
                   >
-                    <Text
-                      style={{ fontSize: 14, fontWeight: '800', color: C.txt }}
-                    >
-                      {svc.price}
-                    </Text>
-                    <Text style={{ fontSize: 11.5, color: C.dim }}>
-                      {' '}
-                      so'm dan
-                    </Text>
+                    {c.isNegotiable ? (
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: C.dim }}>
+                        Kelishilgan narx
+                      </Text>
+                    ) : c.minPrice || c.price ? (
+                      <>
+                        <Text
+                          style={{ fontSize: 14, fontWeight: '800', color: C.txt }}
+                        >
+                          {c.minPrice || c.price}
+                        </Text>
+                        <Text style={{ fontSize: 11.5, color: C.dim }}>
+                          {' '}
+                          {c.currency} dan
+                        </Text>
+                      </>
+                    ) : (
+                      <Text style={{ fontSize: 12.5, color: C.dim }}>
+                        Narx ko'rsatilmagan
+                      </Text>
+                    )}
                   </View>
                 </View>
               ))}
@@ -726,90 +647,94 @@ export default function UstaDetailScreen({
           ) : (
             <View style={[st.card, { padding: 16, alignItems: 'center' }]}>
               <Text style={{ fontSize: 12.5, color: C.dim }}>
-                Bu yo'nalish bo'yicha xizmatlar hali qo'shilmagan
+                {loadingDetail ? 'Yuklanmoqda...' : "Xizmatlar hali qo'shilmagan"}
               </Text>
             </View>
           )}
 
-          {/* ── Bo'sh vaqtlar ── */}
-          {isLoggedIn && (
+          {/* ── Ish jadvali ── */}
+          {isLoggedIn && weekDays.length > 0 && (
             <>
-              <Text style={st.secTitle}>Bo'sh vaqtlar</Text>
-              {specTimes.length > 0 ? (
+              <Text style={st.secTitle}>Ish jadvali</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {weekDays.map((day) => (
+                  <View
+                    key={day.id}
+                    style={[
+                      st.chip,
+                      { paddingHorizontal: 12 },
+                      day.isWorking ? st.dayChipOn : st.dayChipOff,
+                    ]}
+                  >
+                    {day.isWorking && <View style={st.dayDot} />}
+                    <Text
+                      style={[
+                        st.dayChipTxt,
+                        { color: day.isWorking ? C.green : C.dim },
+                      ]}
+                    >
+                      {day.name.slice(0, 3)}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+              {!!workHours && (
                 <View
-                  style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}
+                  style={[
+                    st.card2,
+                    {
+                      marginTop: 10,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 8,
+                      padding: 12,
+                    },
+                  ]}
                 >
-                  {specTimes.map((tm, i) => (
-                    <View key={i} style={[st.chip, i === 0 && st.chipActive]}>
-                      <Ionicons
-                        name="time-outline"
-                        size={14}
-                        color={i === 0 ? C.orange : C.dim}
-                      />
-                      <Text
-                        style={{
-                          fontSize: 13,
-                          fontWeight: '700',
-                          color: i === 0 ? C.orange : C.txt,
-                        }}
-                      >
-                        {tm.label}
-                      </Text>
-                    </View>
-                  ))}
+                  <Ionicons name="time-outline" size={16} color={C.dim} />
+                  <Text style={{ fontSize: 13, color: C.txt, fontWeight: '600' }}>
+                    {workHours}
+                  </Text>
                 </View>
-              ) : (
-                <Text style={{ fontSize: 12.5, color: C.dim }}>
-                  Bu yo'nalish bo'yicha bo'sh vaqt yo'q
-                </Text>
+              )}
+              {offDates.length > 0 && (
+                <View
+                  style={[
+                    st.card2,
+                    {
+                      marginTop: 10,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 8,
+                      padding: 12,
+                    },
+                  ]}
+                >
+                  <MaterialCommunityIcons name="calendar-remove-outline" size={16} color={C.dim} />
+                  <Text style={{ fontSize: 12.5, color: C.dim, flex: 1 }}>
+                    Dam olish kunlari: {offDates.map(formatDate).join(', ')}
+                  </Text>
+                </View>
               )}
             </>
           )}
 
           {/* ── Sertifikatlar ── */}
           <Text style={st.secTitle}>Sertifikatlar</Text>
-          {specCerts.length > 0 ? (
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              {specCerts.map((c, i) => (
-                <View key={i} style={[st.card, { flex: 1, padding: 13 }]}>
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      gap: 8,
-                      alignItems: 'center',
-                    }}
-                  >
-                    <View
-                      style={{
-                        width: 34,
-                        height: 34,
-                        borderRadius: 10,
-                        backgroundColor: 'rgba(39,165,103,0.14)',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <MaterialCommunityIcons
-                        name="shield-check"
-                        size={18}
-                        color={C.green}
-                      />
+          {certificates.length > 0 ? (
+            <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
+              {certificates.map((c) => (
+                <View key={c.id} style={[st.card, { flexBasis: '48%', flexGrow: 1, padding: 13 }]}>
+                  <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                    <View style={st.certIconWrap}>
+                      <MaterialCommunityIcons name="shield-check" size={18} color={C.green} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text
-                        style={{
-                          fontSize: 12.5,
-                          fontWeight: '700',
-                          color: C.txt,
-                          lineHeight: 17,
-                        }}
-                      >
-                        {c.name}
+                      <Text style={st.certTitle} numberOfLines={2}>
+                        {c.title}
                       </Text>
-                      <Text
-                        style={{ fontSize: 11, color: C.dim, marginTop: 2 }}
-                      >
-                        {c.year}
+                      <Text style={st.certMeta}>
+                        {[c.issuedBy, formatDate(c.issuedAt)].filter(Boolean).join(' · ')}
                       </Text>
                     </View>
                   </View>
@@ -817,11 +742,11 @@ export default function UstaDetailScreen({
               ))}
             </View>
           ) : (
-            <View style={[st.card, { padding: 16, alignItems: 'center' }]}>
-              <Text style={{ fontSize: 12.5, color: C.dim }}>
-                Bu yo'nalish bo'yicha sertifikat yo'q
-              </Text>
-            </View>
+            <EmptyState
+              icon="certificate-outline"
+              title={loadingCertificates ? 'Yuklanmoqda...' : "Sertifikatlar hali yo'q"}
+              subtitle={loadingCertificates ? undefined : 'Bu usta hozircha sertifikat qo\'shmagan'}
+            />
           )}
         </View>
 
@@ -834,11 +759,11 @@ export default function UstaDetailScreen({
         >
           Ishlari
         </Text>
-        {specWorks.length > 0 ? (
-          <WorksCarousel works={specWorks} />
+        {portfolio.length > 0 ? (
+          <WorksCarousel works={portfolio} />
         ) : (
           <Text style={{ fontSize: 12.5, color: C.dim, paddingHorizontal: 20 }}>
-            Bu yo'nalish bo'yicha ishlar hali qo'shilmagan
+            {loadingDetail ? 'Yuklanmoqda...' : "Ishlari hali qo'shilmagan"}
           </Text>
         )}
 
@@ -846,160 +771,155 @@ export default function UstaDetailScreen({
         <View style={st.pad}>
           {/* ── Reyting ── */}
           <Text style={[st.secTitle, { marginTop: 22 }]}>Reyting</Text>
-          <View style={st.card}>
-            <View
-              style={{
-                flexDirection: 'row',
-                gap: 18,
-                alignItems: 'center',
-                padding: 16,
-              }}
-            >
-              <View style={{ alignItems: 'center', minWidth: 68 }}>
-                <Text
-                  style={{
-                    fontSize: 38,
-                    fontWeight: '800',
-                    color: C.txt,
-                    lineHeight: 42,
-                  }}
-                >
-                  {ratingValue}
-                </Text>
-                <View style={{ flexDirection: 'row', gap: 2, marginTop: 6 }}>
-                  {[...Array(5)].map((_, k) => (
-                    <Ionicons key={k} name="star" size={13} color={C.gold} />
-                  ))}
-                </View>
-                <Text style={{ fontSize: 11.5, color: C.dim, marginTop: 5 }}>
-                  {ratingCount} sharh
-                </Text>
-              </View>
-              <View style={{ flex: 1, gap: 7 }}>
-                {bars.map((b, i) => (
-                  <RatingBar key={i} label={b.label} pct={b.pct} />
-                ))}
-              </View>
-            </View>
-          </View>
-
-          {/* ── Sharhlar + filter ── */}
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginTop: 22,
-              marginBottom: 12,
-            }}
-          >
-            <Text style={{ fontSize: 15, fontWeight: '800', color: C.txt }}>
-              Sharhlar
-            </Text>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              {[
-                ['all', 'Hammasi'],
-                ['photo', 'Fotoli'],
-              ].map(([key, label]) => (
-                <TouchableOpacity
-                  key={key}
-                  onPress={() => setReviewFilter(key)}
-                  style={[
-                    st.filterChip,
-                    reviewFilter === key && st.filterChipOn,
-                  ]}
-                  activeOpacity={0.75}
-                >
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      fontWeight: '700',
-                      color: reviewFilter === key ? C.orange : C.txt,
-                    }}
-                  >
-                    {label}
+          {reviewCount > 0 ? (
+            <View style={st.card}>
+              <View style={{ flexDirection: 'row', gap: 18, alignItems: 'center', padding: 16 }}>
+                <View style={{ alignItems: 'center', minWidth: 68 }}>
+                  <Text style={{ fontSize: 38, fontWeight: '800', color: C.txt, lineHeight: 42 }}>
+                    {rating}
                   </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <View style={{ gap: 12 }}>
-            {shownReviews.map((r, i) => (
-              <View key={i} style={[st.card, { padding: 14 }]}>
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
-                >
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      gap: 10,
-                      alignItems: 'center',
-                    }}
-                  >
-                    <View style={[st.revAv, { backgroundColor: r.bgColor }]}>
-                      <Text style={st.revAvTxt}>{r.initial}</Text>
-                    </View>
-                    <View>
-                      <Text
-                        style={{
-                          fontWeight: '700',
-                          fontSize: 14,
-                          color: C.txt,
-                        }}
-                      >
-                        {r.name}
-                      </Text>
-                      <Text
-                        style={{ fontSize: 11, color: C.dim, marginTop: 1 }}
-                      >
-                        {r.time}
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={{ flexDirection: 'row', gap: 2 }}>
-                    {[...Array(r.rating)].map((_, k) => (
+                  <View style={{ flexDirection: 'row', gap: 2, marginTop: 6 }}>
+                    {[...Array(5)].map((_, k) => (
                       <Ionicons key={k} name="star" size={13} color={C.gold} />
                     ))}
                   </View>
+                  <Text style={{ fontSize: 11.5, color: C.dim, marginTop: 5 }}>
+                    {reviewCount} sharh
+                  </Text>
                 </View>
-                <Text
-                  style={{
-                    fontSize: 13.5,
-                    color: '#c4cdd8',
-                    marginTop: 10,
-                    lineHeight: 20,
-                  }}
-                >
-                  {r.text}
-                </Text>
-                {r.hasPhoto && (
-                  <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-                    {[0, 1].map((_, k) => (
-                      <View key={k} style={st.revPhoto}>
-                        <MaterialCommunityIcons
-                          name="image-outline"
-                          size={22}
-                          color={C.dim2}
-                        />
-                      </View>
-                    ))}
+                {ratingBreakdown && (
+                  <View style={{ flex: 1, gap: 7 }}>
+                    {[5, 4, 3, 2, 1].map((star) => {
+                      const count = ratingBreakdown[star] ?? 0;
+                      const pct = Math.round((count / reviewCount) * 100);
+                      return <RatingBar key={star} label={`${star}★`} pct={pct} />;
+                    })}
                   </View>
                 )}
               </View>
-            ))}
-            {shownReviews.length === 0 && (
-              <View style={[st.card, { padding: 16, alignItems: 'center' }]}>
-                <Text style={{ fontSize: 12.5, color: C.dim }}>
-                  Bu yo'nalish bo'yicha sharhlar hali yo'q
+            </View>
+          ) : (
+            <EmptyState
+              icon="chatbubbles-outline"
+              iconSet={Ionicons}
+              title="Sharhlar tez orada"
+              subtitle="Mijozlar sharhlari hozircha mavjud emas"
+            />
+          )}
+
+          {/* ── Sharhlar + filter ── */}
+          {reviewItems.length > 0 && (
+            <>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginTop: 22,
+                  marginBottom: 12,
+                }}
+              >
+                <Text style={{ fontSize: 15, fontWeight: '800', color: C.txt }}>
+                  Sharhlar
                 </Text>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  {[
+                    ['all', 'Hammasi'],
+                    ['photo', 'Fotoli'],
+                  ].map(([key, label]) => (
+                    <TouchableOpacity
+                      key={key}
+                      onPress={() => setReviewFilter(key)}
+                      style={[st.filterChip, reviewFilter === key && st.filterChipOn]}
+                      activeOpacity={0.75}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: '700',
+                          color: reviewFilter === key ? C.orange : C.txt,
+                        }}
+                      >
+                        {label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
-            )}
-          </View>
+
+              <View style={{ gap: 12 }}>
+                {shownReviews.map((p) => (
+                  <View key={p.id} style={[st.card, { padding: 14 }]}>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          gap: 10,
+                          alignItems: 'center',
+                          flex: 1,
+                          marginRight: 8,
+                        }}
+                      >
+                        <View style={[st.revAv, { backgroundColor: C.card3 }]}>
+                          <MaterialCommunityIcons name="briefcase-outline" size={16} color={C.dim} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={{ fontWeight: '700', fontSize: 14, color: C.txt }}
+                            numberOfLines={1}
+                          >
+                            {p.title}
+                          </Text>
+                          <Text style={{ fontSize: 11, color: C.dim, marginTop: 1 }}>
+                            {formatDate(p.workDate)}
+                          </Text>
+                        </View>
+                      </View>
+                      {p.rating != null && (
+                        <View style={{ flexDirection: 'row', gap: 2 }}>
+                          {[...Array(Math.round(p.rating))].map((_, k) => (
+                            <Ionicons key={k} name="star" size={13} color={C.gold} />
+                          ))}
+                        </View>
+                      )}
+                    </View>
+                    {!!p.comment && (
+                      <Text
+                        style={{ fontSize: 13.5, color: '#c4cdd8', marginTop: 10, lineHeight: 20 }}
+                      >
+                        {p.comment}
+                      </Text>
+                    )}
+                    {p.photos?.length > 0 && (
+                      <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+                        {p.photos.slice(0, 2).map((photoUri, k) => (
+                          <Image
+                            key={k}
+                            source={{ uri: encodeImageUri(photoUri) }}
+                            style={st.revPhoto}
+                            resizeMode="cover"
+                          />
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                ))}
+                {shownReviews.length === 0 && (
+                  <View style={[st.card, { padding: 16, alignItems: 'center' }]}>
+                    <Text style={{ fontSize: 12.5, color: C.dim }}>
+                      Fotoli sharhlar hali yo'q
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </>
+          )}
         </View>
       </ScrollView>
 
@@ -1051,12 +971,11 @@ const st = StyleSheet.create({
   headerTitle: { color: C.txt, fontSize: 17, fontWeight: '700' },
 
   avatar: {
-    width: 68,
-    height: 68,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
+    overflow: 'hidden',
   },
   avatarTxt: { color: '#fff', fontSize: 26, fontWeight: '800' },
 
@@ -1107,6 +1026,17 @@ const st = StyleSheet.create({
     borderColor: C.orange,
   },
 
+  /* Work-day chips */
+  dayChipOn: {
+    backgroundColor: 'rgba(39,165,103,0.14)',
+    borderColor: C.green,
+  },
+  dayChipOff: {
+    opacity: 0.4,
+  },
+  dayChipTxt: { fontSize: 13, fontWeight: '700' },
+  dayDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.green },
+
   svcRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1144,6 +1074,7 @@ const st = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 17,
   },
+  workDate: { color: C.dim, fontSize: 10.5, marginTop: 3 },
 
   dots: {
     flexDirection: 'row',
@@ -1153,6 +1084,48 @@ const st = StyleSheet.create({
   },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.card3 },
   dotActive: { width: 18, backgroundColor: C.orange },
+
+  /* Language chips */
+  langChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    backgroundColor: 'rgba(61,130,212,0.10)',
+    borderWidth: 1,
+    borderColor: 'rgba(61,130,212,0.35)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    paddingRight: 13,
+    borderRadius: 20,
+  },
+  langIconWrap: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(61,130,212,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  langChipTxt: { fontSize: 12.5, fontWeight: '700', color: C.blue },
+
+  /* Online indicator */
+  onlinePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(39,165,103,0.16)',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 7,
+  },
+  onlineDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.green },
+  onlinePillTxt: { fontSize: 10.5, fontWeight: '800', color: C.green },
+
+  /* Rating bars */
+  barLabel: { width: 28, color: C.dim, fontSize: 12, fontWeight: '700', textAlign: 'right' },
+  barTrack: { flex: 1, height: 7, borderRadius: 9, backgroundColor: C.card3, overflow: 'hidden' },
+  barFill: { height: 7, borderRadius: 9, backgroundColor: C.gold },
+  barPct: { width: 30, color: C.dim, fontSize: 12, fontWeight: '600', textAlign: 'right' },
 
   /* Filter */
   filterChip: {
@@ -1178,7 +1151,6 @@ const st = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  revAvTxt: { color: '#fff', fontSize: 14, fontWeight: '700' },
   revPhoto: {
     width: 60,
     height: 60,
@@ -1186,9 +1158,37 @@ const st = StyleSheet.create({
     backgroundColor: C.card2,
     borderWidth: 1,
     borderColor: C.line,
+  },
+
+  /* Certificates */
+  certIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: 'rgba(39,165,103,0.14)',
     alignItems: 'center',
     justifyContent: 'center',
   },
+  certTitle: { fontSize: 12.5, fontWeight: '700', color: C.txt, lineHeight: 17 },
+  certMeta: { fontSize: 11, color: C.dim, marginTop: 2 },
+
+  /* Empty state */
+  emptyCard: {
+    alignItems: 'center',
+    paddingVertical: 26,
+    paddingHorizontal: 16,
+  },
+  emptyIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: C.card3,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  emptyTitle: { fontSize: 13.5, fontWeight: '700', color: C.txt },
+  emptyText: { fontSize: 12, color: C.dim, marginTop: 3, textAlign: 'center' },
 
   /* Bottom CTA */
   bottomBar: {
