@@ -14,6 +14,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Feather from '@expo/vector-icons/Feather';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const HIT_SLOP = { top: 10, bottom: 10, left: 10, right: 10 };
 const AVATAR_COLORS = [
@@ -179,20 +180,22 @@ function HeroPhotos({ photos, index, onIndexChange, t }) {
 
 export default function WorkDetailScreen({ work, onBack, onSelectUsta }) {
   const { theme: t } = useTheme();
+  const { t: tr } = useLanguage();
   const [photoIndex, setPhotoIndex] = useState(0);
 
-  const title = work?.title || 'Ish tafsilotlari';
+  const title = work?.title || tr('workDetail.headerTitle');
   const worker = work?.worker || '';
   const rating = typeof work?.rating === 'number' ? work.rating : 0;
   const photos = work?.photos || [];
   const workerInitial = worker ? worker[0].toUpperCase() : '?';
   const workerColor = colorForName(worker);
   const details = mockWorkDetails(work);
+  const unknownMaster = tr('workDetail.unknownMaster');
 
   const openUstaProfile = () => {
     onSelectUsta?.({
       initial: workerInitial,
-      name: worker || "Noma'lum usta",
+      name: worker || unknownMaster,
       trade: details.category,
       rating,
       bgColor: workerColor,
@@ -202,9 +205,11 @@ export default function WorkDetailScreen({ work, onBack, onSelectUsta }) {
 
   const share = () => {
     Share.share({
-      message: `"${title}" — ${
-        worker ? `${worker} tomonidan bajarilgan, ` : ''
-      }reyting ${rating.toFixed(1)} ★. Ilovada ko'ring!`,
+      message: tr('workDetail.shareMessage', {
+        title,
+        byline: worker ? tr('workDetail.shareByline', { worker }) : '',
+        rating: rating.toFixed(1),
+      }),
     }).catch(() => {});
   };
 
@@ -231,7 +236,7 @@ export default function WorkDetailScreen({ work, onBack, onSelectUsta }) {
           />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: t.text }]} numberOfLines={1}>
-          Ish tafsilotlari
+          {tr('workDetail.headerTitle')}
         </Text>
         <TouchableOpacity
           style={[
@@ -259,7 +264,7 @@ export default function WorkDetailScreen({ work, onBack, onSelectUsta }) {
 
           <View style={styles.donePill}>
             <Ionicons name="checkmark-circle" size={13} color="#2fa37a" />
-            <Text style={styles.donePillText}>Yakunlangan</Text>
+            <Text style={styles.donePillText}>{tr('workDetail.done')}</Text>
           </View>
 
           <View style={styles.ratingPill}>
@@ -310,13 +315,13 @@ export default function WorkDetailScreen({ work, onBack, onSelectUsta }) {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.workerLabel, { color: t.muted }]}>
-                Ijrochi usta
+                {tr('workDetail.performingMaster')}
               </Text>
               <Text
                 style={[styles.workerName, { color: t.text }]}
                 numberOfLines={1}
               >
-                {worker || "Noma'lum usta"}
+                {worker || unknownMaster}
               </Text>
             </View>
             <View style={styles.workerRatingBadge}>
@@ -329,7 +334,7 @@ export default function WorkDetailScreen({ work, onBack, onSelectUsta }) {
           </TouchableOpacity>
 
           <Text style={[styles.sectionLabel, { color: t.text }]}>
-            Ish narxi
+            {tr('workDetail.priceTitle')}
           </Text>
           <View
             style={[
@@ -339,10 +344,10 @@ export default function WorkDetailScreen({ work, onBack, onSelectUsta }) {
           >
             <View style={styles.priceHeaderRow}>
               <Text style={[styles.priceTotalLabel, { color: t.muted }]}>
-                Umumiy narx
+                {tr('workDetail.totalPrice')}
               </Text>
               <Text style={[styles.priceTotalValue, { color: t.text }]}>
-                {formatPrice(details.price)} so'm
+                {formatPrice(details.price)} {tr('common.currencySom')}
               </Text>
             </View>
             <View
@@ -352,29 +357,29 @@ export default function WorkDetailScreen({ work, onBack, onSelectUsta }) {
               <View style={styles.priceRowLeft}>
                 <Feather name="package" size={14} color={t.muted} />
                 <Text style={[styles.priceRowLabel, { color: t.muted }]}>
-                  Materiallar
+                  {tr('workDetail.materials')}
                 </Text>
               </View>
               <Text style={[styles.priceRowValue, { color: t.text }]}>
-                {formatPrice(details.priceMaterial)} so'm
+                {formatPrice(details.priceMaterial)} {tr('common.currencySom')}
               </Text>
             </View>
             <View style={styles.priceRow}>
               <View style={styles.priceRowLeft}>
                 <Feather name="tool" size={14} color={t.muted} />
                 <Text style={[styles.priceRowLabel, { color: t.muted }]}>
-                  Ish haqi
+                  {tr('workDetail.laborCost')}
                 </Text>
               </View>
               <Text style={[styles.priceRowValue, { color: t.text }]}>
-                {formatPrice(details.priceLabor)} so'm
+                {formatPrice(details.priceLabor)} {tr('common.currencySom')}
               </Text>
             </View>
             <View style={styles.priceRow}>
               <View style={styles.priceRowLeft}>
                 <Feather name="clock" size={14} color={t.muted} />
                 <Text style={[styles.priceRowLabel, { color: t.muted }]}>
-                  Davomiyligi
+                  {tr('workDetail.duration')}
                 </Text>
               </View>
               <Text style={[styles.priceRowValue, { color: t.text }]}>
@@ -384,7 +389,7 @@ export default function WorkDetailScreen({ work, onBack, onSelectUsta }) {
           </View>
 
           <Text style={[styles.sectionLabel, { color: t.text }]}>
-            Usta izohi
+            {tr('workDetail.masterNoteTitle')}
           </Text>
           <View
             style={[
@@ -406,7 +411,7 @@ export default function WorkDetailScreen({ work, onBack, onSelectUsta }) {
                 style={[styles.noteName, { color: t.text, flex: 1 }]}
                 numberOfLines={1}
               >
-                {worker || "Noma'lum usta"}
+                {worker || unknownMaster}
               </Text>
               <Feather name="chevron-right" size={15} color={t.muted} />
             </TouchableOpacity>
@@ -416,7 +421,7 @@ export default function WorkDetailScreen({ work, onBack, onSelectUsta }) {
           </View>
 
           <Text style={[styles.sectionLabel, { color: t.text }]}>
-            Mijoz sharhi
+            {tr('workDetail.customerReviewTitle')}
           </Text>
           <View
             style={[
@@ -456,7 +461,7 @@ export default function WorkDetailScreen({ work, onBack, onSelectUsta }) {
           {photos.length > 1 && (
             <>
               <Text style={[styles.sectionLabel, { color: t.text }]}>
-                Barcha suratlar ({photos.length})
+                {tr('workDetail.allPhotos', { count: photos.length })}
               </Text>
               <View style={styles.thumbRow}>
                 {photos.map((uri, i) => (

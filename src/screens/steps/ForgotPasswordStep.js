@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import PhoneInput from '../../components/login/PhoneInput';
 
 export default function ForgotPasswordStep({
@@ -23,6 +24,7 @@ export default function ForgotPasswordStep({
   error = '',
 }) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const isDark = theme.isDark !== false;
   const isUsta = actorType === 'worker';
   const isReady = phone.length === 9 && !loading;
@@ -58,14 +60,14 @@ export default function ForgotPasswordStep({
               style={s.logo}
               resizeMode="contain"
             />
-            <Text style={[s.h1, { color: theme.text }]}>Parolni tiklash</Text>
+            <Text style={[s.h1, { color: theme.text }]}>{t('login.forgotPasswordStep.title')}</Text>
             <Text style={[s.sub, { color: theme.muted }]}>
-              Telefon raqamingizni kiriting — tasdiqlash kodini yuboramiz va yangi parol o'rnatasiz.
+              {t('login.forgotPasswordStep.subtitle')}
             </Text>
           </View>
 
           <View style={s.fieldWrap}>
-            <Text style={[s.fieldLabel, { color: theme.muted }]}>Telefon raqami</Text>
+            <Text style={[s.fieldLabel, { color: theme.muted }]}>{t('login.phoneStep.phoneLabel')}</Text>
             <PhoneInput value={phone} onChangeText={onChange} theme={theme} />
           </View>
 
@@ -93,7 +95,7 @@ export default function ForgotPasswordStep({
               <ActivityIndicator size="small" color="#fff" />
             ) : (
               <>
-                <Text style={[s.ctaTxt, !isReady && s.ctaTxtDisabled]}>Kod yuborish</Text>
+                <Text style={[s.ctaTxt, !isReady && s.ctaTxtDisabled]}>{t('login.forgotPasswordStep.sendCode')}</Text>
                 <Feather name="arrow-right" size={18} color={isReady ? '#fff' : '#7a6253'} />
               </>
             )}
@@ -101,12 +103,12 @@ export default function ForgotPasswordStep({
 
           <View style={s.footer}>
             <Text style={[s.terms, { color: theme.muted }]}>
-              Kodni oldingiz — hisobingizga kiring va yangi parol o'rnating.
+              {t('login.forgotPasswordStep.hint')}
             </Text>
             <View style={s.regRow}>
-              <Text style={[s.regHint, { color: theme.muted }]}>Esladingizmi? </Text>
+              <Text style={[s.regHint, { color: theme.muted }]}>{t('login.forgotPasswordStep.rememberedPassword')}</Text>
               <TouchableOpacity onPress={onBack} activeOpacity={0.7}>
-                <Text style={[s.regLink, { color: theme.orange }]}>Kirish</Text>
+                <Text style={[s.regLink, { color: theme.orange }]}>{t('login.phoneStep.loginCta')}</Text>
               </TouchableOpacity>
             </View>
           </View>

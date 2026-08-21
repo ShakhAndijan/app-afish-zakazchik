@@ -1,9 +1,11 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../constants/colors';
+import { useLanguage } from '../../context/LanguageContext';
 import PrimaryBtn from '../../components/login/PrimaryBtn';
 
 export default function SuccessStep({ onHome }) {
+  const { t } = useLanguage();
   return (
     <View style={styles.container}>
       <View style={styles.iconOuter}>
@@ -13,14 +15,14 @@ export default function SuccessStep({ onHome }) {
       </View>
 
       <View style={styles.textBlock}>
-        <Text style={styles.title}>Muvaffaqiyatli kirildi!</Text>
+        <Text style={styles.title}>{t('login.successStep.title')}</Text>
         <Text style={styles.subtitle}>
-          Xush kelibsiz! Endi ishonchli ustalarni topishingiz mumkin.
+          {t('login.successStep.subtitle')}
         </Text>
       </View>
 
       <View style={styles.btnWrap}>
-        <PrimaryBtn label="Asosiy sahifaga o'tish" onPress={onHome} />
+        <PrimaryBtn label={t('login.successStep.cta')} onPress={onHome} />
       </View>
     </View>
   );

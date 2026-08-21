@@ -11,6 +11,7 @@ import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Feather from '@expo/vector-icons/Feather';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import OrderDetailScreen from './OrderDetailScreen';
 
 const fmt = (n) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
@@ -165,26 +166,17 @@ const ORDERS = [
   },
 ];
 
-const STATUS_CFG = {
-  done: {
-    label: 'Bajarildi',
-    color: '#2fa37a',
-    bg: 'rgba(47,163,122,0.15)',
-    icon: 'check-circle-outline',
-  },
-  cancelled: {
-    label: 'Bekor qilindi',
-    color: '#e0473a',
-    bg: 'rgba(224,71,58,0.13)',
-    icon: 'close-circle-outline',
-  },
-  active: {
-    label: 'Jarayonda',
-    color: '#e87a45',
-    bg: 'rgba(232,122,69,0.15)',
-    icon: 'clock-outline',
-  },
+const STATUS_META = {
+  done: { color: '#2fa37a', bg: 'rgba(47,163,122,0.15)', icon: 'check-circle-outline' },
+  cancelled: { color: '#e0473a', bg: 'rgba(224,71,58,0.13)', icon: 'close-circle-outline' },
+  active: { color: '#e87a45', bg: 'rgba(232,122,69,0.15)', icon: 'clock-outline' },
 };
+
+const getStatusCfg = (tr) => ({
+  done: { ...STATUS_META.done, label: tr('orders.statusDone') },
+  cancelled: { ...STATUS_META.cancelled, label: tr('orders.statusCancelled') },
+  active: { ...STATUS_META.active, label: tr('orders.statusActive') },
+});
 
 const COUNTS = {
   all: ORDERS.length,
@@ -197,10 +189,10 @@ const TOTAL_SPENT = ORDERS.filter((o) => o.status === 'done').reduce(
   0
 );
 
-const TABS = (t) => [
-  { key: 'all', label: 'Hammasi', color: t.orange },
-  { key: 'done', label: 'Bajarilgan', color: STATUS_CFG.done.color },
-  { key: 'cancelled', label: 'Bekor qilingan', color: STATUS_CFG.cancelled.color },
+const TABS = (t, tr) => [
+  { key: 'all', label: tr('orders.tabAll'), color: t.orange },
+  { key: 'done', label: tr('orders.tabDone'), color: STATUS_META.done.color },
+  { key: 'cancelled', label: tr('orders.tabCancelled'), color: STATUS_META.cancelled.color },
 ];
 
 /* ── Stat tile ── */
@@ -231,7 +223,8 @@ function OrderAvatar({ letter, color }) {
 
 /* ── Status pill ── */
 function StatusPill({ status }) {
-  const cfg = STATUS_CFG[status] || STATUS_CFG.active;
+  const { t: tr } = useLanguage();
+  const cfg = getStatusCfg(tr)[status] || getStatusCfg(tr).active;
   return (
     <View style={[s.pill, { backgroundColor: cfg.bg }]}>
       <MaterialCommunityIcons name={cfg.icon} size={11} color={cfg.color} />
@@ -242,7 +235,8 @@ function StatusPill({ status }) {
 
 /* ── Order card ── */
 function OrderCard({ order, onPress, t }) {
-  const cfg = STATUS_CFG[order.status] || STATUS_CFG.active;
+  const { t: tr } = useLanguage();
+  const cfg = STATUS_META[order.status] || STATUS_META.active;
 
   return (
     <TouchableOpacity
@@ -292,11 +286,11 @@ function OrderCard({ order, onPress, t }) {
         <View>
           <Text style={[s.price, { color: t.text }]}>
             {fmt(order.price)}{' '}
-            <Text style={[s.priceSub, { color: t.muted }]}>so'm</Text>
+            <Text style={[s.priceSub, { color: t.muted }]}>{tr('common.currencySom')}</Text>
           </Text>
         </View>
         <View style={[s.ghostBtn, { backgroundColor: t.orange + '18' }]}>
-          <Text style={[s.ghostBtnText, { color: t.orange }]}>Batafsil</Text>
+          <Text style={[s.ghostBtnText, { color: t.orange }]}>{tr('orders.details')}</Text>
           <MaterialCommunityIcons name="chevron-right" size={15} color={t.orange} />
         </View>
       </View>
@@ -307,9 +301,10 @@ function OrderCard({ order, onPress, t }) {
 /* ── Screen ── */
 export default function ZakazchiOrdersScreen({ onBack }) {
   const { theme: t } = useTheme();
+  const { t: tr } = useLanguage();
   const [tab, setTab] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const tabs = TABS(t);
+  const tabs = TABS(t, tr);
 
   const list = tab === 'all' ? ORDERS : ORDERS.filter((o) => o.status === tab);
 
@@ -346,7 +341,7 @@ export default function ZakazchiOrdersScreen({ onBack }) {
           />
         </TouchableOpacity>
         <Text style={[s.headerTitle, { color: t.text }]}>
-          Buyurtmalar tarixi
+          {tr('orders.headerTitle')}
         </Text>
         <View style={{ flex: 1 }} />
       </View>
@@ -362,16 +357,16 @@ export default function ZakazchiOrdersScreen({ onBack }) {
             icon="archive"
             iconColor={t.orange}
             iconBg={t.orange + '18'}
-            value={`${COUNTS.all} ta`}
-            label="Jami buyurtma"
+            value={tr('profile.menu.itemCount', { n: COUNTS.all })}
+            label={tr('orders.statTotal')}
             t={t}
           />
           <StatTile
             icon="check-circle"
-            iconColor={STATUS_CFG.done.color}
-            iconBg={STATUS_CFG.done.bg}
-            value={`${COUNTS.done} ta`}
-            label="Bajarilgan"
+            iconColor={STATUS_META.done.color}
+            iconBg={STATUS_META.done.bg}
+            value={tr('profile.menu.itemCount', { n: COUNTS.done })}
+            label={tr('orders.statDone')}
             t={t}
           />
           <StatTile
@@ -379,7 +374,7 @@ export default function ZakazchiOrdersScreen({ onBack }) {
             iconColor={t.gold}
             iconBg="rgba(245,196,81,0.14)"
             value={`${fmt(TOTAL_SPENT / 1000)}k`}
-            label="Sarflandi, so'm"
+            label={tr('orders.statSpent')}
             t={t}
           />
         </View>
@@ -443,10 +438,10 @@ export default function ZakazchiOrdersScreen({ onBack }) {
                 />
               </View>
               <Text style={[s.emptyText, { color: t.text }]}>
-                Buyurtmalar yo'q
+                {tr('orders.emptyTitle')}
               </Text>
               <Text style={[s.emptySub, { color: t.muted }]}>
-                Bu bo'limda hozircha hech narsa ko'rinmayapti
+                {tr('orders.emptySubtitle')}
               </Text>
             </View>
           ) : (

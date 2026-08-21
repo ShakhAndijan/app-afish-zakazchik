@@ -3,11 +3,14 @@ import { StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import {
   googleLogin,
   loginCustomer,
   requestResetPasswordOtp,
   verifyResetPasswordOtp,
+  requestEmailLoginOtp,
+  verifyEmailLoginOtp,
 } from '../api/auth';
 import { saveToken, saveRefreshToken, saveActorType } from '../utils/token';
 import PhoneStep from './steps/PhoneStep';
@@ -21,6 +24,7 @@ WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen({ onBack, onLoginSuccess }) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const [step, setStep] = useState('phone');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -36,6 +40,13 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [emailLoginEmail, setEmailLoginEmail] = useState('');
+  const [emailOtpLoading, setEmailOtpLoading] = useState(false);
+  const [emailOtpError, setEmailOtpError] = useState('');
+  const [emailDevCode, setEmailDevCode] = useState('');
+  const [emailResendLoading, setEmailResendLoading] = useState(false);
+  const [emailVerifyLoading, setEmailVerifyLoading] = useState(false);
+  const [emailVerifyError, setEmailVerifyError] = useState('');
 
   const handleLogin = async () => {
     try {
@@ -48,7 +59,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
       await saveActorType(actorType);
       (onLoginSuccess ?? onBack)(actorType);
     } catch (e) {
-      setLoginError(e.message || 'Kirishda xatolik yuz berdi');
+      setLoginError(e.message || t('login.errors.loginFailed'));
     } finally {
       setLoginLoading(false);
     }
@@ -63,7 +74,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
       setForgotDevCode(data?.dev_code || '');
       setStep('forgotCode');
     } catch (e) {
-      setForgotError(e.message || 'Kod yuborishda xatolik yuz berdi');
+      setForgotError(e.message || t('login.errors.sendCodeFailed'));
     } finally {
       setForgotLoading(false);
     }
@@ -76,7 +87,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
       const data = await requestResetPasswordOtp(fullPhone);
       setForgotDevCode(data?.dev_code || '');
     } catch (e) {
-      Alert.alert('Xato', e.message || 'Kod yuborishda xatolik yuz berdi');
+      Alert.alert(t('common.errorTitle'), e.message || t('login.errors.sendCodeFailed'));
     } finally {
       setForgotResendLoading(false);
     }
@@ -95,7 +106,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
       setStep('phone');
       return data;
     } catch (e) {
-      setResetError(e.message || 'Parolni saqlashda xatolik yuz berdi');
+      setResetError(e.message || t('login.errors.savePasswordFailed'));
     } finally {
       setResetLoading(false);
     }
@@ -111,10 +122,53 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
       (onLoginSuccess ?? onBack)(actorType);
     } catch (e) {
       if (e.message !== 'cancelled') {
-        Alert.alert('Xato', e.message || 'Google orqali kirishda xatolik');
+        Alert.alert(t('common.errorTitle'), e.message || t('login.errors.googleFailed'));
       }
     } finally {
       setGoogleLoading(false);
+    }
+  };
+
+  const handleEmailOtpRequest = async (email) => {
+    try {
+      setEmailOtpLoading(true);
+      setEmailOtpError('');
+      setEmailLoginEmail(email);
+      const data = await requestEmailLoginOtp(email);
+      setEmailDevCode(data?.dev_code || '');
+      setStep('emailCode');
+    } catch (e) {
+      setEmailOtpError(e.message || t('login.errors.sendCodeFailed'));
+    } finally {
+      setEmailOtpLoading(false);
+    }
+  };
+
+  const handleEmailResend = async () => {
+    try {
+      setEmailResendLoading(true);
+      const data = await requestEmailLoginOtp(emailLoginEmail);
+      setEmailDevCode(data?.dev_code || '');
+    } catch (e) {
+      Alert.alert(t('common.errorTitle'), e.message || t('login.errors.sendCodeFailed'));
+    } finally {
+      setEmailResendLoading(false);
+    }
+  };
+
+  const handleEmailVerify = async (code) => {
+    try {
+      setEmailVerifyLoading(true);
+      setEmailVerifyError('');
+      const data = await verifyEmailLoginOtp(emailLoginEmail, code);
+      if (data?.access_token) await saveToken(data.access_token);
+      if (data?.refresh_token) await saveRefreshToken(data.refresh_token);
+      await saveActorType(actorType);
+      (onLoginSuccess ?? onBack)(actorType);
+    } catch (e) {
+      setEmailVerifyError(e.message || t('login.errors.loginFailed'));
+    } finally {
+      setEmailVerifyLoading(false);
     }
   };
 
@@ -185,7 +239,21 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
     email: (
       <EmailStep
         onBack={() => setStep('phone')}
-        onLogin={() => setStep('done')}
+        onSubmit={handleEmailOtpRequest}
+        loading={emailOtpLoading}
+        error={emailOtpError}
+      />
+    ),
+    emailCode: (
+      <CodeStep
+        email={emailLoginEmail}
+        devCode={emailDevCode}
+        onBack={() => setStep('email')}
+        onConfirm={handleEmailVerify}
+        confirmLoading={emailVerifyLoading}
+        error={emailVerifyError}
+        onResend={handleEmailResend}
+        resendLoading={emailResendLoading}
       />
     ),
     register: (

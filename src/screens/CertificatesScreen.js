@@ -14,12 +14,17 @@ import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Feather from '@expo/vector-icons/Feather';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import AddCertificateScreen from './AddCertificateScreen';
 
-const STATUS_CFG = {
-  verified: { label: 'Tasdiqlangan', color: '#2fa37a', bg: 'rgba(47,163,122,0.15)', icon: 'check-decagram' },
-  pending: { label: 'Ko\'rib chiqilmoqda', color: '#e87a45', bg: 'rgba(232,122,69,0.15)', icon: 'clock-outline' },
+const STATUS_META = {
+  verified: { color: '#2fa37a', bg: 'rgba(47,163,122,0.15)', icon: 'check-decagram' },
+  pending: { color: '#e87a45', bg: 'rgba(232,122,69,0.15)', icon: 'clock-outline' },
 };
+const getStatusCfg = (tr) => ({
+  verified: { ...STATUS_META.verified, label: tr('certificates.status.verified') },
+  pending: { ...STATUS_META.pending, label: tr('certificates.status.pending') },
+});
 
 // Rasm massivda ikki xil bo'lishi mumkin: backend'dan kelgan uzoq uri (string)
 // yoki lokal require() qilingan asset (raqam/obyekt) — mock rasmlar uchun.
@@ -123,7 +128,8 @@ function InfoRow({ icon, label, value, t }) {
 
 /* ── Certificate card ── */
 function CertificateCard({ cert, t, onViewImage, onRequestDelete }) {
-  const statusCfg = STATUS_CFG[cert.status];
+  const { t: tr } = useLanguage();
+  const statusCfg = getStatusCfg(tr)[cert.status];
 
   return (
     <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
@@ -165,24 +171,24 @@ function CertificateCard({ cert, t, onViewImage, onRequestDelete }) {
         </View>
 
         <View style={[s.infoCard, { borderTopColor: t.border }]}>
-          <InfoRow icon="home" label="Muassasa" value={cert.institution} t={t} />
+          <InfoRow icon="home" label={tr('certificates.institutionLabel')} value={cert.institution} t={t} />
           <InfoRow
             icon="calendar"
-            label="Olingan sana"
+            label={tr('certificates.issuedLabel')}
             value={`${cert.day}-${cert.month}, ${cert.year}`}
             t={t}
           />
           <InfoRow
             icon="shield-off"
-            label="Amal qilish muddati"
+            label={tr('certificates.expiryLabel')}
             value={
               cert.expiryDate
                 ? `${cert.expiryDate.day}-${cert.expiryDate.month}, ${cert.expiryDate.year}`
-                : 'Muddatsiz'
+                : tr('certificates.noExpiry')
             }
             t={t}
           />
-          <InfoRow icon="hash" label="Sertifikat raqami" value={cert.certNumber} t={t} />
+          <InfoRow icon="hash" label={tr('certificates.certNumberLabel')} value={cert.certNumber} t={t} />
         </View>
       </View>
     </View>
@@ -191,6 +197,7 @@ function CertificateCard({ cert, t, onViewImage, onRequestDelete }) {
 
 /* ── Themed delete-confirmation dialog (replaces the native Alert) ── */
 function ConfirmDeleteModal({ cert, onCancel, onConfirm, t }) {
+  const { t: tr } = useLanguage();
   return (
     <Modal
       visible={!!cert}
@@ -208,10 +215,9 @@ function ConfirmDeleteModal({ cert, onCancel, onConfirm, t }) {
           <View style={[s.confirmIcon, { backgroundColor: 'rgba(224,71,58,0.15)' }]}>
             <MaterialCommunityIcons name="trash-can-outline" size={28} color={t.red} />
           </View>
-          <Text style={[s.confirmTitle, { color: t.text }]}>Sertifikatni o'chirish</Text>
+          <Text style={[s.confirmTitle, { color: t.text }]}>{tr('certificates.deleteTitle')}</Text>
           <Text style={[s.confirmMessage, { color: t.muted }]}>
-            <Text style={{ color: t.text, fontWeight: '700' }}>"{cert?.title}"</Text>
-            {' '}sertifikatini o'chirmoqchimisiz? Bu amalni ortga qaytarib bo'lmaydi.
+            {tr('certificates.deleteMessage', { title: cert?.title })}
           </Text>
 
           <View style={s.confirmActions}>
@@ -220,7 +226,7 @@ function ConfirmDeleteModal({ cert, onCancel, onConfirm, t }) {
               activeOpacity={0.8}
               onPress={onCancel}
             >
-              <Text style={[s.confirmBtnGhostText, { color: t.text }]}>Bekor qilish</Text>
+              <Text style={[s.confirmBtnGhostText, { color: t.text }]}>{tr('common.cancel')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[s.confirmBtnDanger, { backgroundColor: t.red }]}
@@ -228,7 +234,7 @@ function ConfirmDeleteModal({ cert, onCancel, onConfirm, t }) {
               onPress={onConfirm}
             >
               <Feather name="trash-2" size={14} color="#fff" />
-              <Text style={s.confirmBtnDangerText}>O'chirish</Text>
+              <Text style={s.confirmBtnDangerText}>{tr('common.delete')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -239,6 +245,7 @@ function ConfirmDeleteModal({ cert, onCancel, onConfirm, t }) {
 
 export default function CertificatesScreen({ onBack }) {
   const { theme: t } = useTheme();
+  const { t: tr } = useLanguage();
   const [certificates, setCertificates] = useState(INITIAL_CERTIFICATES);
   const [viewerImage, setViewerImage] = useState(null);
   const [showAddScreen, setShowAddScreen] = useState(false);
@@ -273,7 +280,7 @@ export default function CertificatesScreen({ onBack }) {
         >
           <MaterialCommunityIcons name="chevron-left" size={24} color={t.text} />
         </TouchableOpacity>
-        <Text style={[s.headerTitle, { color: t.text }]}>Sertifikatlarim</Text>
+        <Text style={[s.headerTitle, { color: t.text }]}>{tr('certificates.headerTitle')}</Text>
         <TouchableOpacity
           style={[s.addBtn, { backgroundColor: t.orange }]}
           onPress={() => setShowAddScreen(true)}
@@ -289,24 +296,24 @@ export default function CertificatesScreen({ onBack }) {
           <StatCell
             icon="certificate-outline"
             color={t.orange}
-            value={`${certificates.length} ta`}
-            label="Jami sertifikat"
+            value={tr('profile.menu.itemCount', { n: certificates.length })}
+            label={tr('certificates.statTotal')}
             t={t}
             border
           />
           <StatCell
             icon="check-decagram"
             color="#2fa37a"
-            value={`${verifiedCount} ta`}
-            label="Tasdiqlangan"
+            value={tr('profile.menu.itemCount', { n: verifiedCount })}
+            label={tr('certificates.status.verified')}
             t={t}
             border
           />
           <StatCell
             icon="clock-outline"
             color="#e87a45"
-            value={`${pendingCount} ta`}
-            label="Kutilmoqda"
+            value={tr('profile.menu.itemCount', { n: pendingCount })}
+            label={tr('certificates.status.pending')}
             t={t}
           />
         </View>
@@ -318,9 +325,9 @@ export default function CertificatesScreen({ onBack }) {
               <View style={[s.emptyIcon, { backgroundColor: t.card, borderColor: t.border }]}>
                 <MaterialCommunityIcons name="certificate-outline" size={40} color={t.faint} />
               </View>
-              <Text style={[s.emptyText, { color: t.text }]}>Sertifikatlar yo'q</Text>
+              <Text style={[s.emptyText, { color: t.text }]}>{tr('certificates.emptyTitle')}</Text>
               <Text style={[s.emptySub, { color: t.muted }]}>
-                Malaka va tajribangizni tasdiqlovchi sertifikatlaringizni qo'shing
+                {tr('certificates.emptySub')}
               </Text>
               <TouchableOpacity
                 style={[s.emptyAddBtn, { backgroundColor: t.orange }]}
@@ -328,7 +335,7 @@ export default function CertificatesScreen({ onBack }) {
                 activeOpacity={0.85}
               >
                 <MaterialCommunityIcons name="plus" size={16} color="#fff" />
-                <Text style={s.emptyAddText}>Sertifikat qo'shish</Text>
+                <Text style={s.emptyAddText}>{tr('certificates.addBtn')}</Text>
               </TouchableOpacity>
             </View>
           ) : (

@@ -17,32 +17,43 @@ import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Feather from '@expo/vector-icons/Feather';
-import { getWorkerById, getWorkerCertificates } from '../api/workers';
+import {
+  getWorkerById,
+  getWorkerCertificates,
+  likeWorker,
+  unlikeWorker,
+} from '../api/workers';
 import AfishLoader from '../components/AfishLoader';
+import WorkDetailScreen from './WorkDetailScreen';
+import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 
 // ─── Colors ──────────────────────────────────────────────────────────────────
 
-const C = {
-  bg: '#0a1622',
-  card: '#16222f',
-  card2: '#1b2937',
-  card3: '#22303f',
-  line: 'rgba(255,255,255,0.06)',
-  line2: 'rgba(255,255,255,0.10)',
-  orange: '#e87b3e',
-  green: '#27a567',
-  blue: '#3d82d4',
-  purple: '#9466cf',
-  gold: '#f0b429',
-  txt: '#ffffff',
-  dim: '#8492a3',
-  dim2: '#5e6e80',
-};
+/** Mavzu (theme) obyektini shu ekranda ishlatiladigan rang nomlariga o'giradi */
+function buildPalette(t) {
+  return {
+    bg: t.bg,
+    card: t.card,
+    card2: t.card2,
+    card3: t.card3,
+    line: t.border,
+    line2: t.line2,
+    orange: t.orange,
+    green: t.green,
+    blue: t.blue,
+    purple: t.violet,
+    gold: t.gold,
+    txt: t.text,
+    dim: t.muted,
+    dim2: t.faint,
+  };
+}
 
 const RELIABILITY_BADGES = {
-  bronze: { emoji: '🥉', label: 'Bronza usta', color: '#cd7f32', bg: 'rgba(205,127,50,0.14)' },
-  silver: { emoji: '🥈', label: 'Kumush usta', color: '#b0b8c1', bg: 'rgba(176,184,193,0.14)' },
-  gold: { emoji: '🥇', label: 'Oltin usta', color: '#f0b429', bg: 'rgba(240,180,41,0.14)' },
+  bronze: { emoji: '🥉', key: 'bronze', color: '#cd7f32', bg: 'rgba(205,127,50,0.14)' },
+  silver: { emoji: '🥈', key: 'silver', color: '#b0b8c1', bg: 'rgba(176,184,193,0.14)' },
+  gold: { emoji: '🥇', key: 'gold', color: '#f0b429', bg: 'rgba(240,180,41,0.14)' },
 };
 
 // Android'dagi Image (Fresco/OkHttp) kodlanmagan "+" belgisini URL'da
@@ -59,7 +70,7 @@ function formatDate(isoDate) {
 
 // ─── Empty State ──────────────────────────────────────────────────────────────
 
-function EmptyState({ icon, iconSet: IconSet = MaterialCommunityIcons, title, subtitle }) {
+function EmptyState({ icon, iconSet: IconSet = MaterialCommunityIcons, title, subtitle, C, st }) {
   return (
     <View style={[st.card, st.emptyCard]}>
       <View style={st.emptyIconWrap}>
@@ -73,7 +84,7 @@ function EmptyState({ icon, iconSet: IconSet = MaterialCommunityIcons, title, su
 
 // ─── Rating Bar ───────────────────────────────────────────────────────────────
 
-function RatingBar({ label, pct }) {
+function RatingBar({ label, pct, st }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
       <Text style={st.barLabel}>{label}</Text>
@@ -87,7 +98,7 @@ function RatingBar({ label, pct }) {
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 
-function Avatar({ initial, size, bgColor, uri }) {
+function Avatar({ initial, size, bgColor, uri, C, st }) {
   const [failed, setFailed] = useState(false);
   const showImage = uri && !failed;
 
@@ -118,7 +129,7 @@ const CARD_W = 148;
 const CARD_GAP = 10;
 const CARD_SLOT = CARD_W + CARD_GAP;
 
-function WorksCarousel({ works }) {
+function WorksCarousel({ works, C, st, onSelectWork }) {
   const listRef = useRef(null);
   const idxRef = useRef(0);
   const [active, setActive] = useState(0);
@@ -153,7 +164,11 @@ function WorksCarousel({ works }) {
           gap: CARD_GAP,
         }}
         renderItem={({ item }) => (
-          <TouchableOpacity style={st.workCard} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={st.workCard}
+            activeOpacity={0.85}
+            onPress={() => onSelectWork?.(item)}
+          >
             <View style={[st.workImg, !item.photo && { backgroundColor: C.card3 }]}>
               {item.photo ? (
                 <Image
@@ -200,12 +215,18 @@ export default function UstaDetailScreen({
   isLoggedIn = false,
 }) {
   const insets = useSafeAreaInsets();
+  const { theme: t } = useTheme();
+  const { t: tr } = useLanguage();
+  const C = useMemo(() => buildPalette(t), [t]);
+  const st = useMemo(() => buildStyles(C), [C]);
   const [reviewFilter, setReviewFilter] = useState('all');
   const [liked, setLiked] = useState(false);
+  const [likeSubmitting, setLikeSubmitting] = useState(false);
   const [detail, setDetail] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [certificates, setCertificates] = useState([]);
   const [loadingCertificates, setLoadingCertificates] = useState(false);
+  const [selectedWork, setSelectedWork] = useState(null);
 
   useEffect(() => {
     if (!usta?.id) return;
@@ -214,7 +235,10 @@ export default function UstaDetailScreen({
     setCertificates([]);
     getWorkerById(usta.id)
       .then((data) => {
-        if (!cancelled) setDetail(data);
+        if (!cancelled) {
+          setDetail(data);
+          setLiked(!!data.isLiked);
+        }
       })
       .catch(() => {})
       .finally(() => {
@@ -284,42 +308,42 @@ export default function UstaDetailScreen({
 
   const badges = [];
   const reliabilityMeta = RELIABILITY_BADGES[d.reliability_badge];
-  if (reliabilityMeta) badges.push(reliabilityMeta);
+  if (reliabilityMeta) badges.push({ ...reliabilityMeta, label: tr(`ustaDetail.reliabilityBadges.${reliabilityMeta.key}`) });
   if (d.vip_status && d.vip_status !== 'none') {
-    badges.push({ emoji: '👑', label: 'VIP usta', color: C.purple, bg: 'rgba(148,102,207,0.14)' });
+    badges.push({ emoji: '👑', label: tr('ustaDetail.vipBadge'), color: C.purple, bg: 'rgba(148,102,207,0.14)' });
   }
 
   const secondaryStat =
     d.repeatClientRate != null
       ? {
           value: `${Math.round(d.repeatClientRate)}%`,
-          label: 'Qayta chaqiruv',
+          label: tr('ustaDetail.stats.repeatClient'),
           icon: 'repeat-variant',
           color: C.blue,
         }
       : d.acceptanceRate != null
         ? {
             value: `${Math.round(d.acceptanceRate)}%`,
-            label: 'Qabul qilish',
+            label: tr('ustaDetail.stats.acceptance'),
             icon: 'thumb-up-outline',
             color: C.blue,
           }
         : null;
   const statItems = [
     experience
-      ? { value: experience, label: 'Tajriba', icon: 'briefcase-outline', color: C.orange }
+      ? { value: experience, label: tr('ustaDetail.stats.experience'), icon: 'briefcase-outline', color: C.orange }
       : null,
     secondaryStat,
     detail?.completedJobsCount
       ? {
           value: String(detail.completedJobsCount),
-          label: 'Bajarilgan ish',
+          label: tr('ustaDetail.stats.completedJobs'),
           icon: 'hammer-wrench',
           color: C.purple,
         }
       : {
           value: String(portfolio.length),
-          label: 'Namuna ishlar',
+          label: tr('ustaDetail.stats.portfolioSamples'),
           icon: 'image-multiple-outline',
           color: C.purple,
         },
@@ -331,11 +355,45 @@ export default function UstaDetailScreen({
   const ratingBreakdown = detail?.ratingBreakdown ?? null;
   const isIdentityVerified = !!detail?.isIdentityVerified;
 
+  // Necha xil yulduz darajasida baho borligi (masalan 4 va 3) — shu asosda
+  // o'rtacha qiymatni alohida ko'rsatish kerakligini aniqlaymiz.
+  const distinctStarLevels = ratingBreakdown
+    ? Object.values(ratingBreakdown).filter((c) => c > 0).length
+    : 0;
+  const showAverageLabel = distinctStarLevels > 1;
+
   const reviewItems = portfolio.filter((p) => p.comment || p.rating != null);
   const shownReviews =
     reviewFilter === 'photo'
       ? reviewItems.filter((p) => p.photos?.length)
       : reviewItems;
+
+  // Backend review_count'ni noto'g'ri (0) qaytarishi mumkin, garchi overall_rating
+  // yoki portfoliodagi baholangan ishlar mavjud bo'lsa ham — shu holatda "sharhlar
+  // tez orada" bo'sh holatini emas, haqiqiy reytingni ko'rsatamiz.
+  const hasRating = typeof rawRating === 'number' && rawRating > 0;
+  const effectiveReviewCount = reviewCount > 0 ? reviewCount : reviewItems.length;
+  const showRatingCard = effectiveReviewCount > 0 || hasRating;
+
+  const handleToggleLike = () => {
+    const workerId = usta?.id ?? detail?.id;
+    if (!workerId || likeSubmitting) return;
+    const next = !liked;
+    setLiked(next);
+    setLikeSubmitting(true);
+    (next ? likeWorker(workerId) : unlikeWorker(workerId))
+      .catch(() => setLiked(!next))
+      .finally(() => setLikeSubmitting(false));
+  };
+
+  if (selectedWork) {
+    return (
+      <WorkDetailScreen
+        work={{ ...selectedWork, worker: name }}
+        onBack={() => setSelectedWork(null)}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={st.safe} edges={['top', 'left', 'right']}>
@@ -350,14 +408,14 @@ export default function UstaDetailScreen({
         >
           <Ionicons name="arrow-back" size={22} color={C.txt} />
         </TouchableOpacity>
-        <Text style={st.headerTitle}>Usta profili</Text>
+        <Text style={st.headerTitle}>{tr('ustaDetail.headerTitle')}</Text>
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <TouchableOpacity
             style={st.iconBtn}
             activeOpacity={0.7}
             onPress={() =>
               Share.share({
-                message: `${name} — ${trade} ustasi, reyting ${rating} ★. Ilovada ko'ring!`,
+                message: tr('ustaDetail.shareMessage', { name, trade, rating }),
               }).catch(() => {})
             }
           >
@@ -367,7 +425,7 @@ export default function UstaDetailScreen({
             <TouchableOpacity
               style={st.iconBtn}
               activeOpacity={0.7}
-              onPress={() => setLiked((v) => !v)}
+              onPress={handleToggleLike}
             >
               <Ionicons
                 name={liked ? 'heart' : 'heart-outline'}
@@ -396,7 +454,7 @@ export default function UstaDetailScreen({
               alignItems: 'center',
             }}
           >
-            <Avatar initial={initial} size={68} bgColor={bgColor} uri={d.profile_photo} />
+            <Avatar initial={initial} size={68} bgColor={bgColor} uri={d.profile_photo} C={C} st={st} />
             <View style={{ flex: 1 }}>
               <View
                 style={{
@@ -409,7 +467,7 @@ export default function UstaDetailScreen({
                 {isOnline && (
                   <View style={st.onlinePill}>
                     <View style={st.onlineDot} />
-                    <Text style={st.onlinePillTxt}>Onlayn</Text>
+                    <Text style={st.onlinePillTxt}>{tr('ustaDetail.online')}</Text>
                   </View>
                 )}
                 <Text style={{ fontSize: 19, fontWeight: '800', color: C.txt }}>
@@ -454,7 +512,7 @@ export default function UstaDetailScreen({
                 </View>
                 {avgResponseMin != null && (
                   <Text style={{ fontSize: 12.5, color: C.dim }}>
-                    · ~{avgResponseMin} daq javob
+                    {tr('ustaDetail.avgResponse', { min: avgResponseMin })}
                   </Text>
                 )}
               </View>
@@ -543,7 +601,7 @@ export default function UstaDetailScreen({
           {/* ── Tillar ── */}
           {languages.length > 0 && (
             <>
-              <Text style={st.secTitle}>Biladigan tillari</Text>
+              <Text style={st.secTitle}>{tr('ustaDetail.languagesTitle')}</Text>
               <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
                 {languages.map((lang, i) => (
                   <View key={i} style={st.langChip}>
@@ -558,7 +616,7 @@ export default function UstaDetailScreen({
           )}
 
           {/* ── Mutaxassislik ── */}
-          <Text style={st.secTitle}>Mutaxassislik</Text>
+          <Text style={st.secTitle}>{tr('ustaDetail.specializationTitle')}</Text>
           {categories.length > 0 ? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {categories.map((c) => (
@@ -581,13 +639,13 @@ export default function UstaDetailScreen({
           ) : (
             <View style={[st.card, { padding: 16, alignItems: 'center' }]}>
               <Text style={{ fontSize: 12.5, color: C.dim }}>
-                {loadingDetail ? 'Yuklanmoqda...' : "Mutaxassisliklar hali qo'shilmagan"}
+                {loadingDetail ? tr('common.loading') : tr('ustaDetail.specializationEmpty')}
               </Text>
             </View>
           )}
 
           {/* ── Xizmatlar narxi ── */}
-          <Text style={st.secTitle}>Xizmatlar narxi</Text>
+          <Text style={st.secTitle}>{tr('ustaDetail.servicesPriceTitle')}</Text>
           {categories.length > 0 ? (
             <View style={st.card}>
               {categories.map((c, i) => (
@@ -621,23 +679,15 @@ export default function UstaDetailScreen({
                   >
                     {c.isNegotiable ? (
                       <Text style={{ fontSize: 13, fontWeight: '700', color: C.dim }}>
-                        Kelishilgan narx
+                        {tr('ustaDetail.negotiablePrice')}
                       </Text>
                     ) : c.minPrice || c.price ? (
-                      <>
-                        <Text
-                          style={{ fontSize: 14, fontWeight: '800', color: C.txt }}
-                        >
-                          {c.minPrice || c.price}
-                        </Text>
-                        <Text style={{ fontSize: 11.5, color: C.dim }}>
-                          {' '}
-                          {c.currency} dan
-                        </Text>
-                      </>
+                      <Text style={{ fontSize: 14, fontWeight: '800', color: C.txt }}>
+                        {tr('ustaDetail.priceFrom', { price: c.minPrice || c.price, currency: c.currency })}
+                      </Text>
                     ) : (
                       <Text style={{ fontSize: 12.5, color: C.dim }}>
-                        Narx ko'rsatilmagan
+                        {tr('ustaDetail.noPriceSet')}
                       </Text>
                     )}
                   </View>
@@ -647,7 +697,7 @@ export default function UstaDetailScreen({
           ) : (
             <View style={[st.card, { padding: 16, alignItems: 'center' }]}>
               <Text style={{ fontSize: 12.5, color: C.dim }}>
-                {loadingDetail ? 'Yuklanmoqda...' : "Xizmatlar hali qo'shilmagan"}
+                {loadingDetail ? tr('common.loading') : tr('ustaDetail.servicesEmpty')}
               </Text>
             </View>
           )}
@@ -655,7 +705,7 @@ export default function UstaDetailScreen({
           {/* ── Ish jadvali ── */}
           {isLoggedIn && weekDays.length > 0 && (
             <>
-              <Text style={st.secTitle}>Ish jadvali</Text>
+              <Text style={st.secTitle}>{tr('ustaDetail.scheduleTitle')}</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                 {weekDays.map((day) => (
                   <View
@@ -712,7 +762,7 @@ export default function UstaDetailScreen({
                 >
                   <MaterialCommunityIcons name="calendar-remove-outline" size={16} color={C.dim} />
                   <Text style={{ fontSize: 12.5, color: C.dim, flex: 1 }}>
-                    Dam olish kunlari: {offDates.map(formatDate).join(', ')}
+                    {tr('ustaDetail.daysOff', { dates: offDates.map(formatDate).join(', ') })}
                   </Text>
                 </View>
               )}
@@ -720,7 +770,7 @@ export default function UstaDetailScreen({
           )}
 
           {/* ── Sertifikatlar ── */}
-          <Text style={st.secTitle}>Sertifikatlar</Text>
+          <Text style={st.secTitle}>{tr('ustaDetail.certificatesTitle')}</Text>
           {certificates.length > 0 ? (
             <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
               {certificates.map((c) => (
@@ -744,8 +794,10 @@ export default function UstaDetailScreen({
           ) : (
             <EmptyState
               icon="certificate-outline"
-              title={loadingCertificates ? 'Yuklanmoqda...' : "Sertifikatlar hali yo'q"}
-              subtitle={loadingCertificates ? undefined : 'Bu usta hozircha sertifikat qo\'shmagan'}
+              title={loadingCertificates ? tr('common.loading') : tr('ustaDetail.certificatesEmptyTitle')}
+              subtitle={loadingCertificates ? undefined : tr('ustaDetail.certificatesEmptySubtitle')}
+              C={C}
+              st={st}
             />
           )}
         </View>
@@ -757,24 +809,29 @@ export default function UstaDetailScreen({
             { paddingHorizontal: 20, marginTop: 22, marginBottom: 14 },
           ]}
         >
-          Ishlari
+          {tr('ustaDetail.worksTitle')}
         </Text>
         {portfolio.length > 0 ? (
-          <WorksCarousel works={portfolio} />
+          <WorksCarousel works={portfolio} C={C} st={st} onSelectWork={setSelectedWork} />
         ) : (
           <Text style={{ fontSize: 12.5, color: C.dim, paddingHorizontal: 20 }}>
-            {loadingDetail ? 'Yuklanmoqda...' : "Ishlari hali qo'shilmagan"}
+            {loadingDetail ? tr('common.loading') : tr('ustaDetail.worksEmpty')}
           </Text>
         )}
 
         {/* ═══ Padded content block 2 ═══ */}
         <View style={st.pad}>
           {/* ── Reyting ── */}
-          <Text style={[st.secTitle, { marginTop: 22 }]}>Reyting</Text>
-          {reviewCount > 0 ? (
+          <Text style={[st.secTitle, { marginTop: 22 }]}>{tr('ustaDetail.ratingTitle')}</Text>
+          {showRatingCard ? (
             <View style={st.card}>
               <View style={{ flexDirection: 'row', gap: 18, alignItems: 'center', padding: 16 }}>
                 <View style={{ alignItems: 'center', minWidth: 68 }}>
+                  {showAverageLabel && (
+                    <Text style={{ fontSize: 10.5, fontWeight: '700', color: C.dim, textTransform: 'uppercase', letterSpacing: 0.3 }}>
+                      {tr('ustaDetail.averageRatingLabel')}
+                    </Text>
+                  )}
                   <Text style={{ fontSize: 38, fontWeight: '800', color: C.txt, lineHeight: 42 }}>
                     {rating}
                   </Text>
@@ -783,16 +840,18 @@ export default function UstaDetailScreen({
                       <Ionicons key={k} name="star" size={13} color={C.gold} />
                     ))}
                   </View>
-                  <Text style={{ fontSize: 11.5, color: C.dim, marginTop: 5 }}>
-                    {reviewCount} sharh
-                  </Text>
+                  {effectiveReviewCount > 0 && (
+                    <Text style={{ fontSize: 11.5, color: C.dim, marginTop: 5 }}>
+                      {tr('ustaDetail.reviewsCount', { count: effectiveReviewCount })}
+                    </Text>
+                  )}
                 </View>
-                {ratingBreakdown && (
+                {ratingBreakdown && effectiveReviewCount > 0 && (
                   <View style={{ flex: 1, gap: 7 }}>
                     {[5, 4, 3, 2, 1].map((star) => {
                       const count = ratingBreakdown[star] ?? 0;
-                      const pct = Math.round((count / reviewCount) * 100);
-                      return <RatingBar key={star} label={`${star}★`} pct={pct} />;
+                      const pct = Math.round((count / effectiveReviewCount) * 100);
+                      return <RatingBar key={star} label={`${star}★`} pct={pct} st={st} />;
                     })}
                   </View>
                 )}
@@ -802,8 +861,10 @@ export default function UstaDetailScreen({
             <EmptyState
               icon="chatbubbles-outline"
               iconSet={Ionicons}
-              title="Sharhlar tez orada"
-              subtitle="Mijozlar sharhlari hozircha mavjud emas"
+              title={tr('ustaDetail.reviewsEmptyTitle')}
+              subtitle={tr('ustaDetail.reviewsEmptySubtitle')}
+              C={C}
+              st={st}
             />
           )}
 
@@ -820,12 +881,12 @@ export default function UstaDetailScreen({
                 }}
               >
                 <Text style={{ fontSize: 15, fontWeight: '800', color: C.txt }}>
-                  Sharhlar
+                  {tr('ustaDetail.reviewsTitle')}
                 </Text>
                 <View style={{ flexDirection: 'row', gap: 8 }}>
                   {[
-                    ['all', 'Hammasi'],
-                    ['photo', 'Fotoli'],
+                    ['all', tr('ustaDetail.reviewFilterAll')],
+                    ['photo', tr('ustaDetail.reviewFilterPhoto')],
                   ].map(([key, label]) => (
                     <TouchableOpacity
                       key={key}
@@ -913,7 +974,7 @@ export default function UstaDetailScreen({
                 {shownReviews.length === 0 && (
                   <View style={[st.card, { padding: 16, alignItems: 'center' }]}>
                     <Text style={{ fontSize: 12.5, color: C.dim }}>
-                      Fotoli sharhlar hali yo'q
+                      {tr('ustaDetail.reviewsPhotoEmpty')}
                     </Text>
                   </View>
                 )}
@@ -940,7 +1001,7 @@ export default function UstaDetailScreen({
             size={18}
             color="#fff"
           />
-          <Text style={st.callBtnTxt}>Chaqirish · {startingPrice} dan</Text>
+          <Text style={st.callBtnTxt}>{tr('ustaDetail.callBtn', { price: startingPrice })}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -949,7 +1010,8 @@ export default function UstaDetailScreen({
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const st = StyleSheet.create({
+function buildStyles(C) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
   pad: { paddingHorizontal: 20 },
 
@@ -1224,4 +1286,5 @@ const st = StyleSheet.create({
     gap: 8,
   },
   callBtnTxt: { color: '#fff', fontSize: 15, fontWeight: '700' },
-});
+  });
+}

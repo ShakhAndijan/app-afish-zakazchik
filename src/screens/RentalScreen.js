@@ -4,35 +4,37 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import BottomNav from '../components/BottomNav';
 
-export default function ZakazchiChatScreen({ onTabChange }) {
+export default function RentalScreen({ onTabChange }) {
   const { theme: t } = useTheme();
+  const { t: tr } = useLanguage();
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }} edges={['top', 'left', 'right']}>
       <StatusBar style={t.isDark ? 'light' : 'dark'} />
 
       <View style={s.header}>
-        <Text style={[s.headerTitle, { color: t.text }]}>Xabarlar</Text>
+        <Text style={[s.headerTitle, { color: t.text }]}>{tr('rental.headerTitle')}</Text>
       </View>
 
       <View style={s.content}>
         <View style={[s.iconWrap, { backgroundColor: t.orange + '18' }]}>
-          <MaterialCommunityIcons name="chat-processing-outline" size={56} color={t.orange} />
+          <MaterialCommunityIcons name="key-outline" size={56} color={t.orange} />
           <View style={[s.badge, { backgroundColor: t.orange, borderColor: t.bg }]}>
             <MaterialCommunityIcons name="wrench" size={14} color="#fff" />
           </View>
         </View>
 
-        <Text style={[s.title, { color: t.text }]}>Bu oyna hali ish jarayonida</Text>
+        <Text style={[s.title, { color: t.text }]}>{tr('rental.comingSoonTitle')}</Text>
         <Text style={[s.subtitle, { color: t.muted }]}>
-          Tez orada shu yerda ustalar bilan yozishmalaringizni ko'rasiz
+          {tr('rental.comingSoonSubtitle')}
         </Text>
       </View>
 
       <BottomNav
-        activeTab="chat"
+        activeTab="rental"
         onTabChange={onTabChange}
         accent={t.orange}
         background={t.navBg}

@@ -141,6 +141,34 @@ export async function verifyResetPasswordOtp(phone, code, newPassword) {
   return data.response_data;
 }
 
+export async function requestEmailLoginOtp(email) {
+  const res = await fetch(ENDPOINTS.EMAIL_LOGIN_REQUEST_OTP, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || 'Kod yuborishda xatolik yuz berdi');
+  }
+  const data = await res.json();
+  return data.response_data; // { sent, dev_code }
+}
+
+export async function verifyEmailLoginOtp(email, code) {
+  const res = await fetch(ENDPOINTS.EMAIL_LOGIN_VERIFY_OTP, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, code }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || 'Kodni tasdiqlashda xatolik yuz berdi');
+  }
+  const data = await res.json();
+  return data.response_data; // { access_token, refresh_token }
+}
+
 export async function googleLogin(actorType = 'customer') {
   const redirectUri = Linking.createURL('auth/callback');
   const loginUrl =

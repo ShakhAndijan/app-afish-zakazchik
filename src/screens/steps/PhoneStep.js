@@ -11,14 +11,15 @@ import {
 } from 'react-native';
 import { Feather, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import PhoneInput from '../../components/login/PhoneInput';
 import PasswordInput from '../../components/login/PasswordInput';
 
 const SERVICES = [
-  { name: 'Santexnik', color: '#22b8cf', icon: 'wrench',          lib: 'MaterialCommunityIcons' },
-  { name: 'Elektrik',  color: '#ffd43b', icon: 'lightning-bolt',  lib: 'MaterialCommunityIcons' },
-  { name: "Bo'yoqchi", color: '#ff7ab8', icon: 'brush',           lib: 'MaterialCommunityIcons' },
-  { name: 'Duradgor',  color: '#9775fa', icon: 'hammer',          lib: 'MaterialCommunityIcons' },
+  { key: 'plumber', color: '#22b8cf', icon: 'wrench',          lib: 'MaterialCommunityIcons' },
+  { key: 'electrician',  color: '#ffd43b', icon: 'lightning-bolt',  lib: 'MaterialCommunityIcons' },
+  { key: 'painter', color: '#ff7ab8', icon: 'brush',           lib: 'MaterialCommunityIcons' },
+  { key: 'carpenter',  color: '#9775fa', icon: 'hammer',          lib: 'MaterialCommunityIcons' },
 ];
 
 function ServiceIcon({ icon, color }) {
@@ -42,6 +43,7 @@ export default function PhoneStep({
   actorType = 'customer',
 }) {
   const { theme, toggleTheme } = useTheme();
+  const { t } = useLanguage();
   const isDark = theme.isDark !== false;
   const isUsta = actorType === 'worker';
   const isReady = phone.length === 9 && password.length >= 4 && !loginLoading;
@@ -99,12 +101,10 @@ export default function PhoneStep({
               </View>
             )}
             <Text style={[s.h1, { color: theme.text }]}>
-              {isUsta ? 'Ishni boshlaymizmi?' : 'Xush kelibsiz!'}
+              {isUsta ? t('login.phoneStep.titleUsta') : t('login.phoneStep.titleCustomer')}
             </Text>
             <Text style={[s.sub, { color: theme.muted }]}>
-              {isUsta
-                ? 'Hisobingizga kirib buyurtmalarni qabul qiling va daromad oling.'
-                : 'Hisobingizga kiring va ishonchli ustalarga buyurtma bering.'}
+              {isUsta ? t('login.phoneStep.subtitleUsta') : t('login.phoneStep.subtitleCustomer')}
             </Text>
           </View>
 
@@ -114,33 +114,33 @@ export default function PhoneStep({
               <View style={[s.statBox, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 <MaterialCommunityIcons name="lightning-bolt" size={18} color={theme.gold} />
                 <Text style={[s.statVal, { color: theme.text }]}>5 000+</Text>
-                <Text style={[s.statLbl, { color: theme.muted }]}>oylik ish</Text>
+                <Text style={[s.statLbl, { color: theme.muted }]}>{t('login.phoneStep.statMonthlyJobs')}</Text>
               </View>
               <View style={[s.statBox, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 <MaterialCommunityIcons name="wallet-outline" size={18} color={theme.green} />
-                <Text style={[s.statVal, { color: theme.text }]}>24 soat</Text>
-                <Text style={[s.statLbl, { color: theme.muted }]}>to'lov</Text>
+                <Text style={[s.statVal, { color: theme.text }]}>{t('login.phoneStep.statPayoutValue')}</Text>
+                <Text style={[s.statLbl, { color: theme.muted }]}>{t('login.phoneStep.statPayout')}</Text>
               </View>
               <View style={[s.statBox, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 <Ionicons name="star" size={18} color={theme.gold} />
                 <Text style={[s.statVal, { color: theme.text }]}>4.8</Text>
-                <Text style={[s.statLbl, { color: theme.muted }]}>reyting</Text>
+                <Text style={[s.statLbl, { color: theme.muted }]}>{t('login.phoneStep.statRating')}</Text>
               </View>
             </View>
           )}
 
           {/* ── Phone field ── */}
           <View style={s.fieldWrap}>
-            <Text style={[s.fieldLabel, { color: theme.muted }]}>Telefon raqami</Text>
+            <Text style={[s.fieldLabel, { color: theme.muted }]}>{t('login.phoneStep.phoneLabel')}</Text>
             <PhoneInput value={phone} onChangeText={onChange} theme={theme} />
           </View>
 
           {/* ── Password field ── */}
           <View style={s.fieldWrap}>
-            <Text style={[s.fieldLabel, { color: theme.muted }]}>Parol</Text>
+            <Text style={[s.fieldLabel, { color: theme.muted }]}>{t('login.phoneStep.passwordLabel')}</Text>
             <PasswordInput value={password} onChangeText={onPasswordChange} theme={theme} />
             <TouchableOpacity onPress={onForgot} activeOpacity={0.7} style={s.forgotRow}>
-              <Text style={[s.forgotTxt, { color: theme.orange }]}>Parolni unutdingizmi?</Text>
+              <Text style={[s.forgotTxt, { color: theme.orange }]}>{t('login.phoneStep.forgotPassword')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -170,7 +170,7 @@ export default function PhoneStep({
               <ActivityIndicator size="small" color="#fff" />
             ) : (
               <>
-                <Text style={[s.ctaTxt, !isReady && s.ctaTxtDisabled]}>Kirish</Text>
+                <Text style={[s.ctaTxt, !isReady && s.ctaTxtDisabled]}>{t('login.phoneStep.loginCta')}</Text>
                 <Feather name="arrow-right" size={18} color={isReady ? '#fff' : '#7a6253'} />
               </>
             )}
@@ -181,11 +181,13 @@ export default function PhoneStep({
             <View style={s.chipRow}>
               {SERVICES.map((sv) => (
                 <View
-                  key={sv.name}
+                  key={sv.key}
                   style={[s.chip, { backgroundColor: theme.card, borderColor: theme.border }]}
                 >
                   <ServiceIcon icon={sv.icon} color={sv.color} />
-                  <Text style={[s.chipTxt, { color: theme.muted }]}>{sv.name}</Text>
+                  <Text style={[s.chipTxt, { color: theme.muted }]}>
+                    {t(`login.phoneStep.services.${sv.key}`)}
+                  </Text>
                 </View>
               ))}
             </View>
@@ -194,7 +196,7 @@ export default function PhoneStep({
           {/* ── Social ── */}
           <View style={s.orWrap}>
             <View style={[s.line, { backgroundColor: theme.border }]} />
-            <Text style={[s.orTxt, { color: theme.muted }]}>yoki</Text>
+            <Text style={[s.orTxt, { color: theme.muted }]}>{t('login.phoneStep.or')}</Text>
             <View style={[s.line, { backgroundColor: theme.border }]} />
           </View>
 
@@ -224,18 +226,18 @@ export default function PhoneStep({
           {/* ── Footer ── */}
           <View style={s.footer}>
             <Text style={[s.terms, { color: theme.muted }]}>
-              Davom etish orqali{' '}
-              <Text style={{ color: theme.text, fontWeight: '700' }}>Shartlar</Text>
-              {' va '}
-              <Text style={{ color: theme.text, fontWeight: '700' }}>Maxfiylik siyosati</Text>
-              ga rozilik bildirasiz.
+              {t('login.phoneStep.termsPrefix')}{' '}
+              <Text style={{ color: theme.text, fontWeight: '700' }}>{t('login.phoneStep.termsLink')}</Text>
+              {' ' + t('login.phoneStep.termsAnd') + ' '}
+              <Text style={{ color: theme.text, fontWeight: '700' }}>{t('login.phoneStep.privacyLink')}</Text>
+              {t('login.phoneStep.termsSuffix')}
             </Text>
             <View style={s.regRow}>
               <Text style={[s.regHint, { color: theme.muted }]}>
-                {isUsta ? 'Usta sifatida yangimisiz? ' : "Hisobingiz yo'qmi? "}
+                {isUsta ? t('login.phoneStep.registerHintUsta') : t('login.phoneStep.registerHintCustomer')}
               </Text>
               <TouchableOpacity onPress={onRegister} activeOpacity={0.7}>
-                <Text style={[s.regLink, { color: theme.orange }]}>Ro'yxatdan o'tish</Text>
+                <Text style={[s.regLink, { color: theme.orange }]}>{t('login.phoneStep.registerLink')}</Text>
               </TouchableOpacity>
             </View>
           </View>

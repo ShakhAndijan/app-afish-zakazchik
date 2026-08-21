@@ -9,6 +9,7 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useLanguage } from '../context/LanguageContext';
 
 function Row({ icon, label, color, onPress }) {
   return (
@@ -35,6 +36,7 @@ export default function AvatarPickerSheet({
   previewColor,
   t,
 }) {
+  const { t: tr } = useLanguage();
   return (
     <Modal
       visible={visible}
@@ -70,15 +72,15 @@ export default function AvatarPickerSheet({
         </View>
 
         <View style={[s.group, { backgroundColor: t.card, borderColor: t.border }]}>
-          <Text style={[s.groupTitle, { color: t.muted }]}>Profil rasmini o'zgartirish</Text>
+          <Text style={[s.groupTitle, { color: t.muted }]}>{tr('avatarPicker.title')}</Text>
           <Divider t={t} />
-          <Row icon="camera-outline" label="Kamera" color={t.text} onPress={onPickCamera} />
+          <Row icon="camera-outline" label={tr('avatarPicker.camera')} color={t.text} onPress={onPickCamera} />
           <Divider t={t} />
-          <Row icon="image-multiple-outline" label="Galereya" color={t.text} onPress={onPickGallery} />
+          <Row icon="image-multiple-outline" label={tr('avatarPicker.gallery')} color={t.text} onPress={onPickGallery} />
           {hasPhoto && (
             <>
               <Divider t={t} />
-              <Row icon="trash-can-outline" label="Rasmni o'chirish" color={t.red} onPress={onRemove} />
+              <Row icon="trash-can-outline" label={tr('avatarPicker.remove')} color={t.red} onPress={onRemove} />
             </>
           )}
         </View>
@@ -88,7 +90,7 @@ export default function AvatarPickerSheet({
           activeOpacity={0.6}
           onPress={onClose}
         >
-          <Text style={[s.cancelText, { color: t.text }]}>Bekor qilish</Text>
+          <Text style={[s.cancelText, { color: t.text }]}>{tr('common.cancel')}</Text>
         </TouchableOpacity>
       </View>
     </Modal>

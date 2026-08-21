@@ -1,4 +1,6 @@
-export const API_BASE_URL = 'http://10.240.8.109:9494';
+export const API_BASE_URL = "http://dev-back.afish.uz";
+
+export const YANDEX_MAPS_API_KEY = "e9e77baf-a133-46b1-9f59-055744b55c57";
 
 export const ENDPOINTS = {
   AUTH_GOOGLE_LOGIN: `${API_BASE_URL}/api/v1/auth/google/login`,
@@ -13,6 +15,8 @@ export const ENDPOINTS = {
   AUTH_CHANGE_PHONE_VERIFY_OTP: `${API_BASE_URL}/api/v1/auth/change-phone/verify-otp`,
   RESET_PASSWORD_REQUEST_OTP: `${API_BASE_URL}/api/v1/auth/reset-password/request-otp`,
   RESET_PASSWORD_VERIFY_OTP: `${API_BASE_URL}/api/v1/auth/reset-password/verify-otp`,
+  EMAIL_LOGIN_REQUEST_OTP: `${API_BASE_URL}/api/v1/auth/customer/login/email/request-otp`,
+  EMAIL_LOGIN_VERIFY_OTP: `${API_BASE_URL}/api/v1/auth/customer/login/email/verify-otp`,
   CATEGORIES: `${API_BASE_URL}/api/v1/categories`,
 
   GENDERS: `${API_BASE_URL}/api/v1/genders`,
@@ -21,6 +25,7 @@ export const ENDPOINTS = {
     `${API_BASE_URL}/api/v1/regions/${regionId}/districts`,
   WORKERS: `${API_BASE_URL}/api/v1/workers`,
   WORKER_DETAIL: (workerId) => `${API_BASE_URL}/api/v1/workers/${workerId}`,
+  WORKER_LIKE: (workerId) => `${API_BASE_URL}/api/v1/workers/${workerId}/like`,
   WORKER_CERTIFICATES: (workerId, categoryId) =>
     categoryId
       ? `${API_BASE_URL}/api/v1/workers/${workerId}/certificates?category_id=${categoryId}`

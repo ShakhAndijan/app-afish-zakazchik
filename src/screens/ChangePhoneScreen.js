@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import PhoneInput from '../components/login/PhoneInput';
 import { requestChangePhoneOtp, verifyChangePhoneOtp } from '../api/user';
 import SuccessModal from '../components/SuccessModal';
@@ -78,6 +79,7 @@ function OtpCells({ value, onChange, t, length = 6 }) {
 
 export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
   const { theme: t } = useTheme();
+  const { t: tr } = useLanguage();
   const [step, setStep] = useState('input');
   const [phone, setPhone] = useState('');
   const [sending, setSending] = useState(false);
@@ -112,7 +114,7 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
       setTimer(60);
       setStep('otp');
     } catch (e) {
-      setSendError(e.message || 'Kod yuborishda xatolik yuz berdi');
+      setSendError(e.message || tr('changePhone.sendError'));
     } finally {
       setSending(false);
     }
@@ -126,7 +128,7 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
       setCode('');
       setTimer(60);
     } catch (e) {
-      Alert.alert('Xato', e.message || 'Kod yuborishda xatolik yuz berdi');
+      Alert.alert(tr('common.errorTitle'), e.message || tr('changePhone.sendError'));
     } finally {
       setResending(false);
     }
@@ -140,7 +142,7 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
       await verifyChangePhoneOtp(fullPhone(), code);
       setShowSuccess(true);
     } catch (e) {
-      setConfirmError(e.message || 'Kod noto\'g\'ri, qayta urinib ko\'ring');
+      setConfirmError(e.message || tr('changePhone.codeError'));
     } finally {
       setVerifying(false);
     }
@@ -159,7 +161,7 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
           <MaterialCommunityIcons name="chevron-left" size={24} color={t.text} />
         </TouchableOpacity>
         <Text style={[s.headerTitle, { color: t.text }]}>
-          {step === 'otp' ? 'Tasdiqlash kodi' : 'Telefon raqamini almashtirish'}
+          {step === 'otp' ? tr('changePhone.otpHeaderTitle') : tr('changePhone.headerTitle')}
         </Text>
       </View>
 
@@ -171,12 +173,12 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
                 <MaterialCommunityIcons name="phone-check-outline" size={24} color={t.blue} />
               </View>
               <Text style={[s.heroText, { color: t.muted }]}>
-                Yangi raqamga tasdiqlash kodi yuboriladi. Kodni kiritgach, tizimga shu raqam bilan kirasiz.
+                {tr('changePhone.heroText')}
               </Text>
             </View>
 
             <View style={{ marginTop: 20, gap: 8 }}>
-              <Text style={[s.fieldLabel, { color: t.muted }]}>Joriy raqam</Text>
+              <Text style={[s.fieldLabel, { color: t.muted }]}>{tr('changePhone.currentLabel')}</Text>
               <View style={[s.currentRow, { backgroundColor: t.inputBg, borderColor: t.border }]}>
                 <MaterialCommunityIcons name="phone-outline" size={17} color={t.faint} />
                 <Text style={[s.currentText, { color: t.text }]}>{currentPhone}</Text>
@@ -184,7 +186,7 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
             </View>
 
             <View style={{ marginTop: 18, gap: 8 }}>
-              <Text style={[s.fieldLabel, { color: t.muted }]}>Yangi telefon raqami</Text>
+              <Text style={[s.fieldLabel, { color: t.muted }]}>{tr('changePhone.newLabel')}</Text>
               <PhoneInput value={phone} onChangeText={setPhone} theme={t} />
               {!!sendError && (
                 <Text style={[s.errorText, { color: t.red }]}>{sendError}</Text>
@@ -200,7 +202,7 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
               {sending ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={s.submitText}>Tasdiqlash kodini yuborish</Text>
+                <Text style={s.submitText}>{tr('changePhone.sendCodeBtn')}</Text>
               )}
             </TouchableOpacity>
           </>
@@ -210,10 +212,9 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
               <View style={[s.heroIcon, { backgroundColor: t.green + '1c', width: 64, height: 64, borderRadius: 18 }]}>
                 <MaterialCommunityIcons name="message-processing-outline" size={28} color={t.green} />
               </View>
-              <Text style={[s.otpTitle, { color: t.text }]}>SMS kod yuborildi</Text>
+              <Text style={[s.otpTitle, { color: t.text }]}>{tr('changePhone.smsSentTitle')}</Text>
               <Text style={[s.otpSubtitle, { color: t.muted }]}>
-                <Text style={{ color: t.text, fontWeight: '700' }}>+998 {formatPhone(phone)}</Text>
-                {' '}raqamiga yuborilgan 6 xonali kodni kiriting.
+                {tr('changePhone.smsSentSubtitle', { phone: `+998 ${formatPhone(phone)}` })}
               </Text>
             </View>
 
@@ -227,14 +228,14 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
 
             {!!devCode && (
               <Text style={[s.devCode, { color: t.muted }]}>
-                Dev kod: <Text style={{ color: t.orange, fontWeight: '700' }}>{devCode}</Text>
+                {tr('changePhone.devCode')} <Text style={{ color: t.orange, fontWeight: '700' }}>{devCode}</Text>
               </Text>
             )}
 
             <Text style={[s.timerText, { color: t.muted }]}>
               {timer > 0 ? (
                 <>
-                  Qayta yuborish{' '}
+                  {tr('changePhone.resendIn')}{' '}
                   <Text style={{ color: t.text, fontWeight: '700' }}>
                     00:{String(timer).padStart(2, '0')}
                   </Text>
@@ -243,7 +244,7 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
                 <ActivityIndicator size="small" color={t.orange} />
               ) : (
                 <Text style={{ color: t.orange, fontWeight: '700' }} onPress={handleResend}>
-                  Kodni qayta yuborish
+                  {tr('changePhone.resendNow')}
                 </Text>
               )}
             </Text>
@@ -257,7 +258,7 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
               {verifying ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={s.submitText}>Tasdiqlash</Text>
+                <Text style={s.submitText}>{tr('common.confirm')}</Text>
               )}
             </TouchableOpacity>
           </>
@@ -272,7 +273,7 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
           else onBack();
         }}
         t={t}
-        message="Telefon raqamingiz muvaffaqiyatli yangilandi."
+        message={tr('changePhone.successMessage')}
       />
     </SafeAreaView>
   );

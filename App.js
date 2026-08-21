@@ -25,48 +25,22 @@ import { UserProvider, clearCachedUser } from './src/context/UserContext';
 import { getCategories } from './src/api/categories';
 import { getWorkers } from './src/api/workers';
 import { getTopComments, getTopOrders } from './src/api/reviews';
-import { getToken, getActorType, clearTokens } from './src/utils/token';
+import { unlockToken, hasStoredSession, getActorType, clearTokens } from './src/utils/token';
 import AfishLoader from './src/components/AfishLoader';
+import { LanguageProvider, useLanguage } from './src/context/LanguageContext';
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const STEPS = [
-  {
-    num: 1,
-    title: 'Xizmatni tanlang',
-    desc: 'Kerakli usta turini toping yoki qidiruvdan foydalaning.',
-  },
-  {
-    num: 2,
-    title: 'Buyurtma bering',
-    desc: "Vaqt va manzilni belgilab, ustaga so'rov yuboring.",
-  },
-  {
-    num: 3,
-    title: 'Baholang',
-    desc: 'Ish tugagach reyting va sharh qoldiring.',
-  },
+  { num: 1, key: 'step1' },
+  { num: 2, key: 'step2' },
+  { num: 3, key: 'step3' },
 ];
 
 const BENEFITS_DATA = [
-  {
-    icon: 'shield-check',
-    color: '#2ecc71',
-    title: 'Kafolatlangan ish',
-    desc: 'Har bir buyurtma himoyalangan, sifat kafolati bilan.',
-  },
-  {
-    icon: 'check-decagram',
-    color: '#3b82f6',
-    title: 'Tekshirilgan ustalar',
-    desc: 'Hujjatlari va tajribasi tasdiqlangan mutaxassislar.',
-  },
-  {
-    icon: 'lightning-bolt',
-    color: '#f5b81f',
-    title: 'Tezkor javob',
-    desc: "O'rtacha 15 daqiqada usta sizga bog'lanadi.",
-  },
+  { icon: 'shield-check', color: '#2ecc71', key: 'guaranteed' },
+  { icon: 'check-decagram', color: '#3b82f6', key: 'verified' },
+  { icon: 'lightning-bolt', color: '#f5b81f', key: 'fast' },
 ];
 
 // ─── TaklifXizmatlar ──────────────────────────────────────────────────────────
@@ -74,6 +48,7 @@ const BENEFITS_DATA = [
 const ITEM_SLOT = 76;
 
 function TaklifXizmatlar() {
+  const { t } = useLanguage();
   const [categories, setCategories] = useState([]);
   const flatListRef = useRef(null);
   const activeIndexRef = useRef(0);
@@ -104,9 +79,9 @@ function TaklifXizmatlar() {
   return (
     <View style={tx.container}>
       <View style={tx.header}>
-        <Text style={tx.title}>Taklif xizmatlar</Text>
+        <Text style={tx.title}>{t('app.taklifXizmatlar.title')}</Text>
         <TouchableOpacity activeOpacity={0.7}>
-          <Text style={tx.link}>Barchasi</Text>
+          <Text style={tx.link}>{t('app.taklifXizmatlar.all')}</Text>
         </TouchableOpacity>
       </View>
       <FlatList
@@ -172,10 +147,11 @@ const tx = StyleSheet.create({
 // ─── EngZorUstalar ────────────────────────────────────────────────────────────
 
 function EngZorUstalar({ onSelectUsta }) {
+  const { t } = useLanguage();
   const [workers, setWorkers] = useState([]);
 
   useEffect(() => {
-    getWorkers({ limit: 5 })
+    getWorkers({ size: 5 })
       .then(setWorkers)
       .catch(() => {});
   }, []);
@@ -185,9 +161,9 @@ function EngZorUstalar({ onSelectUsta }) {
   return (
     <View style={eu.container}>
       <View style={eu.header}>
-        <Text style={eu.title}>Eng zo'r ustalar</Text>
+        <Text style={eu.title}>{t('app.engZorUstalar.title')}</Text>
         <TouchableOpacity activeOpacity={0.7}>
-          <Text style={eu.link}>Reyting</Text>
+          <Text style={eu.link}>{t('app.engZorUstalar.rating')}</Text>
         </TouchableOpacity>
       </View>
       {workers.map((worker, i) => (
@@ -225,8 +201,7 @@ function EngZorUstalar({ onSelectUsta }) {
               <Text style={eu.loc}>{worker.location}</Text>
             </View>
             <Text style={eu.price}>
-              Narx:{' '}
-              <Text style={eu.priceBold}>{worker.startingPrice} so'm</Text> dan
+              {t('app.engZorUstalar.priceFrom', { price: worker.startingPrice })}
             </Text>
           </View>
 
@@ -331,6 +306,7 @@ const EI_GAP = 12;
 const EI_SLOT = EI_CARD_W + EI_GAP;
 
 function EngZorIshlar() {
+  const { t } = useLanguage();
   const [works, setWorks] = useState([]);
   const flatListRef = useRef(null);
   const indexRef = useRef(0);
@@ -361,9 +337,9 @@ function EngZorIshlar() {
   return (
     <View style={ei.container}>
       <View style={ei.header}>
-        <Text style={ei.title}>Eng zo'r ishlar</Text>
+        <Text style={ei.title}>{t('app.engZorIshlar.title')}</Text>
         <TouchableOpacity activeOpacity={0.7}>
-          <Text style={ei.link}>Galereya</Text>
+          <Text style={ei.link}>{t('app.engZorIshlar.gallery')}</Text>
         </TouchableOpacity>
       </View>
       <FlatList
@@ -517,6 +493,7 @@ const ei = StyleSheet.create({
 // ─── PromoBanner ──────────────────────────────────────────────────────────────
 
 function PromoBanner({ onPress }) {
+  const { t } = useLanguage();
   return (
     <View style={pb.wrap}>
       <View style={pb.glow} />
@@ -528,12 +505,10 @@ function PromoBanner({ onPress }) {
           style={{ opacity: 0.12 }}
         />
       </View>
-      <Text style={pb.heading}>Ustangizni 2 daqiqada{'\n'}toping</Text>
-      <Text style={pb.sub}>
-        1 200+ tekshirilgan mutaxassis —{'\n'}kafolat bilan ishlaydi.
-      </Text>
+      <Text style={pb.heading}>{t('app.promo.heading')}</Text>
+      <Text style={pb.sub}>{t('app.promo.sub')}</Text>
       <TouchableOpacity style={pb.cta} activeOpacity={0.85} onPress={onPress}>
-        <Text style={pb.ctaTxt}>Boshlash</Text>
+        <Text style={pb.ctaTxt}>{t('app.promo.cta')}</Text>
         <Ionicons name="arrow-forward" size={16} color={COLORS.orange} />
       </TouchableOpacity>
     </View>
@@ -589,12 +564,13 @@ const pb = StyleSheet.create({
 // ─── TrustRow ─────────────────────────────────────────────────────────────────
 
 const TRUST_ITEMS = [
-  { icon: 'shield-check', color: '#2ecc71', label: 'Kafolat' },
-  { icon: 'check-decagram', color: '#3b82f6', label: 'Tekshirilgan' },
-  { icon: 'lightning-bolt', color: '#f5b81f', label: '24/7 xizmat' },
+  { icon: 'shield-check', color: '#2ecc71', key: 'guarantee' },
+  { icon: 'check-decagram', color: '#3b82f6', key: 'verified' },
+  { icon: 'lightning-bolt', color: '#f5b81f', key: 'service247' },
 ];
 
 function TrustRow() {
+  const { t } = useLanguage();
   return (
     <View
       style={{
@@ -628,7 +604,7 @@ function TrustRow() {
           <Text
             style={{ fontSize: 12, color: COLORS.white, fontWeight: '600' }}
           >
-            {item.label}
+            {t(`app.trust.${item.key}`)}
           </Text>
         </View>
       ))}
@@ -638,14 +614,15 @@ function TrustRow() {
 
 // ─── StatsBand ────────────────────────────────────────────────────────────────
 
-const DEFAULT_STATS = [
-  ['1 200+', 'Usta'],
-  ['8 500+', 'Bajarilgan ish'],
-  ['4.8★', "O'rtacha reyting"],
+const DEFAULT_STATS_META = [
+  { value: '1 200+', key: 'workers' },
+  { value: '8 500+', key: 'completedJobs' },
+  { value: '4.8★', key: 'avgRating' },
 ];
 
 function StatsBand() {
-  const [stats, setStats] = useState(DEFAULT_STATS);
+  const { t } = useLanguage();
+  const [stats, setStats] = useState(DEFAULT_STATS_META);
 
   useEffect(() => {
     fetch(ENDPOINTS.SYSTEM_STATS)
@@ -655,9 +632,9 @@ function StatsBand() {
           const { worker_count, order_count, average_rating } =
             data.response_data;
           setStats([
-            [`${worker_count}+`, 'Usta'],
-            [`${order_count}+`, 'Bajarilgan ish'],
-            [`${average_rating.toFixed(1)}★`, "O'rtacha reyting"],
+            { value: `${worker_count}+`, key: 'workers' },
+            { value: `${order_count}+`, key: 'completedJobs' },
+            { value: `${average_rating.toFixed(1)}★`, key: 'avgRating' },
           ]);
         }
       })
@@ -678,7 +655,7 @@ function StatsBand() {
         flexDirection: 'row',
       }}
     >
-      {stats.map(([v, l], i) => (
+      {stats.map((item, i) => (
         <View
           key={i}
           style={{
@@ -691,7 +668,7 @@ function StatsBand() {
           <Text
             style={{ fontSize: 19, fontWeight: '800', color: COLORS.white }}
           >
-            {v}
+            {item.value}
           </Text>
           <Text
             style={{
@@ -702,7 +679,7 @@ function StatsBand() {
               paddingHorizontal: 4,
             }}
           >
-            {l}
+            {t(`app.stats.${item.key}`)}
           </Text>
         </View>
       ))}
@@ -713,6 +690,7 @@ function StatsBand() {
 // ─── HowItWorks ───────────────────────────────────────────────────────────────
 
 function HowItWorks() {
+  const { t } = useLanguage();
   return (
     <View style={{ paddingHorizontal: 16, marginBottom: 32, gap: 16 }}>
       {STEPS.map((s) => (
@@ -746,10 +724,10 @@ function HowItWorks() {
                 marginBottom: 4,
               }}
             >
-              {s.title}
+              {t(`app.steps.${s.key}Title`)}
             </Text>
             <Text style={{ color: COLORS.gray, fontSize: 13, lineHeight: 19 }}>
-              {s.desc}
+              {t(`app.steps.${s.key}Desc`)}
             </Text>
           </View>
         </View>
@@ -875,6 +853,7 @@ function ReviewsSection() {
 // ─── BenefitsSection ──────────────────────────────────────────────────────────
 
 function BenefitsSection() {
+  const { t } = useLanguage();
   return (
     <View style={{ paddingHorizontal: 16, marginBottom: 32, gap: 12 }}>
       {BENEFITS_DATA.map((b, i) => (
@@ -913,10 +892,10 @@ function BenefitsSection() {
                 marginBottom: 4,
               }}
             >
-              {b.title}
+              {t(`app.benefits.${b.key}Title`)}
             </Text>
             <Text style={{ color: COLORS.gray, fontSize: 13, lineHeight: 19 }}>
-              {b.desc}
+              {t(`app.benefits.${b.key}Desc`)}
             </Text>
           </View>
         </View>
@@ -928,6 +907,7 @@ function BenefitsSection() {
 // ─── ClosingCTA ───────────────────────────────────────────────────────────────
 
 function ClosingCTA({ onPress }) {
+  const { t } = useLanguage();
   return (
     <View
       style={{
@@ -961,7 +941,7 @@ function ClosingCTA({ onPress }) {
           lineHeight: 27,
         }}
       >
-        Birinchi buyurtmangizni bering
+        {t('app.closingCta.title')}
       </Text>
       <Text
         style={{
@@ -972,7 +952,7 @@ function ClosingCTA({ onPress }) {
           lineHeight: 20,
         }}
       >
-        Ro'yxatdan o'ting va ishonchli ustalardan foydalaning.
+        {t('app.closingCta.sub')}
       </Text>
       <TouchableOpacity
         onPress={onPress}
@@ -990,7 +970,7 @@ function ClosingCTA({ onPress }) {
       >
         <Feather name="log-in" size={18} color="#fff" />
         <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>
-          Kirish / Ro'yxatdan o'tish
+          {t('app.closingCta.button')}
         </Text>
       </TouchableOpacity>
     </View>
@@ -1025,20 +1005,41 @@ function SectionHead({ title, link }) {
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 
-export default function App() {
+function AppShell() {
+  const { t } = useLanguage();
   const [searchText, setSearchText] = useState('');
   const [screen, setScreen] = useState('home');
   const [selectedUsta, setSelectedUsta] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [biometricLocked, setBiometricLocked] = useState(false);
+  const [unlocking, setUnlocking] = useState(false);
+
+  const tryUnlock = async () => {
+    const token = await unlockToken();
+    if (!token) return false;
+    const actorType = await getActorType();
+    setScreen(actorType === 'worker' ? 'usta-dashboard' : 'zakazchi-dashboard');
+    setBiometricLocked(false);
+    return true;
+  };
+
+  const handleRetryUnlock = async () => {
+    setUnlocking(true);
+    const ok = await tryUnlock();
+    setUnlocking(false);
+    if (!ok) setBiometricLocked(true);
+  };
+
+  const handleAbandonSession = async () => {
+    await clearTokens();
+    setBiometricLocked(false);
+  };
 
   useEffect(() => {
     (async () => {
-      const token = await getToken();
-      if (token) {
-        const actorType = await getActorType();
-        setScreen(
-          actorType === 'worker' ? 'usta-dashboard' : 'zakazchi-dashboard'
-        );
+      if (await hasStoredSession()) {
+        const ok = await tryUnlock();
+        if (!ok) setBiometricLocked(true);
       }
       setAuthChecked(true);
     })();
@@ -1056,6 +1057,66 @@ export default function App() {
         >
           <AfishLoader size={160} />
         </View>
+      </SafeAreaProvider>
+    );
+  }
+
+  if (biometricLocked) {
+    return (
+      <SafeAreaProvider>
+        <StatusBar style="light" />
+        <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
+          <View
+            style={{
+              flex: 1,
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingHorizontal: 32,
+              gap: 18,
+            }}
+          >
+            <View
+              style={{
+                width: 84,
+                height: 84,
+                borderRadius: 42,
+                backgroundColor: 'rgba(232,122,69,0.14)',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <MaterialCommunityIcons name="fingerprint" size={44} color={COLORS.orange} />
+            </View>
+            <Text style={{ color: COLORS.white, fontSize: 17, fontWeight: '800', textAlign: 'center' }}>
+              {t('app.lock.title')}
+            </Text>
+            <Text style={{ color: COLORS.muted, fontSize: 13.5, textAlign: 'center', lineHeight: 19 }}>
+              {t('app.lock.subtitle')}
+            </Text>
+            <TouchableOpacity
+              onPress={handleRetryUnlock}
+              disabled={unlocking}
+              activeOpacity={0.85}
+              style={{
+                marginTop: 10,
+                backgroundColor: COLORS.orange,
+                borderRadius: 14,
+                paddingVertical: 14,
+                paddingHorizontal: 28,
+                opacity: unlocking ? 0.7 : 1,
+              }}
+            >
+              <Text style={{ color: '#fff', fontSize: 14.5, fontWeight: '700' }}>
+                {unlocking ? t('app.lock.checking') : t('app.lock.retry')}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleAbandonSession} activeOpacity={0.7} style={{ marginTop: 4 }}>
+              <Text style={{ color: COLORS.faint, fontSize: 12.5, fontWeight: '600' }}>
+                {t('app.lock.useOtherAccount')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
       </SafeAreaProvider>
     );
   }
@@ -1147,7 +1208,7 @@ export default function App() {
                 color={COLORS.white}
                 style={{ marginRight: 6 }}
               />
-              <Text style={styles.loginBtnTxt}>Kirish</Text>
+              <Text style={styles.loginBtnTxt}>{t('app.header.login')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -1162,7 +1223,7 @@ export default function App() {
               />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Qaysi usta kerak?"
+                placeholder={t('app.search.placeholder')}
                 placeholderTextColor={COLORS.gray}
                 value={searchText}
                 onChangeText={setSearchText}
@@ -1190,15 +1251,15 @@ export default function App() {
           <StatsBand />
 
           {/* ── Qanday ishlaydi ── */}
-          <SectionHead title="Qanday ishlaydi" />
+          <SectionHead title={t('app.sectionHead.howItWorks')} />
           <HowItWorks />
 
           {/* ── Mijozlar fikri ── */}
-          <SectionHead title="Mijozlar fikri" />
+          <SectionHead title={t('app.sectionHead.reviews')} />
           <ReviewsSection />
 
           {/* ── Nega AFISH? ── */}
-          <SectionHead title="Nega AFISH?" />
+          <SectionHead title={t('app.sectionHead.whyAfish')} />
           <BenefitsSection />
 
           {/* ── Closing CTA ── */}
@@ -1206,6 +1267,14 @@ export default function App() {
         </ScrollView>
       </SafeAreaView>
     </SafeAreaProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <LanguageProvider>
+      <AppShell />
+    </LanguageProvider>
   );
 }
 

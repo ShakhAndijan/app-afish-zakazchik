@@ -13,6 +13,7 @@
     "android": {
       "package": "uz.afish.zakazchik",
       "softwareKeyboardLayoutMode": "resize",
+      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/afish-logo-icon.png"
@@ -29,7 +30,13 @@
       "expo-web-browser",
       "expo-location",
       "expo-secure-store",
-      "expo-image"
+      "expo-image",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Ilova hisobingizga xavfsiz kirish uchun Face ID dan foydalanadi."
+        }
+      ]
     ],
     "extra": {
       "eas": {

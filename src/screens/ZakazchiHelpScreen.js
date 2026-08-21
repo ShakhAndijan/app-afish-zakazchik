@@ -11,61 +11,49 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 
-const FAQ = [
-  {
-    q: 'Buyurtmani qanday bekor qilaman?',
-    a: "Buyurtmalar bo'limidan kerakli buyurtmani oching va \"Bekor qilish\" tugmasini bosing. Usta yo'lga chiqmagan bo'lsa bepul.",
-  },
-  {
-    q: 'Pul qaytarish qancha vaqt oladi?',
-    a: "To'lov bekor qilinganda mablag' 1–3 ish kuni ichida hamyoningizga yoki kartangizga qaytariladi.",
-  },
-  {
-    q: 'Usta belgilangan vaqtda kelmadi',
-    a: 'Buyurtma sahifasidagi chat orqali usta bilan bog\'laning yoki "Shikoyat" tugmasi orqali bizga xabar bering.',
-  },
-];
+const FAQ_KEYS = ['cancelOrder', 'refundTime', 'masterLate'];
 
 const CONTACTS = [
   {
+    key: 'liveChat',
     icon: 'message-text',
     bg: '#e87a45',
-    title: 'Jonli chat',
-    sub: "Eng tez yo'l",
-    badge: 'Onlayn',
+    hasBadge: true,
   },
   {
+    key: 'call',
     icon: 'phone',
     bg: '#2fa37a',
-    title: "Qo'ng'iroq",
     sub: '+998 95 023 99 22',
     onPress: () => Linking.openURL('tel:+998950239922'),
   },
   {
+    key: 'telegram',
     icon: 'send',
     bg: '#2aabee',
-    title: 'Telegram',
     sub: '@Shakhzodbek_AA',
     onPress: () => Linking.openURL('https://t.me/Shakhzodbek_AA'),
   },
   {
+    key: 'email',
     icon: 'email-outline',
     bg: '#3f7fd4',
-    title: 'Email',
     sub: 'shakhandijan@gmail.com',
     onPress: () => Linking.openURL('mailto:shakhandijan@gmail.com'),
   },
 ];
 
-function FaqItem({ item, isOpen, onToggle }) {
+function FaqItem({ faqKey, isOpen, onToggle }) {
   const { theme: t } = useTheme();
+  const { t: tr } = useLanguage();
   const [liked, setLiked] = useState(null);
 
   return (
     <View>
       <TouchableOpacity style={s.faqRow} activeOpacity={0.7} onPress={onToggle}>
-        <Text style={[s.faqQ, { color: t.text, flex: 1 }]}>{item.q}</Text>
+        <Text style={[s.faqQ, { color: t.text, flex: 1 }]}>{tr(`help.faq.${faqKey}.q`)}</Text>
         <MaterialCommunityIcons
           name={isOpen ? 'chevron-up' : 'chevron-down'}
           size={18}
@@ -76,10 +64,10 @@ function FaqItem({ item, isOpen, onToggle }) {
         <View
           style={[s.faqBody, { borderTopWidth: 1, borderTopColor: t.border }]}
         >
-          <Text style={[s.faqA, { color: t.muted }]}>{item.a}</Text>
+          <Text style={[s.faqA, { color: t.muted }]}>{tr(`help.faq.${faqKey}.a`)}</Text>
           <View style={s.feedbackRow}>
             <Text style={{ fontSize: 11.5, color: t.faint, flex: 1 }}>
-              Foydali bo'ldimi?
+              {tr('help.wasHelpful')}
             </Text>
             <TouchableOpacity
               style={[
@@ -130,11 +118,11 @@ function FaqAccordion() {
     <View
       style={[s.faqCard, { backgroundColor: t.card, borderColor: t.border }]}
     >
-      {FAQ.map((item, i) => (
-        <View key={i}>
+      {FAQ_KEYS.map((faqKey, i) => (
+        <View key={faqKey}>
           {i > 0 && <View style={{ height: 1, backgroundColor: t.border }} />}
           <FaqItem
-            item={item}
+            faqKey={faqKey}
             isOpen={openIdx === i}
             onToggle={() => setOpenIdx(openIdx === i ? -1 : i)}
           />
@@ -146,6 +134,7 @@ function FaqAccordion() {
 
 export default function ZakazchiHelpScreen({ onBack }) {
   const { theme: t } = useTheme();
+  const { t: tr } = useLanguage();
 
   return (
     <SafeAreaView
@@ -175,7 +164,7 @@ export default function ZakazchiHelpScreen({ onBack }) {
             />
           </TouchableOpacity>
           <Text style={{ fontWeight: '700', fontSize: 20, color: t.text }}>
-            Yordam markazi
+            {tr('profile.settings.helpCenter')}
           </Text>
         </View>
 
@@ -190,7 +179,7 @@ export default function ZakazchiHelpScreen({ onBack }) {
               />
             </View>
             <Text style={{ fontWeight: '700', fontSize: 19, color: '#fff' }}>
-              Sizga qanday yordam beramiz?
+              {tr('help.heroTitle')}
             </Text>
             <Text
               style={{
@@ -200,16 +189,16 @@ export default function ZakazchiHelpScreen({ onBack }) {
                 maxWidth: 220,
               }}
             >
-              Operatorlar 24/7 onlayn · o'rtacha 2 daqiqada javob beramiz
+              {tr('help.heroSubtitle')}
             </Text>
           </View>
         </View>
 
         {/* ── Bog'lanish kanallari ── */}
         <View style={{ paddingHorizontal: 20, marginTop: 18, gap: 11 }}>
-          {CONTACTS.map((item, i) => (
+          {CONTACTS.map((item) => (
             <TouchableOpacity
-              key={i}
+              key={item.key}
               style={[
                 s.contactRow,
                 { backgroundColor: t.card, borderColor: t.border },
@@ -228,15 +217,15 @@ export default function ZakazchiHelpScreen({ onBack }) {
                 <Text
                   style={{ fontWeight: '700', fontSize: 14, color: t.text }}
                 >
-                  {item.title}
+                  {tr(`help.contacts.${item.key}`)}
                 </Text>
                 <Text style={{ fontSize: 11.5, color: t.muted, marginTop: 2 }}>
-                  {item.sub}
+                  {item.sub || tr('help.liveChatSub')}
                 </Text>
               </View>
-              {item.badge && (
+              {item.hasBadge && (
                 <View style={s.badge}>
-                  <Text style={s.badgeTxt}>{item.badge}</Text>
+                  <Text style={s.badgeTxt}>{tr('help.onlineBadge')}</Text>
                 </View>
               )}
               <MaterialCommunityIcons
@@ -259,7 +248,7 @@ export default function ZakazchiHelpScreen({ onBack }) {
               marginBottom: 12,
             }}
           >
-            Tez-tez so'raladi
+            {tr('help.faqTitle')}
           </Text>
           <FaqAccordion />
         </View>

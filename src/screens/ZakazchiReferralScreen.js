@@ -12,6 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import QRCode from 'react-native-qrcode-svg';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const fmt = (n) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
@@ -20,53 +21,19 @@ const YOU_GET = 50000;
 const FRIEND_GETS = 30000;
 
 const INVITED = [
-  {
-    name: 'Sherzod A.',
-    initial: 'S',
-    color: '#3E8BE8',
-    status: 'earned',
-    note: "+50 000 so'm",
-  },
-  {
-    name: 'Madina R.',
-    initial: 'M',
-    color: '#E85B9A',
-    status: 'pending',
-    note: 'Buyurtma kutilmoqda',
-  },
-  {
-    name: 'Otabek K.',
-    initial: 'O',
-    color: '#34B57C',
-    status: 'earned',
-    note: "+50 000 so'm",
-  },
-  {
-    name: 'Lola T.',
-    initial: 'L',
-    color: '#9B6FE3',
-    status: 'joined',
-    note: "Ro'yxatdan o'tdi",
-  },
+  { name: 'Sherzod A.', initial: 'S', color: '#3E8BE8', status: 'earned', amount: 50000 },
+  { name: 'Madina R.', initial: 'M', color: '#E85B9A', status: 'pending' },
+  { name: 'Otabek K.', initial: 'O', color: '#34B57C', status: 'earned', amount: 50000 },
+  { name: 'Lola T.', initial: 'L', color: '#9B6FE3', status: 'joined' },
 ];
 
-const STEPS = [
-  { title: 'Kodni ulashing', desc: "Do'stingizga havola yoki kodni yuboring" },
-  {
-    title: "Do'st ro'yxatdan o'tadi",
-    desc: 'Sizning kodingiz bilan ilovaga kiradi',
-  },
-  {
-    title: 'Ikkalangiz bonus olasiz',
-    desc: 'U birinchi buyurtma bergach pul keladi',
-  },
-];
+const STEP_KEYS = ['shareCode', 'friendJoins', 'bothGetBonus'];
 
 const SHARE_APPS = [
-  { icon: 'send', label: 'Telegram', bg: '#2AABEE', fg: '#fff' },
-  { icon: 'whatsapp', label: 'WhatsApp', bg: '#25D366', fg: '#fff' },
-  { icon: 'message-text-outline', label: 'SMS', bg: null, fg: null },
-  { icon: 'link-variant', label: 'Havola', bg: null, fg: null },
+  { key: 'telegram', icon: 'send', label: 'Telegram', bg: '#2AABEE', fg: '#fff' },
+  { key: 'whatsapp', icon: 'whatsapp', label: 'WhatsApp', bg: '#25D366', fg: '#fff' },
+  { key: 'sms', icon: 'message-text-outline', label: 'SMS', bg: null, fg: null },
+  { key: 'link', icon: 'link-variant', labelKey: 'link', bg: null, fg: null },
 ];
 
 function genCode() {
@@ -79,6 +46,7 @@ function genCode() {
 }
 
 function CodeBox({ t }) {
+  const { t: tr } = useLanguage();
   const [code, setCode] = useState(INITIAL_CODE);
   const [copied, setCopied] = useState(false);
   const spinAnim = useRef(new Animated.Value(0)).current;
@@ -125,14 +93,14 @@ function CodeBox({ t }) {
           />
         </View>
         <Text style={[s.qrHint, { color: t.muted }]}>
-          Do'stingiz skanerlasin yoki kodni yuboring
+          {tr('referral.qrHint')}
         </Text>
       </View>
 
       {/* Code display */}
       <View style={[s.codeDisplay, { borderColor: t.border }]}>
         <Text style={[s.codeMono, { color: t.text }]}>{code}</Text>
-        <Text style={[s.codeHint, { color: t.muted }]}>SIZNING KODINGIZ</Text>
+        <Text style={[s.codeHint, { color: t.muted }]}>{tr('referral.yourCode')}</Text>
       </View>
       {/* Buttons */}
       <View style={s.codeBtns}>
@@ -150,7 +118,7 @@ function CodeBox({ t }) {
             color={copied ? t.green : '#fff'}
           />
           <Text style={[s.codeBtnText, { color: copied ? t.green : '#fff' }]}>
-            {copied ? 'Nusxalandi' : 'Nusxa olish'}
+            {copied ? tr('referral.copied') : tr('referral.copyCode')}
           </Text>
         </TouchableOpacity>
 
@@ -169,7 +137,7 @@ function CodeBox({ t }) {
           <Animated.View style={{ transform: [{ rotate: spin }] }}>
             <MaterialCommunityIcons name="refresh" size={16} color={t.text} />
           </Animated.View>
-          <Text style={[s.codeBtnText, { color: t.text }]}>Kod olish</Text>
+          <Text style={[s.codeBtnText, { color: t.text }]}>{tr('referral.getNewCode')}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -177,11 +145,12 @@ function CodeBox({ t }) {
 }
 
 function ShareRow({ t }) {
+  const { t: tr } = useLanguage();
   return (
     <View style={s.shareRow}>
       {SHARE_APPS.map((app) => (
         <TouchableOpacity
-          key={app.label}
+          key={app.key}
           style={s.shareItem}
           activeOpacity={0.8}
         >
@@ -200,7 +169,9 @@ function ShareRow({ t }) {
               color={app.fg || t.text}
             />
           </View>
-          <Text style={[s.shareLabel, { color: t.muted }]}>{app.label}</Text>
+          <Text style={[s.shareLabel, { color: t.muted }]}>
+            {app.labelKey ? tr(`referral.share.${app.labelKey}`) : app.label}
+          </Text>
         </TouchableOpacity>
       ))}
     </View>
@@ -208,12 +179,19 @@ function ShareRow({ t }) {
 }
 
 function InvitedRow({ item, border, t }) {
+  const { t: tr } = useLanguage();
   const statusColors = {
     earned: { color: t.green, bg: 'rgba(47,163,122,0.15)' },
     pending: { color: t.orange, bg: 'rgba(232,122,69,0.15)' },
     joined: { color: t.muted, bg: t.rowIconBg },
   };
   const m = statusColors[item.status] || statusColors.joined;
+  const note =
+    item.status === 'earned'
+      ? tr('referral.status.earned', { amount: fmt(item.amount) })
+      : item.status === 'pending'
+        ? tr('referral.status.pending')
+        : tr('referral.status.joined');
 
   return (
     <View
@@ -227,7 +205,7 @@ function InvitedRow({ item, border, t }) {
       </View>
       <Text style={[s.invName, { color: t.text }]}>{item.name}</Text>
       <View style={[s.invBadge, { backgroundColor: m.bg }]}>
-        <Text style={[s.invBadgeText, { color: m.color }]}>{item.note}</Text>
+        <Text style={[s.invBadgeText, { color: m.color }]}>{note}</Text>
       </View>
     </View>
   );
@@ -235,6 +213,7 @@ function InvitedRow({ item, border, t }) {
 
 export default function ZakazchiReferralScreen({ onBack }) {
   const { theme: t } = useTheme();
+  const { t: tr } = useLanguage();
 
   return (
     <SafeAreaView
@@ -260,7 +239,7 @@ export default function ZakazchiReferralScreen({ onBack }) {
           />
         </TouchableOpacity>
         <Text style={[s.headerTitle, { color: t.text }]}>
-          Do'stni taklif et
+          {tr('referral.headerTitle')}
         </Text>
       </View>
 
@@ -279,30 +258,33 @@ export default function ZakazchiReferralScreen({ onBack }) {
             />
           </View>
           <Text style={s.heroTitle}>
-            Do'st chaqiring,{'\n'}
-            {fmt(YOU_GET)} so'm oling
+            {tr('referral.heroTitle', { amount: fmt(YOU_GET) })}
           </Text>
           <Text style={s.heroSub}>
-            Do'stingiz ham {fmt(FRIEND_GETS)} so'mlik chegirma oladi
+            {tr('referral.heroSubtitle', { amount: fmt(FRIEND_GETS) })}
           </Text>
         </View>
 
         {/* ── You / Friend split ── */}
         <View style={s.splitRow}>
           {[
-            ['Siz olasiz', YOU_GET, t.green],
-            ["Do'stingiz oladi", FRIEND_GETS, t.orange],
-          ].map(([label, val, col]) => (
+            ['youGet', YOU_GET, t.green],
+            ['friendGets', FRIEND_GETS, t.orange],
+          ].map(([labelKey, val, col]) => (
             <View
-              key={label}
+              key={labelKey}
               style={[
                 s.splitCard,
                 { backgroundColor: t.card, borderColor: t.border },
               ]}
             >
-              <Text style={[s.splitLabel, { color: t.muted }]}>{label}</Text>
+              <Text style={[s.splitLabel, { color: t.muted }]}>
+                {tr(`referral.split.${labelKey}`)}
+              </Text>
               <Text style={[s.splitValue, { color: col }]}>{fmt(val)}</Text>
-              <Text style={[s.splitSub, { color: t.faint }]}>so'm</Text>
+              <Text style={[s.splitSub, { color: t.faint }]}>
+                {tr('common.currencySom')}
+              </Text>
             </View>
           ))}
         </View>
@@ -315,10 +297,12 @@ export default function ZakazchiReferralScreen({ onBack }) {
 
         {/* ── How it works ── */}
         <View>
-          <Text style={[s.secTitle, { color: t.text }]}>Qanday ishlaydi</Text>
+          <Text style={[s.secTitle, { color: t.text }]}>
+            {tr('referral.howItWorksTitle')}
+          </Text>
           <View style={s.stepsCol}>
-            {STEPS.map((st, i) => (
-              <View key={i} style={s.stepRow}>
+            {STEP_KEYS.map((stepKey, i) => (
+              <View key={stepKey} style={s.stepRow}>
                 <View style={s.stepNum}>
                   <Text style={[s.stepNumText, { color: t.orange }]}>
                     {i + 1}
@@ -326,10 +310,10 @@ export default function ZakazchiReferralScreen({ onBack }) {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[s.stepTitle, { color: t.text }]}>
-                    {st.title}
+                    {tr(`referral.steps.${stepKey}.title`)}
                   </Text>
                   <Text style={[s.stepDesc, { color: t.muted }]}>
-                    {st.desc}
+                    {tr(`referral.steps.${stepKey}.desc`)}
                   </Text>
                 </View>
               </View>
@@ -354,11 +338,11 @@ export default function ZakazchiReferralScreen({ onBack }) {
                 color={t.orange}
               />
               <Text style={[s.invTitle, { color: t.text }]}>
-                Taklif qilinganlar
+                {tr('referral.invitedTitle')}
               </Text>
             </View>
             <Text style={[s.invCount, { color: t.muted }]}>
-              {INVITED.length} ta
+              {tr('referral.invitedCount', { n: INVITED.length })}
             </Text>
           </View>
           {INVITED.map((item, i) => (

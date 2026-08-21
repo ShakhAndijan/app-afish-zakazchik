@@ -15,22 +15,26 @@ export function mapWorker(w) {
     color: AVATAR_COLORS[w.id % AVATAR_COLORS.length],
     profile_photo: w.profile_photo ?? null,
     profession: w.bio?.split(/[.,،]/)[0]?.trim() ?? '',
+    bio: w.bio ?? '',
     rating: parseFloat(w.overall_rating ?? '0'),
     location: [w.district, w.region].filter(Boolean).join(', '),
     experience: `${w.experience_years} yil`,
+    experienceYears: w.experience_years ?? 0,
     startingPrice: formatPrice(w.min_price ?? '0'),
+    minPrice: parseFloat(w.min_price ?? '0'),
     is_online: w.is_online ?? false,
+    isIdentityVerified: !!w.is_identity_verified,
     reliability_badge: w.reliability_badge ?? 'none',
     vip_status: w.vip_status ?? 'none',
   };
 }
 
 /**
- * @param {{ limit?: number, offset?: number, categoryId?: number|string|null }} params
+ * @param {{ page?: number, size?: number, categoryId?: number|string|null, sort?: string }} params
  * @returns {Promise<ReturnType<mapWorker>[]>}
  */
-export async function getWorkers({ limit = 5, offset = 0, categoryId } = {}) {
-  const params = `limit=${limit}&offset=${offset}`;
+export async function getWorkers({ page = 1, size = 5, categoryId, sort = 'rating' } = {}) {
+  const params = `sort=${sort}&page=${page}&size=${size}`;
   const url = categoryId
     ? `${ENDPOINTS.WORKERS}?category_id=${categoryId}&${params}`
     : `${ENDPOINTS.WORKERS}?${params}`;
@@ -41,7 +45,8 @@ export async function getWorkers({ limit = 5, offset = 0, categoryId } = {}) {
   }
 
   const json = await res.json();
-  return (json.response_data ?? []).map(mapWorker);
+  const items = json.response_data?.items ?? json.response_data ?? [];
+  return items.map(mapWorker);
 }
 
 /**
@@ -158,6 +163,7 @@ export function mapWorkerDetail(w) {
       1: ratingBreakdown.one ?? 0,
     },
     startingPrice: primary?.minPrice ?? primary?.price ?? '0',
+    isLiked: !!(w.is_liked ?? w.is_favorite),
     categories: mappedCategories,
     portfolio: (w.portfolio ?? []).map(mapPortfolioItem),
     certificates: (w.certificates ?? []).map(mapCertificate),
@@ -178,6 +184,28 @@ export async function getWorkerById(workerId) {
 
   const json = await res.json();
   return mapWorkerDetail(json.response_data);
+}
+
+/**
+ * @param {number|string} workerId
+ */
+export async function likeWorker(workerId) {
+  const res = await apiFetch(ENDPOINTS.WORKER_LIKE(workerId), { method: 'POST' });
+
+  if (!res.ok) {
+    throw new Error(`Like worker failed: ${res.status}`);
+  }
+}
+
+/**
+ * @param {number|string} workerId
+ */
+export async function unlikeWorker(workerId) {
+  const res = await apiFetch(ENDPOINTS.WORKER_LIKE(workerId), { method: 'DELETE' });
+
+  if (!res.ok) {
+    throw new Error(`Unlike worker failed: ${res.status}`);
+  }
 }
 
 /**

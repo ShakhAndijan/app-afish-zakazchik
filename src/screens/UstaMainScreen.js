@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useLanguage } from '../context/LanguageContext';
 
 const M = {
   bg: '#0c1828',
@@ -27,39 +28,13 @@ const M = {
   faint: '#6c7f9a',
 };
 
-const WEEK = [
-  ['Du', 40],
-  ['Se', 65],
-  ['Ch', 55],
-  ['Pa', 80],
-  ['Ju', 70],
-  ['Sh', 100],
-  ['Ya', 45],
-];
-const MAX_WEEK = Math.max(...WEEK.map((d) => d[1]));
+const WEEK_VALUES = [40, 65, 55, 80, 70, 100, 45];
+const MAX_WEEK = Math.max(...WEEK_VALUES);
 
-const STATS = [
-  {
-    key: 'kln',
-    value: '247',
-    label: 'Bajarilgan ish',
-    color: M.green,
-    icon: 'checkmark-circle',
-  },
-  {
-    key: 'str',
-    value: '4.9',
-    label: "O'rtacha reyting",
-    color: M.gold,
-    icon: 'star',
-  },
-  {
-    key: 'rsp',
-    value: '12 daq',
-    label: "O'rtacha javob",
-    color: M.blue,
-    icon: 'time',
-  },
+const STATS_META = [
+  { key: 'kln', rawValue: '247', color: M.green, icon: 'checkmark-circle' },
+  { key: 'str', rawValue: '4.9', color: M.gold, icon: 'star' },
+  { key: 'rsp', rawValue: '12', color: M.blue, icon: 'time' },
 ];
 
 const JOBS = [
@@ -82,10 +57,10 @@ const JOBS = [
 ];
 
 const NAV = [
-  { key: 'home', label: 'Asosiy', on: 'home', off: 'home-outline' },
-  { key: 'orders', label: 'Buyurtmalar', on: 'grid', off: 'grid-outline' },
-  { key: 'wallet', label: 'Hamyon', on: 'wallet', off: 'wallet-outline' },
-  { key: 'profile', label: 'Profil', on: 'person', off: 'person-outline' },
+  { key: 'home', on: 'home', off: 'home-outline' },
+  { key: 'orders', on: 'grid', off: 'grid-outline' },
+  { key: 'wallet', on: 'wallet', off: 'wallet-outline' },
+  { key: 'profile', on: 'person', off: 'person-outline' },
 ];
 
 function Avatar({ letter = 'A', size = 42, bgColor = M.orange }) {
@@ -108,9 +83,21 @@ function Avatar({ letter = 'A', size = 42, bgColor = M.orange }) {
 }
 
 export default function UstaMainScreen({ onLogout }) {
+  const { t: tr } = useLanguage();
   const [online, setOnline] = useState(true);
   const [activeTab, setActiveTab] = useState('home');
   const [screen, setScreen] = useState(null);
+
+  const weekDays = tr('ustaMain.weekDays');
+  const WEEK = WEEK_VALUES.map((v, i) => [weekDays[i], v]);
+  const STATS = STATS_META.map((st) => ({
+    ...st,
+    label: tr(`ustaMain.stats.${st.key}.label`),
+    value:
+      st.key === 'rsp'
+        ? tr('ustaMain.stats.rsp.value', { n: st.rawValue })
+        : st.rawValue,
+  }));
 
   return (
     <SafeAreaView
@@ -132,7 +119,7 @@ export default function UstaMainScreen({ onLogout }) {
               <Avatar letter="A" bgColor={M.orange} />
               <View>
                 <Text style={{ fontSize: 11.5, color: M.muted }}>
-                  Usta kabineti
+                  {tr('ustaMain.cabinet')}
                 </Text>
                 <Text
                   style={{ fontWeight: '700', fontSize: 15.5, color: M.white }}
@@ -177,7 +164,7 @@ export default function UstaMainScreen({ onLogout }) {
                   color: online ? M.green : M.white,
                 }}
               >
-                {online ? 'Onlayn — buyurtma qabul qilinmoqda' : 'Oflayn'}
+                {online ? tr('ustaMain.onlineStatus') : tr('ustaMain.offlineStatus')}
               </Text>
               <Text
                 style={{
@@ -188,8 +175,8 @@ export default function UstaMainScreen({ onLogout }) {
                 }}
               >
                 {online
-                  ? "Mijozlar sizni qidiruvda ko'radi"
-                  : 'Yangi buyurtmalar kelmaydi'}
+                  ? tr('ustaMain.onlineSub')
+                  : tr('ustaMain.offlineSub')}
               </Text>
             </View>
             <TouchableOpacity
@@ -220,24 +207,24 @@ export default function UstaMainScreen({ onLogout }) {
               <MaterialCommunityIcons name="wallet" size={56} color="#fff" />
             </View>
             <Text style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.92)' }}>
-              Hisobingizdagi mablag'
+              {tr('ustaMain.balanceLabel')}
             </Text>
             <Text style={s.balanceAmt}>
-              1 840 000 <Text style={s.balanceCur}>so'm</Text>
+              1 840 000 <Text style={s.balanceCur}>{tr('common.currencySom')}</Text>
             </Text>
             <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
               <TouchableOpacity style={s.btnWhite} activeOpacity={0.8}>
                 <Text
                   style={{ color: M.orangeD, fontWeight: '700', fontSize: 13 }}
                 >
-                  Pul yechish
+                  {tr('ustaMain.withdraw')}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.btnOutline} activeOpacity={0.8}>
                 <Text
                   style={{ color: M.white, fontWeight: '700', fontSize: 13 }}
                 >
-                  Tarix
+                  {tr('ustaMain.history')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -254,8 +241,8 @@ export default function UstaMainScreen({ onLogout }) {
           }}
         >
           {[
-            { label: 'Bugun', val: '340 000', sub: '4 buyurtma' },
-            { label: 'Bu hafta', val: '1.8M', sub: "↑ 12% o'sish" },
+            { label: tr('ustaMain.today'), val: '340 000', sub: tr('ustaMain.todaySub', { n: 4 }) },
+            { label: tr('ustaMain.thisWeek'), val: '1.8M', sub: tr('ustaMain.weekSub', { n: 12 }) },
           ].map((item, i) => (
             <View key={i} style={[s.miniCard, { flex: 1 }]}>
               <Text style={{ fontSize: 11.5, color: M.muted }}>
@@ -336,10 +323,10 @@ export default function UstaMainScreen({ onLogout }) {
               }}
             >
               <Text style={{ fontWeight: '700', fontSize: 14, color: M.white }}>
-                Haftalik daromad
+                {tr('ustaMain.weeklyIncome')}
               </Text>
               <Text style={{ fontSize: 11.5, color: M.muted }}>
-                so'm (ming)
+                {tr('ustaMain.somThousands')}
               </Text>
             </View>
             <View
@@ -390,12 +377,12 @@ export default function UstaMainScreen({ onLogout }) {
             }}
           >
             <Text style={{ fontWeight: '700', fontSize: 16.5, color: M.white }}>
-              Yangi buyurtmalar
+              {tr('ustaMain.newOrders')}
             </Text>
             <Text
               style={{ color: M.orange, fontSize: 12.5, fontWeight: '600' }}
             >
-              3 ta yaqin
+              {tr('ustaMain.nearbyCount', { n: 3 })}
             </Text>
           </View>
           {JOBS.map((j) => (
@@ -437,7 +424,7 @@ export default function UstaMainScreen({ onLogout }) {
                             color: '#fff',
                           }}
                         >
-                          SHOSHILINCH
+                          {tr('ustaMain.urgent')}
                         </Text>
                       </View>
                     )}
@@ -466,7 +453,7 @@ export default function UstaMainScreen({ onLogout }) {
                   >
                     {j.pay}
                   </Text>
-                  <Text style={{ fontSize: 10, color: M.muted }}>so'm</Text>
+                  <Text style={{ fontSize: 10, color: M.muted }}>{tr('common.currencySom')}</Text>
                 </View>
               </View>
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
@@ -478,14 +465,14 @@ export default function UstaMainScreen({ onLogout }) {
                       fontSize: 12.5,
                     }}
                   >
-                    Rad etish
+                    {tr('ustaMain.decline')}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={s.jobBtnPri} activeOpacity={0.8}>
                   <Text
                     style={{ color: '#fff', fontWeight: '700', fontSize: 12.5 }}
                   >
-                    Qabul qilish
+                    {tr('ustaMain.accept')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -514,7 +501,7 @@ export default function UstaMainScreen({ onLogout }) {
               <Text
                 style={{ fontSize: 10, fontWeight: '600', color, marginTop: 4 }}
               >
-                {item.label}
+                {tr(`ustaMain.nav.${item.key}`)}
               </Text>
             </TouchableOpacity>
           );

@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const fmt = (n) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
@@ -42,10 +43,10 @@ const PROMO = [
   },
 ];
 
-const PTABS = [
-  { key: 'active', label: 'Faol' },
-  { key: 'used', label: 'Ishlatilgan' },
-  { key: 'expired', label: "Muddati o'tgan" },
+const PTABS = (tr) => [
+  { key: 'active', label: tr('promo.tabs.active') },
+  { key: 'used', label: tr('promo.tabs.used') },
+  { key: 'expired', label: tr('promo.tabs.expired') },
 ];
 
 const PCOUNTS = {
@@ -55,10 +56,11 @@ const PCOUNTS = {
 };
 
 function PromoCard({ p, t }) {
+  const { t: tr } = useLanguage();
   const [copied, setCopied] = useState(false);
   const dim = p.status !== 'active';
   const valueLabel = p.type === 'percent' ? `${p.value}%` : fmt(p.value);
-  const valueSub = p.type === 'percent' ? 'chegirma' : "so'm";
+  const valueSub = p.type === 'percent' ? tr('promo.discount') : tr('common.currencySom');
 
   const onCopy = () => {
     if (dim) return;
@@ -73,7 +75,7 @@ function PromoCard({ p, t }) {
         <Text style={s.stubValue}>{valueLabel}</Text>
         <Text style={s.stubSub}>{valueSub}</Text>
         {p.cap && p.type === 'percent' && (
-          <Text style={s.stubCap}>{fmt(p.cap)} so'm{'\n'}gacha</Text>
+          <Text style={s.stubCap}>{tr('promo.capUpTo', { cap: fmt(p.cap) })}</Text>
         )}
       </View>
 
@@ -94,12 +96,12 @@ function PromoCard({ p, t }) {
           </Text>
           {p.status === 'used' && (
             <View style={[s.badge, { backgroundColor: t.rowIconBg }]}>
-              <Text style={[s.badgeText, { color: t.muted }]}>Ishlatilgan</Text>
+              <Text style={[s.badgeText, { color: t.muted }]}>{tr('promo.tabs.used')}</Text>
             </View>
           )}
           {p.status === 'expired' && (
             <View style={[s.badge, { backgroundColor: 'rgba(224,71,58,0.13)' }]}>
-              <Text style={[s.badgeText, { color: t.red }]}>Muddati o'tgan</Text>
+              <Text style={[s.badgeText, { color: t.red }]}>{tr('promo.tabs.expired')}</Text>
             </View>
           )}
         </View>
@@ -112,7 +114,7 @@ function PromoCard({ p, t }) {
         <View style={s.expiryRow}>
           <MaterialCommunityIcons name="clock-outline" size={12} color={t.faint} />
           <Text style={[s.expiryText, { color: t.faint }]}>
-            {p.status === 'active' ? `${p.expire}gacha amal qiladi` : p.expire}
+            {p.status === 'active' ? tr('promo.expiresOn', { date: p.expire }) : p.expire}
           </Text>
         </View>
 
@@ -144,7 +146,7 @@ function PromoCard({ p, t }) {
               color={copied ? t.green : dim ? t.muted : '#fff'}
             />
             <Text style={[s.copyText, { color: copied ? t.green : dim ? t.muted : '#fff' }]}>
-              {copied ? 'Nusxalandi' : 'Nusxa'}
+              {copied ? tr('promo.copied') : tr('promo.copy')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -155,10 +157,12 @@ function PromoCard({ p, t }) {
 
 export default function ZakazchiPromoScreen({ onBack }) {
   const { theme: t } = useTheme();
+  const { t: tr } = useLanguage();
   const [tab, setTab] = useState('active');
   const [field, setField] = useState('');
 
   const list = PROMO.filter((p) => p.status === tab);
+  const ptabs = PTABS(tr);
 
   return (
     <SafeAreaView
@@ -176,7 +180,7 @@ export default function ZakazchiPromoScreen({ onBack }) {
         >
           <MaterialCommunityIcons name="chevron-left" size={24} color={t.text} />
         </TouchableOpacity>
-        <Text style={[s.headerTitle, { color: t.text }]}>Promokodlarim</Text>
+        <Text style={[s.headerTitle, { color: t.text }]}>{tr('promo.headerTitle')}</Text>
         <View style={{ flex: 1 }} />
         <View style={s.headerBadge}>
           <MaterialCommunityIcons name="gift-outline" size={17} color={t.orange} />
@@ -191,7 +195,7 @@ export default function ZakazchiPromoScreen({ onBack }) {
           <TextInput
             value={field}
             onChangeText={(v) => setField(v.toUpperCase())}
-            placeholder="Promokodni kiriting"
+            placeholder={tr('promo.inputPlaceholder')}
             placeholderTextColor={t.faint}
             autoCapitalize="characters"
             style={[s.textInput, { color: t.text }]}
@@ -203,13 +207,13 @@ export default function ZakazchiPromoScreen({ onBack }) {
           disabled={!field}
         >
           <MaterialCommunityIcons name="plus" size={18} color={field ? '#fff' : t.muted} />
-          <Text style={[s.addBtnText, { color: field ? '#fff' : t.muted }]}>Qo'shish</Text>
+          <Text style={[s.addBtnText, { color: field ? '#fff' : t.muted }]}>{tr('promo.addBtn')}</Text>
         </TouchableOpacity>
       </View>
 
       {/* Tabs */}
       <View style={s.tabsRow}>
-        {PTABS.map((tb) => {
+        {ptabs.map((tb) => {
           const on = tb.key === tab;
           return (
             <TouchableOpacity
@@ -245,7 +249,7 @@ export default function ZakazchiPromoScreen({ onBack }) {
             <View style={[s.emptyIcon, { backgroundColor: t.card }]}>
               <MaterialCommunityIcons name="gift-outline" size={30} color={t.muted} />
             </View>
-            <Text style={[s.emptyText, { color: t.muted }]}>Bu yerda promokod yo'q</Text>
+            <Text style={[s.emptyText, { color: t.muted }]}>{tr('promo.emptyText')}</Text>
           </View>
         )}
       </ScrollView>

@@ -1,12 +1,13 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useLanguage } from '../context/LanguageContext';
 
 const NAV = [
-  { key: 'home',     label: 'Asosiy',    on: 'home',       off: 'home-outline' },
-  { key: 'services', label: 'Xizmatlar', on: 'grid',       off: 'grid-outline' },
-  { key: 'chat',     label: 'Xabarlar',  on: 'chatbubble', off: 'chatbubble-outline' },
-  { key: 'profile',  label: 'Profil',    on: 'person',     off: 'person-outline' },
+  { key: 'home',     labelKey: 'bottomNav.home',     on: 'home',    off: 'home-outline' },
+  { key: 'services', labelKey: 'bottomNav.services', on: 'grid',    off: 'grid-outline' },
+  { key: 'rental',   labelKey: 'bottomNav.rental',   on: 'key',     off: 'key-outline' },
+  { key: 'profile',  labelKey: 'bottomNav.profile',  on: 'person',  off: 'person-outline' },
 ];
 
 export default function BottomNav({
@@ -18,6 +19,7 @@ export default function BottomNav({
   muted = 'rgba(255,255,255,0.4)',
   ringColor,
 }) {
+  const { t } = useLanguage();
   const ring = ringColor ?? background;
 
   return (
@@ -38,7 +40,7 @@ export default function BottomNav({
             ) : (
               <>
                 <Ionicons name={item.off} size={21} color={muted} />
-                <Text style={[s.label, { color: muted }]}>{item.label}</Text>
+                <Text style={[s.label, { color: muted }]}>{t(item.labelKey)}</Text>
               </>
             )}
           </TouchableOpacity>

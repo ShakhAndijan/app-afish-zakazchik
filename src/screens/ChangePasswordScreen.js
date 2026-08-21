@@ -14,17 +14,18 @@ import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Feather from '@expo/vector-icons/Feather';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { setPassword } from '../api/user';
 import SuccessModal from '../components/SuccessModal';
 
 const HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 };
 
 const PASSWORD_RULES = [
-  { key: 'length', label: 'Kamida 8 ta belgi', test: (pw) => pw.length >= 8 },
-  { key: 'upper', label: '1 ta katta harf (A-Z)', test: (pw) => /[A-Z]/.test(pw) },
-  { key: 'lower', label: '1 ta kichik harf (a-z)', test: (pw) => /[a-z]/.test(pw) },
-  { key: 'digit', label: '1 ta raqam (0-9)', test: (pw) => /\d/.test(pw) },
-  { key: 'special', label: '1 ta maxsus belgi (!@#$%)', test: (pw) => /[^A-Za-z0-9]/.test(pw) },
+  { key: 'length', test: (pw) => pw.length >= 8 },
+  { key: 'upper', test: (pw) => /[A-Z]/.test(pw) },
+  { key: 'lower', test: (pw) => /[a-z]/.test(pw) },
+  { key: 'digit', test: (pw) => /\d/.test(pw) },
+  { key: 'special', test: (pw) => /[^A-Za-z0-9]/.test(pw) },
 ];
 
 function PasswordField({ label, value, onChangeText, placeholder, t, error }) {
@@ -58,6 +59,7 @@ function PasswordField({ label, value, onChangeText, placeholder, t, error }) {
 }
 
 function PasswordRules({ password, t }) {
+  const { t: tr } = useLanguage();
   return (
     <View style={s.rulesWrap}>
       {PASSWORD_RULES.map((rule) => {
@@ -70,7 +72,7 @@ function PasswordRules({ password, t }) {
               color={passed ? t.green : t.faint}
             />
             <Text style={[s.ruleLabel, { color: passed ? t.green : t.muted }]}>
-              {rule.label}
+              {tr(`login.newPasswordStep.rules.${rule.key}`)}
             </Text>
           </View>
         );
@@ -81,6 +83,7 @@ function PasswordRules({ password, t }) {
 
 export default function ChangePasswordScreen({ onBack }) {
   const { theme: t } = useTheme();
+  const { t: tr } = useLanguage();
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
@@ -102,9 +105,9 @@ export default function ChangePasswordScreen({ onBack }) {
       setShowSuccess(true);
     } catch (e) {
       if (e.status === 400 || e.status === 401 || e.status === 403) {
-        setCurrentPwError("Joriy parol noto'g'ri");
+        setCurrentPwError(tr('changePassword.currentPwError'));
       } else {
-        Alert.alert('Xatolik', e.message || 'Parolni yangilashda xatolik yuz berdi');
+        Alert.alert(tr('common.errorTitle'), e.message || tr('changePassword.genericError'));
       }
     } finally {
       setLoading(false);
@@ -123,7 +126,7 @@ export default function ChangePasswordScreen({ onBack }) {
         >
           <MaterialCommunityIcons name="chevron-left" size={24} color={t.text} />
         </TouchableOpacity>
-        <Text style={[s.headerTitle, { color: t.text }]}>Parolni almashtirish</Text>
+        <Text style={[s.headerTitle, { color: t.text }]}>{tr('changePassword.headerTitle')}</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
@@ -132,42 +135,42 @@ export default function ChangePasswordScreen({ onBack }) {
             <MaterialCommunityIcons name="shield-lock-outline" size={24} color={t.blue} />
           </View>
           <Text style={[s.heroText, { color: t.muted }]}>
-            Hisobingiz xavfsizligi uchun boshqa joyda ishlatilmagan, kuchli parol tanlang.
+            {tr('changePassword.heroText')}
           </Text>
         </View>
 
         <View style={{ gap: 18, marginTop: 20 }}>
           <PasswordField
-            label="Joriy parol"
+            label={tr('changePassword.currentPwLabel')}
             value={currentPw}
             onChangeText={(v) => {
               setCurrentPw(v);
               if (currentPwError) setCurrentPwError('');
             }}
-            placeholder="Joriy parolingizni kiriting"
+            placeholder={tr('changePassword.currentPwPlaceholder')}
             t={t}
             error={currentPwError}
           />
 
           <View style={{ gap: 8 }}>
             <PasswordField
-              label="Yangi parol"
+              label={tr('changePassword.newPwLabel')}
               value={newPw}
               onChangeText={setNewPw}
-              placeholder="Yangi parol yarating"
+              placeholder={tr('changePassword.newPwPlaceholder')}
               t={t}
-              error={sameAsOld ? 'Yangi parol joriy paroldan farq qilishi kerak' : ''}
+              error={sameAsOld ? tr('changePassword.sameAsOldError') : ''}
             />
             <PasswordRules password={newPw} t={t} />
           </View>
 
           <PasswordField
-            label="Yangi parolni tasdiqlang"
+            label={tr('changePassword.confirmPwLabel')}
             value={confirmPw}
             onChangeText={setConfirmPw}
-            placeholder="Yangi parolni qayta kiriting"
+            placeholder={tr('changePassword.confirmPwPlaceholder')}
             t={t}
-            error={confirmPw.length > 0 && !matchOk ? 'Parollar mos kelmadi' : ''}
+            error={confirmPw.length > 0 && !matchOk ? tr('login.newPasswordStep.mismatch') : ''}
           />
         </View>
 
@@ -183,7 +186,7 @@ export default function ChangePasswordScreen({ onBack }) {
           {loading ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <Text style={s.submitText}>Parolni yangilash</Text>
+            <Text style={s.submitText}>{tr('changePassword.submitBtn')}</Text>
           )}
         </TouchableOpacity>
       </ScrollView>
@@ -195,7 +198,7 @@ export default function ChangePasswordScreen({ onBack }) {
           onBack();
         }}
         t={t}
-        message="Parolingiz muvaffaqiyatli yangilandi."
+        message={tr('changePassword.successMessage')}
       />
     </SafeAreaView>
   );

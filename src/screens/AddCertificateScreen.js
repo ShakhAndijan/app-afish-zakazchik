@@ -21,26 +21,24 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Feather from '@expo/vector-icons/Feather';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const FIELD_OPTIONS = [
-  { name: 'Santexnika', icon: 'wrench', color: '#2fa37a' },
-  { name: 'Elektr montaji', icon: 'lightning-bolt', color: '#e87a45' },
-  { name: 'Dizayn', icon: 'palette-outline', color: '#9b6cd1' },
-  { name: 'Konditsioner', icon: 'air-conditioner', color: '#3f7fd4' },
-  { name: 'Duradgorlik', icon: 'hammer', color: '#8d6e63' },
-  { name: 'Boshqa', icon: 'certificate-outline', color: '#6c7f9a' },
+  { key: 'plumbing', name: 'Santexnika', icon: 'wrench', color: '#2fa37a' },
+  { key: 'electrical', name: 'Elektr montaji', icon: 'lightning-bolt', color: '#e87a45' },
+  { key: 'design', name: 'Dizayn', icon: 'palette-outline', color: '#9b6cd1' },
+  { key: 'hvac', name: 'Konditsioner', icon: 'air-conditioner', color: '#3f7fd4' },
+  { key: 'carpentry', name: 'Duradgorlik', icon: 'hammer', color: '#8d6e63' },
+  { key: 'other', name: 'Boshqa', icon: 'certificate-outline', color: '#6c7f9a' },
 ];
 
-const MONTH_NAMES_UZ = [
-  'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
-  'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr',
-];
 const pad2 = (n) => String(n).padStart(2, '0');
 const daysInMonth = (year, month) => new Date(year, month, 0).getDate();
 const formatDate = (d) => (d ? `${pad2(d.day)}.${pad2(d.month)}.${d.year}` : '');
 
 /* ── Minimal iOS-style photo source sheet (same language as AvatarPickerSheet) ── */
 function PhotoSourceSheet({ visible, onClose, onPickCamera, onPickGallery, t }) {
+  const { t: tr } = useLanguage();
   return (
     <Modal visible={visible} transparent animationType="fade" statusBarTranslucent onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={onClose}>
@@ -53,16 +51,16 @@ function PhotoSourceSheet({ visible, onClose, onPickCamera, onPickGallery, t }) 
         </View>
 
         <View style={[s.sheetGroup, { backgroundColor: t.card, borderColor: t.border }]}>
-          <Text style={[s.sheetGroupTitle, { color: t.muted }]}>Sertifikat rasmini yuklang</Text>
+          <Text style={[s.sheetGroupTitle, { color: t.muted }]}>{tr('addCertificate.photoSheetTitle')}</Text>
           <View style={[s.sheetDivider, { backgroundColor: t.border }]} />
           <TouchableOpacity style={s.sheetRow} activeOpacity={0.6} onPress={onPickCamera}>
             <Feather name="camera" size={18} color={t.text} style={{ marginRight: 9 }} />
-            <Text style={[s.sheetRowText, { color: t.text }]}>Kamera</Text>
+            <Text style={[s.sheetRowText, { color: t.text }]}>{tr('avatarPicker.camera')}</Text>
           </TouchableOpacity>
           <View style={[s.sheetDivider, { backgroundColor: t.border }]} />
           <TouchableOpacity style={s.sheetRow} activeOpacity={0.6} onPress={onPickGallery}>
             <Feather name="image" size={18} color={t.text} style={{ marginRight: 9 }} />
-            <Text style={[s.sheetRowText, { color: t.text }]}>Galereya</Text>
+            <Text style={[s.sheetRowText, { color: t.text }]}>{tr('avatarPicker.gallery')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -71,7 +69,7 @@ function PhotoSourceSheet({ visible, onClose, onPickCamera, onPickGallery, t }) 
           activeOpacity={0.6}
           onPress={onClose}
         >
-          <Text style={[s.sheetCancelText, { color: t.text }]}>Bekor qilish</Text>
+          <Text style={[s.sheetCancelText, { color: t.text }]}>{tr('common.cancel')}</Text>
         </TouchableOpacity>
       </View>
     </Modal>
@@ -110,6 +108,8 @@ function DateColumn({ values, value, onChange, format, t }) {
 
 /* ── Date picker sheet — used for both "Olingan sana" and "Amal qilish muddati" ── */
 function DatePickerSheet({ visible, onClose, title, value, onConfirm, onClear, t }) {
+  const { t: tr } = useLanguage();
+  const monthNames = tr('login.registerStep.birthDate.months');
   const currentYear = new Date().getFullYear();
   const [day, setDay] = useState(value?.day ?? 1);
   const [month, setMonth] = useState(value?.month ?? 1);
@@ -161,7 +161,7 @@ function DatePickerSheet({ visible, onClose, title, value, onConfirm, onClear, t
         <View style={s.dateWheelWrap}>
           <View style={[s.dateHighlight, { backgroundColor: t.rowIconBg }]} pointerEvents="none" />
           <DateColumn values={days} value={day} onChange={setDay} t={t} />
-          <DateColumn values={months} value={month} onChange={changeMonth} format={(m) => MONTH_NAMES_UZ[m - 1]} t={t} />
+          <DateColumn values={months} value={month} onChange={changeMonth} format={(m) => monthNames[m - 1]} t={t} />
           <DateColumn values={years} value={year} onChange={changeYear} t={t} />
         </View>
 
@@ -171,11 +171,11 @@ function DatePickerSheet({ visible, onClose, title, value, onConfirm, onClear, t
             activeOpacity={0.85}
             onPress={() => onConfirm({ day, month, year })}
           >
-            <Text style={s.confirmBtnText}>Tasdiqlash</Text>
+            <Text style={s.confirmBtnText}>{tr('common.confirm')}</Text>
           </TouchableOpacity>
           {onClear && (
             <TouchableOpacity style={s.clearBtn} activeOpacity={0.7} onPress={onClear}>
-              <Text style={[s.clearBtnText, { color: t.muted }]}>Muddatsiz qilib qoldirish</Text>
+              <Text style={[s.clearBtnText, { color: t.muted }]}>{tr('addCertificate.leaveIndefinite')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -185,11 +185,12 @@ function DatePickerSheet({ visible, onClose, title, value, onConfirm, onClear, t
 }
 
 function TextField({ label, value, onChangeText, placeholder, t, keyboardType, optional }) {
+  const { t: tr } = useLanguage();
   return (
     <View style={{ gap: 8 }}>
       <Text style={[s.fieldLabel, { color: t.muted }]}>
         {label}
-        {optional ? <Text style={{ color: t.faint }}> (ixtiyoriy)</Text> : null}
+        {optional ? <Text style={{ color: t.faint }}> {tr('addCertificate.optional')}</Text> : null}
       </Text>
       <View style={[s.inputWrap, { backgroundColor: t.inputBg, borderColor: t.border }]}>
         <TextInput
@@ -206,11 +207,12 @@ function TextField({ label, value, onChangeText, placeholder, t, keyboardType, o
 }
 
 function DateField({ label, value, placeholder, onPress, onClear, t, optional }) {
+  const { t: tr } = useLanguage();
   return (
     <View style={{ gap: 8 }}>
       <Text style={[s.fieldLabel, { color: t.muted }]}>
         {label}
-        {optional ? <Text style={{ color: t.faint }}> (ixtiyoriy)</Text> : null}
+        {optional ? <Text style={{ color: t.faint }}> {tr('addCertificate.optional')}</Text> : null}
       </Text>
       <TouchableOpacity
         style={[s.inputWrap, { backgroundColor: t.inputBg, borderColor: t.border }]}
@@ -233,6 +235,8 @@ function DateField({ label, value, placeholder, onPress, onClear, t, optional })
 
 export default function AddCertificateScreen({ onBack, onSave }) {
   const { theme: t } = useTheme();
+  const { t: tr } = useLanguage();
+  const monthNames = tr('login.registerStep.birthDate.months');
   const [photoUri, setPhotoUri] = useState(null);
   const [showPhotoSheet, setShowPhotoSheet] = useState(false);
 
@@ -253,7 +257,7 @@ export default function AddCertificateScreen({ onBack, onSave }) {
     setShowPhotoSheet(false);
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('Ruxsat kerak', 'Galereyadan foydalanish uchun ruxsat bering.');
+      Alert.alert(tr('avatarPicker.permissionTitle'), tr('addCertificate.galleryPermission'));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -269,7 +273,7 @@ export default function AddCertificateScreen({ onBack, onSave }) {
     setShowPhotoSheet(false);
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('Ruxsat kerak', 'Kameradan foydalanish uchun ruxsat bering.');
+      Alert.alert(tr('avatarPicker.permissionTitle'), tr('addCertificate.cameraPermission'));
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -299,10 +303,10 @@ export default function AddCertificateScreen({ onBack, onSave }) {
         field: selectedField.name,
         institution: institution.trim(),
         day: obtainedDate.day,
-        month: MONTH_NAMES_UZ[obtainedDate.month - 1],
+        month: monthNames[obtainedDate.month - 1],
         year: obtainedDate.year,
         expiryDate: expiryDate
-          ? { day: expiryDate.day, month: MONTH_NAMES_UZ[expiryDate.month - 1], year: expiryDate.year }
+          ? { day: expiryDate.day, month: monthNames[expiryDate.month - 1], year: expiryDate.year }
           : null,
         certNumber: certNumber.trim() || '—',
         status: 'pending',
@@ -325,7 +329,7 @@ export default function AddCertificateScreen({ onBack, onSave }) {
         >
           <MaterialCommunityIcons name="chevron-left" size={24} color={t.text} />
         </TouchableOpacity>
-        <Text style={[s.headerTitle, { color: t.text }]}>Sertifikat qo'shish</Text>
+        <Text style={[s.headerTitle, { color: t.text }]}>{tr('addCertificate.headerTitle')}</Text>
       </View>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -335,7 +339,7 @@ export default function AddCertificateScreen({ onBack, onSave }) {
               <Image source={{ uri: photoUri }} style={s.photoImg} resizeMode="cover" />
               <View style={[s.photoChangeBtn, { backgroundColor: 'rgba(10,19,34,0.72)' }]}>
                 <Feather name="repeat" size={12} color="#fff" />
-                <Text style={s.photoChangeText}>O'zgartirish</Text>
+                <Text style={s.photoChangeText}>{tr('addCertificate.changePhoto')}</Text>
               </View>
             </TouchableOpacity>
           ) : (
@@ -347,19 +351,19 @@ export default function AddCertificateScreen({ onBack, onSave }) {
               <View style={[s.photoPlaceholderIcon, { backgroundColor: t.orange + '18' }]}>
                 <MaterialCommunityIcons name="certificate-outline" size={26} color={t.orange} />
               </View>
-              <Text style={[s.photoPlaceholderTitle, { color: t.text }]}>Sertifikat rasmini yuklang</Text>
-              <Text style={[s.photoPlaceholderSub, { color: t.muted }]}>Kamera yoki galereyadan tanlang</Text>
+              <Text style={[s.photoPlaceholderTitle, { color: t.text }]}>{tr('addCertificate.photoSheetTitle')}</Text>
+              <Text style={[s.photoPlaceholderSub, { color: t.muted }]}>{tr('addCertificate.photoPlaceholderSub')}</Text>
             </TouchableOpacity>
           )}
 
           <View style={{ marginTop: 20, gap: 8 }}>
-            <Text style={[s.fieldLabel, { color: t.muted }]}>Yo'nalish</Text>
+            <Text style={[s.fieldLabel, { color: t.muted }]}>{tr('addCertificate.fieldLabel')}</Text>
             <View style={s.chipsRow}>
               {FIELD_OPTIONS.map((opt) => {
                 const on = selectedField?.name === opt.name;
                 return (
                   <TouchableOpacity
-                    key={opt.name}
+                    key={opt.key}
                     onPress={() => setSelectedField(opt)}
                     activeOpacity={0.8}
                     style={[
@@ -368,7 +372,9 @@ export default function AddCertificateScreen({ onBack, onSave }) {
                     ]}
                   >
                     <MaterialCommunityIcons name={opt.icon} size={14} color={on ? '#fff' : opt.color} />
-                    <Text style={[s.chipText, { color: on ? '#fff' : t.text }]}>{opt.name}</Text>
+                    <Text style={[s.chipText, { color: on ? '#fff' : t.text }]}>
+                      {tr(`addCertificate.fields.${opt.key}`)}
+                    </Text>
                   </TouchableOpacity>
                 );
               })}
@@ -377,32 +383,32 @@ export default function AddCertificateScreen({ onBack, onSave }) {
 
           <View style={{ marginTop: 18, gap: 16 }}>
             <TextField
-              label="Sertifikat nomi"
+              label={tr('addCertificate.titleLabel')}
               value={title}
               onChangeText={setTitle}
-              placeholder="Masalan: Santexnika montaji sertifikati"
+              placeholder={tr('addCertificate.titlePlaceholder')}
               t={t}
             />
             <TextField
-              label="Muassasa"
+              label={tr('certificates.institutionLabel')}
               value={institution}
               onChangeText={setInstitution}
-              placeholder="Sertifikatni bergan tashkilot"
+              placeholder={tr('addCertificate.institutionPlaceholder')}
               t={t}
             />
 
             <DateField
-              label="Olingan sana"
+              label={tr('certificates.issuedLabel')}
               value={formatDate(obtainedDate)}
-              placeholder="Sanani tanlang"
+              placeholder={tr('addCertificate.pickDate')}
               onPress={() => setShowObtainedSheet(true)}
               t={t}
             />
 
             <DateField
-              label="Amal qilish muddati"
+              label={tr('certificates.expiryLabel')}
               value={formatDate(expiryDate)}
-              placeholder="Muddatsiz"
+              placeholder={tr('certificates.noExpiry')}
               onPress={() => setShowExpirySheet(true)}
               onClear={expiryDate ? () => setExpiryDate(null) : null}
               t={t}
@@ -410,10 +416,10 @@ export default function AddCertificateScreen({ onBack, onSave }) {
             />
 
             <TextField
-              label="Sertifikat raqami"
+              label={tr('certificates.certNumberLabel')}
               value={certNumber}
               onChangeText={setCertNumber}
-              placeholder="Masalan: SF-2025-0001"
+              placeholder={tr('addCertificate.certNumberPlaceholder')}
               t={t}
               optional
             />
@@ -425,7 +431,7 @@ export default function AddCertificateScreen({ onBack, onSave }) {
             onPress={handleSave}
             disabled={!isReady}
           >
-            {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={s.saveBtnText}>Saqlash</Text>}
+            {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={s.saveBtnText}>{tr('editProfile.saveBtn')}</Text>}
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -441,7 +447,7 @@ export default function AddCertificateScreen({ onBack, onSave }) {
       <DatePickerSheet
         visible={showObtainedSheet}
         onClose={() => setShowObtainedSheet(false)}
-        title="Olingan sana"
+        title={tr('certificates.issuedLabel')}
         value={obtainedDate}
         onConfirm={(d) => {
           setObtainedDate(d);
@@ -453,7 +459,7 @@ export default function AddCertificateScreen({ onBack, onSave }) {
       <DatePickerSheet
         visible={showExpirySheet}
         onClose={() => setShowExpirySheet(false)}
-        title="Amal qilish muddati"
+        title={tr('certificates.expiryLabel')}
         value={expiryDate}
         onConfirm={(d) => {
           setExpiryDate(d);

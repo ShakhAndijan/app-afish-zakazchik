@@ -2,6 +2,7 @@ import { View, Text, Image, StyleSheet, ActivityIndicator } from 'react-native';
 import { useState, useEffect } from 'react';
 
 import { COLORS } from '../../constants/colors';
+import { useLanguage } from '../../context/LanguageContext';
 import BackBtn from '../../components/login/BackBtn';
 import OtpInput from '../../components/login/OtpInput';
 import PrimaryBtn from '../../components/login/PrimaryBtn';
@@ -18,12 +19,16 @@ const formatPhone = (raw = '') => {
 
 export default function CodeStep({
   phone,
+  email,
   onBack,
   onConfirm,
   devCode,
   onResend,
   resendLoading,
+  confirmLoading,
+  error,
 }) {
+  const { t } = useLanguage();
   const [code, setCode] = useState('');
   const [timer, setTimer] = useState(60);
 
@@ -50,34 +55,41 @@ export default function CodeStep({
           style={styles.logo}
           resizeMode="contain"
         />
-        <Text style={styles.title}>Tasdiqlash kodi</Text>
+        <Text style={styles.title}>{t('login.codeStep.title')}</Text>
         <Text style={styles.subtitle}>
-          <Text style={styles.phone}>+998 {formatPhone(phone)}</Text>
-          {' '}raqamiga yuborilgan 6 xonali kodni kiriting.
+          {email ? (
+            <Text style={styles.phone}>{email}</Text>
+          ) : (
+            <Text style={styles.phone}>+998 {formatPhone(phone)}</Text>
+          )}
+          {' '}{email ? t('login.codeStep.subtitleEmail') : t('login.codeStep.subtitle')}
         </Text>
       </View>
 
       <OtpInput value={code} onChange={setCode} length={6} />
 
+      {!!error && <Text style={styles.errorText}>{error}</Text>}
+
       {!!devCode && (
         <Text style={styles.devCode}>
-          Dev kod: <Text style={styles.devCodeVal}>{devCode}</Text>
+          {t('login.codeStep.devCode')} <Text style={styles.devCodeVal}>{devCode}</Text>
         </Text>
       )}
 
       <Text style={styles.timerText}>
         {timer > 0 ? (
-          <>Qayta yuborish <Text style={styles.timerCount}>00:{String(timer).padStart(2, '0')}</Text></>
+          <>{t('login.codeStep.resendIn')} <Text style={styles.timerCount}>00:{String(timer).padStart(2, '0')}</Text></>
         ) : resendLoading ? (
           <ActivityIndicator size="small" color={COLORS.orange} />
         ) : (
-          <Text style={styles.resend} onPress={resend}>Kodni qayta yuborish</Text>
+          <Text style={styles.resend} onPress={resend}>{t('login.codeStep.resendNow')}</Text>
         )}
       </Text>
 
       <PrimaryBtn
-        label="Tasdiqlash"
-        disabled={code.length < 6}
+        label={t('common.confirm')}
+        disabled={code.length < 6 || confirmLoading}
+        icon={confirmLoading ? <ActivityIndicator size="small" color={COLORS.white} /> : undefined}
         onPress={() => onConfirm?.(code)}
       />
     </View>
@@ -123,6 +135,13 @@ const styles = StyleSheet.create({
     color: COLORS.muted,
     fontSize: 13,
     textAlign: 'center',
+    marginTop: -8,
+  },
+  errorText: {
+    color: '#e0473a',
+    fontSize: 13,
+    textAlign: 'center',
+    fontWeight: '600',
     marginTop: -8,
   },
   devCodeVal: {

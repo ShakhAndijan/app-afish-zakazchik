@@ -16,21 +16,13 @@ import Feather from '@expo/vector-icons/Feather';
 import BottomNav from '../components/BottomNav';
 import ListingCard from '../components/ListingCard';
 import UstaDetailScreen from './UstaDetailScreen';
+import AfishLoader from '../components/AfishLoader';
+import { getCategories } from '../api/categories';
+import { getWorkers } from '../api/workers';
+import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 
 // ─── Ma'lumotlar ───────────────────────────────────────────────
-
-const CATEGORIES = [
-  { label: 'Duradgor', glyph: '🪓', color: '#2fa37a' },
-  { label: 'Konditsioner', glyph: '❄️', color: '#9b6cd1' },
-  { label: "Bo'yoqchi", glyph: '🖌️', color: '#f5c451' },
-  { label: 'Tozalash', glyph: '🧹', color: '#26a69a' },
-  { label: 'Santexnik', glyph: '🔧', color: '#e87a45' },
-  { label: 'Elektrik', glyph: '⚡', color: '#3f7fd4' },
-  { label: 'Haydovchi', glyph: '🚚', color: '#42a5f5' },
-  { label: "Bog'bon", glyph: '🌸', color: '#66bb6a' },
-  { label: 'Plitachi', glyph: '🧱', color: '#8d6e63' },
-  { label: 'Quruvchi', glyph: '🔨', color: '#5c6bc0' },
-];
 
 const LISTINGS = [
   { id: 1, initial: 'D', name: 'Davron Mirzayev', category: 'Duradgor', color: '#2fa37a', rating: '5.0', price: 50000, location: 'Yunusobod', postedAgo: '2 soat oldin', title: "Yog'och mebel va eshik ustasi", desc: 'Kvartira va ofis uchun maxsus mebel, eshik tayyorlayman. Tez va sifatli.', experience: 8, certified: true, languages: ['Uzbek', 'Rus'], phone: '+998 90 123 45 67', education: "Toshkent Yog'ochsozlik kolleji", memberSince: '2018', completedJobs: 210, portfolio: [{ title: "Oshxona to'plami" }, { title: 'Kirish eshigi' }, { title: 'Bolalar xonasi mebeli' }] },
@@ -56,18 +48,18 @@ const LISTINGS = [
   { id: 21, initial: 'M', name: 'Murod Sattorov', category: 'Haydovchi', color: '#42a5f5', rating: '4.6', price: 55000, location: "Mirzo Ulug'bek", postedAgo: '3 kun oldin', title: "Shahar bo'ylab yuk tashish", desc: "Gazel va kichik yuk mashinasi bilan tez va ehtiyotkorona yetkazib beraman.", experience: 4, certified: false, languages: ['Uzbek'], phone: '+998 94 111 33 55', education: 'Avtotransport kolleji', memberSince: '2021', completedJobs: 96, portfolio: [{ title: "Ofis ko'chirish" }, { title: 'Texnika tashish' }] },
 ];
 
-const EXP_OPTIONS = [
-  { key: 1, label: '1+ yil' },
-  { key: 3, label: '3+ yil' },
-  { key: 5, label: '5+ yil' },
-];
+const EXP_OPTIONS = [1, 3, 5];
 
 const PRICE_OPTIONS = [
-  { key: 'arzon', label: 'Arzondan qimmatga' },
-  { key: 'qimmat', label: "Qimmatdan arzonga" },
+  { key: 'arzon', labelKey: 'priceCheapFirst' },
+  { key: 'qimmat', labelKey: 'priceExpensiveFirst' },
 ];
 
-const LANG_OPTIONS = ['Uzbek', 'Rus', 'Ingliz'];
+const LANG_OPTIONS = [
+  { value: 'Uzbek', labelKey: 'uzbek' },
+  { value: 'Rus', labelKey: 'russian' },
+  { value: 'Ingliz', labelKey: 'english' },
+];
 
 const RATING_OPTIONS = [
   { key: 4.5, label: '4.5+' },
@@ -90,35 +82,26 @@ const REGIONS = [
 
 // ─── Yordamchi funksiyalar ─────────────────────────────────────
 
-function filterByCategory(list, category) {
-  if (!category) return list;
-  return list.filter((l) => l.category === category);
-}
-
 function applyAdvFilters(list, { sort, minExp, certifiedOnly, langs, minRating, region, district }) {
   let arr = [...list];
-  if (certifiedOnly) arr = arr.filter((l) => l.certified);
-  if (minExp) arr = arr.filter((l) => l.experience >= minExp);
-  if (langs && langs.length > 0) arr = arr.filter((l) => l.languages.some((lg) => langs.includes(lg)));
-  if (minRating) arr = arr.filter((l) => parseFloat(l.rating) >= minRating);
+  if (certifiedOnly) arr = arr.filter((w) => w.isIdentityVerified);
+  if (minExp) arr = arr.filter((w) => w.experienceYears >= minExp);
+  if (langs && langs.length > 0) arr = arr.filter((w) => (w.languages || []).some((lg) => langs.includes(lg)));
+  if (minRating) arr = arr.filter((w) => w.rating >= minRating);
   if (district) {
-    arr = arr.filter((l) => l.location === district);
+    arr = arr.filter((w) => w.location === district);
   } else if (region) {
     const r = REGIONS.find((rg) => rg.id === region);
-    if (r) arr = arr.filter((l) => r.districts.includes(l.location));
+    if (r) arr = arr.filter((w) => r.districts.includes(w.location));
   }
-  if (sort === 'arzon') arr.sort((a, b) => a.price - b.price);
-  if (sort === 'qimmat') arr.sort((a, b) => b.price - a.price);
+  if (sort === 'arzon') arr.sort((a, b) => a.minPrice - b.minPrice);
+  if (sort === 'qimmat') arr.sort((a, b) => b.minPrice - a.minPrice);
   return arr;
 }
 
 function avgExperience(list) {
   if (!list.length) return '—';
-  return Math.round(list.reduce((s, l) => s + l.experience, 0) / list.length);
-}
-
-function formatPrice(n) {
-  return n.toLocaleString('ru-RU');
+  return Math.round(list.reduce((s, w) => s + (w.experienceYears || 0), 0) / list.length);
 }
 
 const CATEGORY_DETAIL_ACCENT = '#e87a45';
@@ -127,17 +110,15 @@ function categoryColorFor() {
   return CATEGORY_DETAIL_ACCENT;
 }
 
-function toUstaProfile(listing) {
+/** Worker (mapWorker) obyektini ListingCard formatiga o'giradi */
+function toListingCardShape(w, tr) {
   return {
-    initial: listing.initial,
-    name: listing.name,
-    trade: listing.category,
-    rating: listing.rating,
-    jobs: listing.completedJobs,
-    bgColor: listing.color,
-    location: listing.location,
-    experience: `${listing.experience} yil`,
-    startingPrice: formatPrice(listing.price),
+    ...w,
+    title: w.profession || tr('xizmatlar.defaultWorkerTitle'),
+    desc: w.bio || '',
+    price: w.minPrice ?? 0,
+    certified: w.isIdentityVerified,
+    postedAgo: null,
   };
 }
 
@@ -147,7 +128,15 @@ const POPULAR_TILE_W = 100;
 const POPULAR_GAP = 12;
 const POPULAR_SLOT = POPULAR_TILE_W + POPULAR_GAP;
 
-function PopularCategoryTile({ item, onPress }) {
+function CategoryGlyph({ glyph, color, size = 22 }) {
+  return glyph ? (
+    <Text style={{ fontSize: size }}>{glyph}</Text>
+  ) : (
+    <Feather name="tool" size={size - 2} color={color} />
+  );
+}
+
+function PopularCategoryTile({ item, onPress, styles }) {
   return (
     <TouchableOpacity style={styles.popularTile} onPress={onPress} activeOpacity={0.85}>
       {item.count > 0 && (
@@ -156,7 +145,7 @@ function PopularCategoryTile({ item, onPress }) {
         </View>
       )}
       <View style={[styles.categoryIconWrap, { backgroundColor: item.color + '22' }]}>
-        <Text style={{ fontSize: 22 }}>{item.glyph}</Text>
+        <CategoryGlyph glyph={item.glyph} color={item.color} />
       </View>
       <Text style={styles.categoryLabel} numberOfLines={1}>
         {item.label}
@@ -165,7 +154,7 @@ function PopularCategoryTile({ item, onPress }) {
   );
 }
 
-function PopularCategories({ categories, onSelect }) {
+function PopularCategories({ categories, onSelect, styles }) {
   const listRef = useRef(null);
   const idxRef = useRef(0);
   const auto = categories.length > 3;
@@ -183,12 +172,12 @@ function PopularCategories({ categories, onSelect }) {
     <FlatList
       ref={listRef}
       data={categories}
-      keyExtractor={(c) => c.label}
+      keyExtractor={(c) => String(c.id)}
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={{ gap: POPULAR_GAP }}
       getItemLayout={(_, index) => ({ length: POPULAR_TILE_W, offset: POPULAR_SLOT * index, index })}
-      renderItem={({ item }) => <PopularCategoryTile item={item} onPress={() => onSelect(item.label)} />}
+      renderItem={({ item }) => <PopularCategoryTile item={item} onPress={() => onSelect(item.id)} styles={styles} />}
     />
   );
 }
@@ -197,6 +186,9 @@ function PopularCategories({ categories, onSelect }) {
 
 export default function XizmatlarScreen({ activeTab, onTabChange }) {
   const { height: windowH } = useWindowDimensions();
+  const { theme: t } = useTheme();
+  const { t: tr } = useLanguage();
+  const styles = useMemo(() => buildStyles(t), [t]);
   const [catFilter, setCatFilter] = useState(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const [sort, setSort] = useState(null);
@@ -210,6 +202,44 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
   const [profileMaster, setProfileMaster] = useState(null);
   const [query, setQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoryWorkers, setCategoryWorkers] = useState([]);
+  const [categoryWorkersLoading, setCategoryWorkersLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getCategories()
+      .then((data) => {
+        if (!cancelled) setCategories(data);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setCategoriesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!catFilter) return;
+    let cancelled = false;
+    setCategoryWorkersLoading(true);
+    getWorkers({ categoryId: catFilter, page: 1, size: 20 })
+      .then((data) => {
+        if (!cancelled) setCategoryWorkers(data);
+      })
+      .catch(() => {
+        if (!cancelled) setCategoryWorkers([]);
+      })
+      .finally(() => {
+        if (!cancelled) setCategoryWorkersLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [catFilter]);
 
   const hasActiveFilters = !!(
     sort || minExp || certifiedOnly || langs.length > 0 || minRating || region || district
@@ -223,11 +253,16 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
 
   const categoriesWithCounts = useMemo(
     () =>
-      CATEGORIES.map((c) => ({
-        ...c,
-        count: filterByCategory(LISTINGS, c.label).length,
-      })),
-    []
+      [...categories]
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+        .map((c) => ({
+          id: c.id,
+          label: c.name,
+          glyph: c.icon,
+          color: c.color || CATEGORY_DETAIL_ACCENT,
+          count: c.worker_count ?? 0,
+        })),
+    [categories]
   );
 
   const visibleCategories = useMemo(() => {
@@ -250,16 +285,15 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
     []
   );
 
-  const categoryRaw = useMemo(() => filterByCategory(LISTINGS, catFilter), [catFilter]);
   const categoryFiltered = useMemo(
-    () => applyAdvFilters(categoryRaw, { sort, minExp, certifiedOnly, langs, minRating, region, district }),
-    [categoryRaw, sort, minExp, certifiedOnly, langs, minRating, region, district]
+    () => applyAdvFilters(categoryWorkers, { sort, minExp, certifiedOnly, langs, minRating, region, district }),
+    [categoryWorkers, sort, minExp, certifiedOnly, langs, minRating, region, district]
   );
   const categoryResults = useMemo(() => {
     if (!query.trim()) return categoryFiltered;
     const q = query.trim().toLowerCase();
     return categoryFiltered.filter(
-      (l) => l.name.toLowerCase().includes(q) || l.title.toLowerCase().includes(q) || l.desc.toLowerCase().includes(q)
+      (w) => w.name.toLowerCase().includes(q) || (w.bio || '').toLowerCase().includes(q)
     );
   }, [categoryFiltered, query]);
 
@@ -273,14 +307,15 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
     setDistrict(null);
   };
 
-  const openCategory = (label) => {
-    setCatFilter(label);
+  const openCategory = (categoryId) => {
+    setCatFilter(categoryId);
     setFilterOpen(false);
     setProfileMaster(null);
   };
 
   const backToCategories = () => {
     setCatFilter(null);
+    setCategoryWorkers([]);
     setProfileMaster(null);
   };
 
@@ -295,10 +330,12 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
     setPickerFor(null);
   };
 
+  const selectedCategoryMeta = categoriesWithCounts.find((c) => c.id === catFilter);
+
   if (catFilter && profileMaster) {
     return (
       <UstaDetailScreen
-        usta={toUstaProfile(profileMaster)}
+        usta={profileMaster}
         onBack={() => setProfileMaster(null)}
         isLoggedIn
       />
@@ -316,7 +353,7 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
         <Feather
           name="search"
           size={17}
-          color={searchFocused ? '#e87a45' : catFilter ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)'}
+          color={searchFocused ? t.orange : catFilter ? 'rgba(255,255,255,0.8)' : t.faint}
         />
         <TextInput
           style={styles.searchInput}
@@ -324,13 +361,13 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
           onChangeText={setQuery}
           onFocus={() => setSearchFocused(true)}
           onBlur={() => setSearchFocused(false)}
-          placeholder="Qaysi usta kerak?"
-          placeholderTextColor={catFilter ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.35)'}
+          placeholder={tr('xizmatlar.searchPlaceholder')}
+          placeholderTextColor={catFilter ? 'rgba(255,255,255,0.65)' : t.faint}
           returnKeyType="search"
         />
         {query.length > 0 && (
           <TouchableOpacity onPress={() => setQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Feather name="x-circle" size={16} color={catFilter ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)'} />
+            <Feather name="x-circle" size={16} color={catFilter ? 'rgba(255,255,255,0.8)' : t.faint} />
           </TouchableOpacity>
         )}
       </View>
@@ -346,7 +383,7 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
         <Feather
           name="sliders"
           size={19}
-          color={filterOpen ? (catFilter ? '#e87a45' : '#fff') : catFilter ? '#fff' : 'rgba(255,255,255,0.55)'}
+          color={filterOpen ? (catFilter ? '#e87a45' : '#fff') : catFilter ? '#fff' : t.faint}
         />
         {hasActiveFilters && <View style={styles.filterDot} />}
       </TouchableOpacity>
@@ -355,7 +392,7 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
 
   const filterPanelBlock = (
     <View style={styles.filterPanel}>
-      <Text style={styles.filterSectionLabel}>Narx</Text>
+      <Text style={styles.filterSectionLabel}>{tr('xizmatlar.filters.price')}</Text>
       <View style={styles.chipRow}>
         {PRICE_OPTIONS.map((p) => (
           <TouchableOpacity
@@ -363,36 +400,36 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
             style={[styles.chipPill, sort === p.key && styles.chipPillActive]}
             onPress={() => setSort(sort === p.key ? null : p.key)}
           >
-            <Text style={[styles.chipPillLabel, sort === p.key && styles.chipPillLabelActive]}>{p.label}</Text>
+            <Text style={[styles.chipPillLabel, sort === p.key && styles.chipPillLabelActive]}>{tr(`xizmatlar.filters.${p.labelKey}`)}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <Text style={styles.filterSectionLabel}>Tajriba</Text>
+      <Text style={styles.filterSectionLabel}>{tr('xizmatlar.filters.experience')}</Text>
       <View style={styles.chipRow}>
         {EXP_OPTIONS.map((e) => (
           <TouchableOpacity
-            key={e.key}
-            style={[styles.chipPill, minExp === e.key && styles.chipPillActive]}
-            onPress={() => setMinExp(minExp === e.key ? null : e.key)}
+            key={e}
+            style={[styles.chipPill, minExp === e && styles.chipPillActive]}
+            onPress={() => setMinExp(minExp === e ? null : e)}
           >
-            <Text style={[styles.chipPillLabel, minExp === e.key && styles.chipPillLabelActive]}>{e.label}</Text>
+            <Text style={[styles.chipPillLabel, minExp === e && styles.chipPillLabelActive]}>{tr('xizmatlar.filters.expYears', { n: e })}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <Text style={styles.filterSectionLabel}>Til bilishi</Text>
+      <Text style={styles.filterSectionLabel}>{tr('xizmatlar.filters.languages')}</Text>
       <View style={styles.chipRow}>
         {LANG_OPTIONS.map((l) => {
-          const active = langs.includes(l);
+          const active = langs.includes(l.value);
           return (
             <TouchableOpacity
-              key={l}
+              key={l.value}
               style={[styles.chipPill, active && styles.chipPillActive]}
-              onPress={() => toggleLang(l)}
+              onPress={() => toggleLang(l.value)}
             >
               {active && <Feather name="check" size={12} color="#fff" style={{ marginRight: 4 }} />}
-              <Text style={[styles.chipPillLabel, active && styles.chipPillLabelActive]}>{l}</Text>
+              <Text style={[styles.chipPillLabel, active && styles.chipPillLabelActive]}>{tr(`xizmatlar.langOptions.${l.labelKey}`)}</Text>
             </TouchableOpacity>
           );
         })}
@@ -400,7 +437,7 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
 
       {catFilter && (
         <>
-          <Text style={styles.filterSectionLabel}>Reyting</Text>
+          <Text style={styles.filterSectionLabel}>{tr('xizmatlar.filters.rating')}</Text>
           <View style={styles.chipRow}>
             {RATING_OPTIONS.map((r) => (
               <TouchableOpacity
@@ -415,14 +452,14 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
             ))}
           </View>
 
-          <Text style={styles.filterSectionLabel}>Hudud</Text>
+          <Text style={styles.filterSectionLabel}>{tr('xizmatlar.filters.region')}</Text>
           <View style={{ gap: 8, marginBottom: 12 }}>
             <TouchableOpacity style={styles.selectRow} onPress={() => setPickerFor('region')} activeOpacity={0.8}>
-              <Feather name="map-pin" size={14} color="rgba(255,255,255,0.4)" />
+              <Feather name="map-pin" size={14} color={t.muted} />
               <Text style={[styles.selectRowText, region && styles.selectRowTextActive]}>
-                {selectedRegion ? selectedRegion.name : 'Viloyat / shahar'}
+                {selectedRegion ? selectedRegion.name : tr('xizmatlar.filters.regionSelect')}
               </Text>
-              <Feather name="chevron-down" size={16} color="rgba(255,255,255,0.4)" />
+              <Feather name="chevron-down" size={16} color={t.muted} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -431,11 +468,11 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
               activeOpacity={0.8}
               disabled={!region}
             >
-              <Feather name="map" size={14} color="rgba(255,255,255,0.4)" />
+              <Feather name="map" size={14} color={t.muted} />
               <Text style={[styles.selectRowText, district && styles.selectRowTextActive]}>
-                {district || 'Tuman'}
+                {district || tr('xizmatlar.filters.district')}
               </Text>
-              <Feather name="chevron-down" size={16} color="rgba(255,255,255,0.4)" />
+              <Feather name="chevron-down" size={16} color={t.muted} />
             </TouchableOpacity>
           </View>
         </>
@@ -447,12 +484,12 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
       >
         <Text style={{ fontSize: 15 }}>🏅</Text>
         <Text style={[styles.certLabel, certifiedOnly && styles.certLabelActive]}>
-          Faqat sertifikatlangan ustalar
+          {tr('xizmatlar.filters.certifiedOnly')}
         </Text>
       </TouchableOpacity>
 
       <TouchableOpacity onPress={resetAdvFilters} style={{ marginTop: 8 }}>
-        <Text style={styles.resetLink}>Filtrlarni tozalash</Text>
+        <Text style={styles.resetLink}>{tr('xizmatlar.filters.reset')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -480,9 +517,9 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
 
         <ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: 90 }} showsVerticalScrollIndicator={false}>
           <View>
-            <Text style={styles.sectionTitle}>Barcha xizmatlar</Text>
+            <Text style={styles.sectionTitle}>{tr('xizmatlar.browse.title')}</Text>
             <Text style={styles.sectionSubtitle}>
-              Yo'nalishni tanlang — ustaning o'zi bergan e'lonini ko'rib, to'g'ridan-to'g'ri yozing
+              {tr('xizmatlar.browse.subtitle')}
             </Text>
 
             {!query.trim() && (
@@ -490,43 +527,47 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
                 <View style={styles.statsRow}>
                   <View style={styles.statCell}>
                     <Text style={styles.statValue}>{overallStats.totalMasters}</Text>
-                    <Text style={styles.statLabel}>faol usta</Text>
+                    <Text style={styles.statLabel}>{tr('xizmatlar.browse.activeMasters')}</Text>
                   </View>
                   <View style={styles.statDivider} />
                   <View style={styles.statCell}>
-                    <Text style={[styles.statValue, { color: '#f5c451' }]}>★ {overallStats.avgRating}</Text>
-                    <Text style={styles.statLabel}>o'rtacha reyting</Text>
+                    <Text style={[styles.statValue, { color: t.gold }]}>★ {overallStats.avgRating}</Text>
+                    <Text style={styles.statLabel}>{tr('xizmatlar.browse.avgRating')}</Text>
                   </View>
                   <View style={styles.statDivider} />
                   <View style={styles.statCell}>
-                    <Text style={[styles.statValue, { color: '#3f7fd4' }]}>🏅 {overallStats.certified}</Text>
-                    <Text style={styles.statLabel}>sertifikatlangan</Text>
+                    <Text style={[styles.statValue, { color: t.blue }]}>🏅 {overallStats.certified}</Text>
+                    <Text style={styles.statLabel}>{tr('xizmatlar.browse.certified')}</Text>
                   </View>
                 </View>
 
                 {popularCategories.length > 0 && (
                   <>
-                    <Text style={styles.groupLabel}>Ommabop yo'nalishlar</Text>
+                    <Text style={styles.groupLabel}>{tr('xizmatlar.browse.popularDirections')}</Text>
                     <View style={{ marginBottom: 22 }}>
-                      <PopularCategories categories={popularCategories} onSelect={openCategory} />
+                      <PopularCategories categories={popularCategories} onSelect={openCategory} styles={styles} />
                     </View>
                   </>
                 )}
               </>
             )}
 
-            <Text style={styles.groupLabel}>{query.trim() ? 'Qidiruv natijalari' : "Barcha yo'nalishlar"}</Text>
-            {visibleCategories.length > 0 ? (
+            <Text style={styles.groupLabel}>{query.trim() ? tr('xizmatlar.browse.searchResults') : tr('xizmatlar.browse.allDirections')}</Text>
+            {categoriesLoading ? (
+              <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+                <AfishLoader size={90} />
+              </View>
+            ) : visibleCategories.length > 0 ? (
               <View style={styles.categoryGrid}>
                 {visibleCategories.map((c) => (
-                  <TouchableOpacity key={c.label} style={styles.categoryCard} onPress={() => openCategory(c.label)}>
+                  <TouchableOpacity key={c.id} style={styles.categoryCard} onPress={() => openCategory(c.id)}>
                     {c.count > 0 && (
                       <View style={[styles.categoryBadge, { backgroundColor: c.color }]}>
                         <Text style={styles.categoryBadgeText}>{c.count}</Text>
                       </View>
                     )}
                     <View style={[styles.categoryIconWrap, { backgroundColor: c.color + '22' }]}>
-                      <Text style={{ fontSize: 22 }}>{c.glyph}</Text>
+                      <CategoryGlyph glyph={c.glyph} color={c.color} />
                     </View>
                     <Text style={styles.categoryLabel}>{c.label}</Text>
                   </TouchableOpacity>
@@ -534,7 +575,7 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
               </View>
             ) : (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>Qidiruvga mos yo'nalish topilmadi</Text>
+                <Text style={styles.emptyText}>{tr('xizmatlar.browse.noDirectionsFound')}</Text>
               </View>
             )}
           </View>
@@ -544,16 +585,16 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
         <BottomNav
           activeTab={activeTab}
           onTabChange={onTabChange}
-          accent="#e87a45"
-          background="rgba(12,22,36,0.96)"
-          border="rgba(255,255,255,0.08)"
-          muted="#6c7f9a"
+          accent={t.orange}
+          background={t.navBg}
+          border={t.border}
+          muted={t.faint}
         />
 
         <Modal visible={!!pickerFor} transparent animationType="slide" onRequestClose={() => setPickerFor(null)}>
           <TouchableOpacity style={styles.sheetOverlay} activeOpacity={1} onPress={() => setPickerFor(null)}>
             <View style={styles.sheet} onStartShouldSetResponder={() => true}>
-              <Text style={styles.sheetTitle}>{pickerFor === 'region' ? 'Viloyat / shahar' : 'Tuman'}</Text>
+              <Text style={styles.sheetTitle}>{pickerFor === 'region' ? tr('xizmatlar.filters.regionSelect') : tr('xizmatlar.filters.district')}</Text>
               <FlatList
                 data={pickerFor === 'region' ? REGIONS : selectedRegion?.districts ?? []}
                 keyExtractor={(item) => (pickerFor === 'region' ? item.id : item)}
@@ -566,7 +607,7 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
                       onPress={() => (pickerFor === 'region' ? pickRegion(item) : pickDistrict(item))}
                     >
                       <Text style={[styles.sheetRowText, active && styles.sheetRowTextActive]}>{label}</Text>
-                      {active && <Feather name="check" size={16} color="#e87a45" />}
+                      {active && <Feather name="check" size={16} color={t.orange} />}
                     </TouchableOpacity>
                   );
                 }}
@@ -589,66 +630,76 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
                 end={{ x: 1, y: 1 }}
                 style={styles.hero}
               >
-                <Text style={styles.heroWatermark}>
-                  {CATEGORIES.find((c) => c.label === catFilter)?.glyph}
-                </Text>
+                <Text style={styles.heroWatermark}>{selectedCategoryMeta?.glyph}</Text>
 
                 {searchFilterRow}
 
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 20 }}>
                   <View style={styles.heroIconWrap}>
-                    <Text style={{ fontSize: 28 }}>{CATEGORIES.find((c) => c.label === catFilter)?.glyph}</Text>
+                    <CategoryGlyph
+                      glyph={selectedCategoryMeta?.glyph}
+                      color="#fff"
+                      size={28}
+                    />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.heroEyebrow}>Yo'nalish</Text>
-                    <Text style={styles.heroTitle}>{catFilter}</Text>
-                    <Text style={styles.heroSubtitle}>{categoryResults.length} usta ushbu yo'nalishda faol</Text>
+                    <Text style={styles.heroEyebrow}>{tr('xizmatlar.detail.direction')}</Text>
+                    <Text style={styles.heroTitle}>{selectedCategoryMeta?.label}</Text>
+                    <Text style={styles.heroSubtitle}>{tr('xizmatlar.detail.activeInDirection', { count: categoryResults.length })}</Text>
                   </View>
                 </View>
               </LinearGradient>
             </View>
 
-            {categoryResults.length > 0 && (
-              <View style={styles.statsCard}>
-                <View style={styles.statCell}>
-                  <Text style={styles.statValue}>{categoryResults.length}</Text>
-                  <Text style={styles.statLabel}>Faol usta</Text>
-                </View>
-                <View style={styles.statDivider} />
-                <View style={styles.statCell}>
-                  <Text style={[styles.statValue, { color: '#3f7fd4' }]}>
-                    🏅 {categoryResults.filter((l) => l.certified).length}
-                  </Text>
-                  <Text style={styles.statLabel}>Sertifikat</Text>
-                </View>
-                <View style={styles.statDivider} />
-                <View style={styles.statCell}>
-                  <Text style={styles.statValue}>{avgExperience(categoryResults)}</Text>
-                  <Text style={styles.statLabel}>Yil tajriba</Text>
-                </View>
-              </View>
-            )}
-
-            {categoryResults.length > 0 ? (
-              <View style={styles.listWrap}>
-                {categoryResults.map((l) => (
-                  <ListingCard
-                    key={l.id}
-                    listing={l}
-                    accent={categoryColorFor(catFilter)}
-                    onPress={() => setProfileMaster(l)}
-                  />
-                ))}
+            {categoryWorkersLoading ? (
+              <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+                <AfishLoader size={90} />
               </View>
             ) : (
-              <View style={[styles.emptyState, { marginTop: 16 }]}>
-                <Text style={styles.emptyText}>
-                  {query.trim() ? 'Qidiruvga mos usta topilmadi' : "Hozircha bu yo'nalishda faol e'lon yo'q"}
-                </Text>
-                <TouchableOpacity onPress={backToCategories}>
-                  <Text style={styles.resetLink}>Boshqa yo'nalish tanlang</Text>
-                </TouchableOpacity>
-              </View>
+              <>
+                {categoryResults.length > 0 && (
+                  <View style={styles.statsCard}>
+                    <View style={styles.statCell}>
+                      <Text style={styles.statValue}>{categoryResults.length}</Text>
+                      <Text style={styles.statLabel}>{tr('xizmatlar.detail.activeMasters')}</Text>
+                    </View>
+                    <View style={styles.statDivider} />
+                    <View style={styles.statCell}>
+                      <Text style={[styles.statValue, { color: t.blue }]}>
+                        🏅 {categoryResults.filter((w) => w.isIdentityVerified).length}
+                      </Text>
+                      <Text style={styles.statLabel}>{tr('xizmatlar.detail.certificate')}</Text>
+                    </View>
+                    <View style={styles.statDivider} />
+                    <View style={styles.statCell}>
+                      <Text style={styles.statValue}>{avgExperience(categoryResults)}</Text>
+                      <Text style={styles.statLabel}>{tr('xizmatlar.detail.yearsExperience')}</Text>
+                    </View>
+                  </View>
+                )}
+
+                {categoryResults.length > 0 ? (
+                  <View style={styles.listWrap}>
+                    {categoryResults.map((w) => (
+                      <ListingCard
+                        key={w.id}
+                        listing={toListingCardShape(w, tr)}
+                        accent={categoryColorFor()}
+                        onPress={() => setProfileMaster(w)}
+                      />
+                    ))}
+                  </View>
+                ) : (
+                  <View style={[styles.emptyState, { marginTop: 16 }]}>
+                    <Text style={styles.emptyText}>
+                      {query.trim() ? tr('xizmatlar.detail.noMastersFound') : tr('xizmatlar.detail.noMastersYet')}
+                    </Text>
+                    <TouchableOpacity onPress={backToCategories}>
+                      <Text style={styles.resetLink}>{tr('xizmatlar.detail.chooseAnother')}</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </>
             )}
           </View>
       </ScrollView>
@@ -657,10 +708,10 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
       <BottomNav
         activeTab={activeTab}
         onTabChange={onTabChange}
-        accent="#e87a45"
-        background="rgba(12,22,36,0.96)"
-        border="rgba(255,255,255,0.08)"
-        muted="#6c7f9a"
+        accent={t.orange}
+        background={t.navBg}
+        border={t.border}
+        muted={t.faint}
       />
 
       {filterModal}
@@ -673,7 +724,7 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
       >
         <TouchableOpacity style={styles.sheetOverlay} activeOpacity={1} onPress={() => setPickerFor(null)}>
           <View style={styles.sheet} onStartShouldSetResponder={() => true}>
-            <Text style={styles.sheetTitle}>{pickerFor === 'region' ? 'Viloyat / shahar' : 'Tuman'}</Text>
+            <Text style={styles.sheetTitle}>{pickerFor === 'region' ? tr('xizmatlar.filters.regionSelect') : tr('xizmatlar.filters.district')}</Text>
             <FlatList
               data={pickerFor === 'region' ? REGIONS : selectedRegion?.districts ?? []}
               keyExtractor={(item) => (pickerFor === 'region' ? item.id : item)}
@@ -686,7 +737,7 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
                     onPress={() => (pickerFor === 'region' ? pickRegion(item) : pickDistrict(item))}
                   >
                     <Text style={[styles.sheetRowText, active && styles.sheetRowTextActive]}>{label}</Text>
-                    {active && <Feather name="check" size={16} color="#e87a45" />}
+                    {active && <Feather name="check" size={16} color={t.orange} />}
                   </TouchableOpacity>
                 );
               }}
@@ -700,8 +751,9 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
 
 // ─── Uslublar ──────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#0c1828' },
+function buildStyles(t) {
+  return StyleSheet.create({
+  screen: { flex: 1, backgroundColor: t.bg },
   header: { flexDirection: 'row', gap: 10, padding: 16, paddingBottom: 0 },
   headerEmbedded: { padding: 0 },
   searchBox: {
@@ -709,11 +761,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 9,
-    backgroundColor: '#0a1626',
+    backgroundColor: t.inputBg,
     borderRadius: 999,
     paddingHorizontal: 16,
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: t.border,
   },
   searchBoxOnHero: {
     backgroundColor: 'transparent',
@@ -721,11 +773,11 @@ const styles = StyleSheet.create({
   },
   searchBoxFocused: {
     borderColor: 'rgba(232,122,69,0.55)',
-    backgroundColor: '#142639',
+    backgroundColor: t.card,
   },
   searchInput: {
     flex: 1,
-    color: '#fff',
+    color: t.text,
     fontSize: 14,
     paddingVertical: 13,
   },
@@ -733,9 +785,9 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 999,
-    backgroundColor: '#0a1626',
+    backgroundColor: t.inputBg,
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: t.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -770,20 +822,20 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: '#3f7fd4',
     borderWidth: 1.5,
-    borderColor: '#0c1828',
+    borderColor: t.inputBg,
   },
 
   filterBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
   filterPanel: {
     margin: 16,
-    backgroundColor: '#142639',
+    backgroundColor: t.card,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
+    borderColor: t.border,
     padding: 14,
   },
   filterSectionLabel: {
-    color: 'rgba(255,255,255,0.4)',
+    color: t.muted,
     fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -798,28 +850,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: '#142639',
+    backgroundColor: t.card,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
+    borderColor: t.border,
   },
   chipPillActive: { backgroundColor: '#e87a45' },
-  chipPillLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 12, fontWeight: '700' },
+  chipPillLabel: { color: t.muted, fontSize: 12, fontWeight: '700' },
   chipPillLabelActive: { color: '#fff' },
 
   selectRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 9,
-    backgroundColor: '#142639',
+    backgroundColor: t.card,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
+    borderColor: t.border,
     borderRadius: 12,
     paddingHorizontal: 13,
     paddingVertical: 12,
   },
   selectRowDisabled: { opacity: 0.45 },
-  selectRowText: { flex: 1, color: 'rgba(255,255,255,0.4)', fontSize: 13, fontWeight: '600' },
-  selectRowTextActive: { color: '#fff', fontWeight: '700' },
+  selectRowText: { flex: 1, color: t.muted, fontSize: 13, fontWeight: '600' },
+  selectRowTextActive: { color: t.text, fontWeight: '700' },
 
   sheetOverlay: {
     flex: 1,
@@ -827,7 +879,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#142639',
+    backgroundColor: t.card,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingTop: 18,
@@ -835,45 +887,45 @@ const styles = StyleSheet.create({
     paddingBottom: 28,
     maxHeight: '65%',
   },
-  sheetTitle: { color: '#fff', fontSize: 15, fontWeight: '800', marginBottom: 10 },
+  sheetTitle: { color: t.text, fontSize: 15, fontWeight: '800', marginBottom: 10 },
   sheetRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomColor: t.border,
   },
-  sheetRowText: { color: 'rgba(255,255,255,0.65)', fontSize: 14, fontWeight: '600' },
+  sheetRowText: { color: t.muted, fontSize: 14, fontWeight: '600' },
   sheetRowTextActive: { color: '#e87a45', fontWeight: '800' },
   certRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 9,
-    backgroundColor: '#142639',
+    backgroundColor: t.card,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
+    borderColor: t.border,
     borderRadius: 12,
     padding: 12,
   },
   certRowActive: { backgroundColor: 'rgba(63,125,212,0.15)' },
-  certLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 12.5, fontWeight: '700' },
-  certLabelActive: { color: '#3f7fd4' },
+  certLabel: { color: t.muted, fontSize: 12.5, fontWeight: '700' },
+  certLabelActive: { color: t.blue },
   resetLink: { color: '#e87a45', fontSize: 12, fontWeight: '700', textAlign: 'center' },
 
   body: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
 
-  sectionTitle: { color: '#fff', fontSize: 20, fontWeight: '800' },
-  sectionSubtitle: { color: 'rgba(255,255,255,0.4)', fontSize: 12.5, marginTop: 3, marginBottom: 18 },
-  groupLabel: { color: '#fff', fontSize: 14.5, fontWeight: '800', marginBottom: 12 },
+  sectionTitle: { color: t.text, fontSize: 20, fontWeight: '800' },
+  sectionSubtitle: { color: t.muted, fontSize: 12.5, marginTop: 3, marginBottom: 18 },
+  groupLabel: { color: t.text, fontSize: 14.5, fontWeight: '800', marginBottom: 12 },
 
   popularTile: {
     width: POPULAR_TILE_W,
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#142639',
+    backgroundColor: t.card,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
+    borderColor: t.border,
     borderRadius: 16,
     paddingVertical: 14,
     position: 'relative',
@@ -884,9 +936,9 @@ const styles = StyleSheet.create({
     width: '31%',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#142639',
+    backgroundColor: t.card,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
+    borderColor: t.border,
     borderRadius: 16,
     paddingVertical: 14,
     position: 'relative',
@@ -910,7 +962,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  categoryLabel: { color: '#fff', fontSize: 11.5, fontWeight: '700', textAlign: 'center' },
+  categoryLabel: { color: t.text, fontSize: 11.5, fontWeight: '700', textAlign: 'center' },
 
   backBtnDark: {
     width: 44,
@@ -924,19 +976,19 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#142639',
+    backgroundColor: t.card,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
+    borderColor: t.border,
     borderRadius: 16,
     paddingVertical: 12,
     paddingHorizontal: 14,
     marginBottom: 14,
   },
   statCell: { flex: 1, alignItems: 'center' },
-  statDivider: { width: 1, height: 26, backgroundColor: 'rgba(255,255,255,0.08)' },
-  statValue: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  statDivider: { width: 1, height: 26, backgroundColor: t.border },
+  statValue: { color: t.text, fontSize: 16, fontWeight: '800' },
   statLabel: {
-    color: 'rgba(255,255,255,0.45)',
+    color: t.muted,
     fontSize: 9.5,
     fontWeight: '700',
     marginTop: 3,
@@ -944,7 +996,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
   },
 
-  // ── Yo'nalish hero ──
+  // ── Yo'nalish hero (doim to'q sarg'ish fon — mavzudan qat'i nazar) ──
   heroShadowWrap: {
     marginHorizontal: -16,
     marginTop: -16,
@@ -996,9 +1048,9 @@ const styles = StyleSheet.create({
   statsCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#142639',
+    backgroundColor: t.card,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: t.border,
     borderRadius: 20,
     paddingVertical: 16,
     paddingHorizontal: 14,
@@ -1018,10 +1070,11 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 34,
     paddingHorizontal: 16,
-    backgroundColor: '#142639',
+    backgroundColor: t.card,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
+    borderColor: t.border,
     borderRadius: 18,
   },
-  emptyText: { color: 'rgba(255,255,255,0.55)', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-});
+  emptyText: { color: t.muted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+  });
+}

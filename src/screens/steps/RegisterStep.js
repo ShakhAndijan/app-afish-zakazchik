@@ -18,10 +18,10 @@ import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { COLORS } from '../../constants/colors';
+import { useLanguage } from '../../context/LanguageContext';
 import PhoneInput from '../../components/login/PhoneInput';
 import PasswordInput from '../../components/login/PasswordInput';
-import * as Location from 'expo-location';
-import { WebView } from 'react-native-webview';
+import LocationMapPicker from '../../components/LocationMapPicker';
 import {
   requestRegisterOtp,
   getRegisterUploadUrl,
@@ -39,7 +39,7 @@ const PHONE_STEP = STEP_ORDER.indexOf('phone') + 1; // 4
 const PASSPORT_STEP = STEP_ORDER.indexOf('passport') + 1; // 6
 const DONE_STEP = TOTAL_STEPS + 1; // 7
 
-function loadInto(setter, fetcher) {
+function loadInto(setter, fetcher, fallbackError) {
   setter((s) => ({ ...s, loading: true, error: null }));
   fetcher()
     .then((items) => setter({ items, loading: false, error: null }))
@@ -47,7 +47,7 @@ function loadInto(setter, fetcher) {
       setter({
         items: [],
         loading: false,
-        error: e.message || "Ma'lumotlarni yuklab bo'lmadi",
+        error: e.message || fallbackError,
       })
     );
 }
@@ -177,6 +177,7 @@ const formatPhone = (raw) => {
 };
 
 function StepPhone({ data, set, onNext, loading }) {
+  const { t } = useLanguage();
   const digits = data.phone.replace(/\D/g, '');
   const ok = digits.length === 9;
   return (
@@ -195,14 +196,14 @@ function StepPhone({ data, set, onNext, loading }) {
           }}
           resizeMode="contain"
         />
-        <Text style={[sh.eyebrow, { textAlign: 'center' }]}>4-QADAM</Text>
-        <Text style={[sh.h1, { textAlign: 'center' }]}>Telefon raqamingiz</Text>
+        <Text style={[sh.eyebrow, { textAlign: 'center' }]}>{t('login.registerStep.stepLabel', { n: PHONE_STEP })}</Text>
+        <Text style={[sh.h1, { textAlign: 'center' }]}>{t('login.registerStep.phone.title')}</Text>
         <Text style={[sh.sub, { textAlign: 'center' }]}>
-          Ro'yxatdan o'tish uchun raqam kiriting. Tasdiqlash kodi yuboriladi.
+          {t('login.registerStep.phone.subtitle')}
         </Text>
 
         <Text style={sh.label}>
-          Telefon raqami <Text style={sh.req}>*</Text>
+          {t('login.phoneStep.phoneLabel')} <Text style={sh.req}>*</Text>
         </Text>
         <PhoneInput
           value={data.phone}
@@ -214,20 +215,19 @@ function StepPhone({ data, set, onNext, loading }) {
         <View style={sh.note}>
           <MaterialCommunityIcons name="shield-check" size={17} color={COLORS.success} />
           <Text style={sh.noteTxt}>
-            Raqamingiz faqat shaxsingizni tasdiqlash uchun ishlatiladi va boshqa maqsadlarda
-            ishlatilmaydi.
+            {t('login.registerStep.phone.note1')}
           </Text>
         </View>
         <View style={sh.note}>
           <Ionicons name="chatbubble-ellipses-outline" size={17} color={COLORS.orange} />
           <Text style={sh.noteTxt}>
-            Tasdiqlash kodi SMS orqali bir necha soniya ichida yetib boradi.
+            {t('login.registerStep.phone.note2')}
           </Text>
         </View>
       </ScrollView>
       <View style={sh.footer}>
         <CtaBtn
-          label="SMS kod yuborish"
+          label={t('login.registerStep.phone.cta')}
           onPress={onNext}
           disabled={!ok}
           loading={loading}
@@ -239,6 +239,7 @@ function StepPhone({ data, set, onNext, loading }) {
 
 // ─── Step 2: OTP ─────────────────────────────────────────────────────────────
 function StepCode({ data, set, onNext, devCode, onResend, resendLoading }) {
+  const { t } = useLanguage();
   const LEN = 6;
   const [digits, setDigits] = useState(Array(LEN).fill(''));
   const [secs, setSecs] = useState(59);
@@ -289,13 +290,13 @@ function StepCode({ data, set, onNext, devCode, onResend, resendLoading }) {
           }}
           resizeMode="contain"
         />
-        <Text style={[sh.eyebrow, { textAlign: 'center' }]}>5-QADAM</Text>
-        <Text style={[sh.h1, { textAlign: 'center' }]}>Tasdiqlash kodi</Text>
+        <Text style={[sh.eyebrow, { textAlign: 'center' }]}>{t('login.registerStep.stepLabel', { n: PHONE_STEP + 1 })}</Text>
+        <Text style={[sh.h1, { textAlign: 'center' }]}>{t('login.codeStep.title')}</Text>
         <Text style={[sh.sub, { textAlign: 'center' }]}>
           <Text style={{ color: COLORS.white, fontWeight: '700' }}>
             +998 {formatPhone(data.phone) || '90 123 45 67'}
           </Text>{' '}
-          raqamiga yuborilgan 6 xonali kodni kiriting.
+          {t('login.codeStep.subtitle')}
         </Text>
 
         <View style={ot.row}>
@@ -317,7 +318,7 @@ function StepCode({ data, set, onNext, devCode, onResend, resendLoading }) {
         <View style={{ alignItems: 'center', marginBottom: 16 }}>
           {secs > 0 ? (
             <Text style={{ color: COLORS.muted, fontSize: 13.5 }}>
-              Qayta yuborish{' '}
+              {t('login.codeStep.resendIn')}{' '}
               <Text style={{ color: COLORS.orange, fontWeight: '700' }}>
                 {mm}:{ss}
               </Text>
@@ -334,7 +335,7 @@ function StepCode({ data, set, onNext, devCode, onResend, resendLoading }) {
                     fontWeight: '600',
                   }}
                 >
-                  Qayta yuborish
+                  {t('login.codeStep.resendNow')}
                 </Text>
               )}
             </TouchableOpacity>
@@ -349,7 +350,7 @@ function StepCode({ data, set, onNext, devCode, onResend, resendLoading }) {
               color={COLORS.muted}
             />
             <Text style={sh.noteTxt}>
-              Dev kod:{' '}
+              {t('login.codeStep.devCode')}{' '}
               <Text style={{ color: COLORS.orange, fontWeight: '700' }}>
                 {devCode}
               </Text>
@@ -358,7 +359,7 @@ function StepCode({ data, set, onNext, devCode, onResend, resendLoading }) {
         )}
       </ScrollView>
       <View style={sh.footer}>
-        <CtaBtn label="Tasdiqlash" onPress={onNext} disabled={!ok} checkIcon />
+        <CtaBtn label={t('common.confirm')} onPress={onNext} disabled={!ok} checkIcon />
       </View>
     </View>
   );
@@ -390,6 +391,7 @@ const ot = StyleSheet.create({
 
 // ─── Step 3: Passport ─────────────────────────────────────────────────────────
 function UploadCard({ uri, onPress, icon, title, desc, uploading }) {
+  const { t } = useLanguage();
   return (
     <TouchableOpacity
       style={[ul.card, uri && !uploading && ul.cardDone]}
@@ -409,7 +411,7 @@ function UploadCard({ uri, onPress, icon, title, desc, uploading }) {
           >
             <ActivityIndicator size="large" color={COLORS.orange} />
             <Text style={{ color: COLORS.white, fontSize: 12, marginTop: 8 }}>
-              Yuklanmoqda...
+              {t('common.loading')}
             </Text>
           </View>
         </View>
@@ -430,10 +432,10 @@ function UploadCard({ uri, onPress, icon, title, desc, uploading }) {
               color={COLORS.success}
             />
             <Text style={[ul.title, { color: COLORS.success }]}>
-              {title} yuklandi
+              {t('login.registerStep.upload.uploadedSuffix', { title })}
             </Text>
           </View>
-          <Text style={ul.desc}>O'zgartirish uchun bosing</Text>
+          <Text style={ul.desc}>{t('login.registerStep.upload.changeHint')}</Text>
         </View>
       ) : (
         <View style={ul.inner}>
@@ -456,7 +458,7 @@ function UploadCard({ uri, onPress, icon, title, desc, uploading }) {
           >
             <Ionicons name="camera-outline" size={13} color={COLORS.faint} />
             <Text style={{ fontSize: 12, color: COLORS.faint }}>
-              Rasmga olish yoki yuklash
+              {t('login.registerStep.upload.pickHint')}
             </Text>
           </View>
         </View>
@@ -507,17 +509,17 @@ const ul = StyleSheet.create({
   },
 });
 
-async function pickImage(onPicked) {
+async function pickImage(onPicked, t) {
   Alert.alert(
-    'Rasm tanlang',
-    'Qayerdan yuklaysiz?',
+    t('login.registerStep.pickImage.title'),
+    t('login.registerStep.pickImage.message'),
     [
       {
-        text: 'Galereya',
+        text: t('login.registerStep.pickImage.gallery'),
         onPress: async () => {
           const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
           if (!perm.granted) {
-            Alert.alert('Ruxsat kerak', 'Galereya uchun ruxsat bering.');
+            Alert.alert(t('login.registerStep.pickImage.permissionTitle'), t('login.registerStep.pickImage.galleryPermission'));
             return;
           }
           const result = await ImagePicker.launchImageLibraryAsync({
@@ -533,11 +535,11 @@ async function pickImage(onPicked) {
         },
       },
       {
-        text: 'Kamera',
+        text: t('login.registerStep.pickImage.camera'),
         onPress: async () => {
           const perm = await ImagePicker.requestCameraPermissionsAsync();
           if (!perm.granted) {
-            Alert.alert('Ruxsat kerak', 'Kamera uchun ruxsat bering.');
+            Alert.alert(t('login.registerStep.pickImage.permissionTitle'), t('login.registerStep.pickImage.cameraPermission'));
             return;
           }
           const result = await ImagePicker.launchCameraAsync({
@@ -551,13 +553,14 @@ async function pickImage(onPicked) {
           }
         },
       },
-      { text: 'Bekor qilish', style: 'cancel' },
+      { text: t('common.cancel'), style: 'cancel' },
     ],
     { cancelable: true }
   );
 }
 
 function StepPassport({ data, set, onNext, onExpire }) {
+  const { t } = useLanguage();
   const [uploading, setUploading] = useState({ passport: false });
   const [secs, setSecs] = useState(30);
 
@@ -587,14 +590,14 @@ function StepPassport({ data, set, onNext, onExpire }) {
         set({ [keyField]: temp_key });
       } catch (e) {
         Alert.alert(
-          'Xatolik',
-          e.message || "Rasm yuklanmadi, qayta urinib ko'ring"
+          t('common.errorTitle'),
+          e.message || t('login.registerStep.errors.uploadFailed')
         );
         set({ [imageField]: null, [keyField]: null });
       } finally {
         setUploading((u) => ({ ...u, [uploadKey]: false }));
       }
-    });
+    }, t);
   };
 
   const ok = !!data.passport_image_key;
@@ -605,10 +608,10 @@ function StepPassport({ data, set, onNext, onExpire }) {
   return (
     <View style={sh.flex}>
       <ScrollView contentContainerStyle={sh.body}>
-        <Text style={[sh.eyebrow, { textAlign: 'center' }]}>6-QADAM</Text>
-        <Text style={[sh.h1, { textAlign: 'center' }]}>Shaxsni tasdiqlash</Text>
+        <Text style={[sh.eyebrow, { textAlign: 'center' }]}>{t('login.registerStep.stepLabel', { n: PASSPORT_STEP })}</Text>
+        <Text style={[sh.h1, { textAlign: 'center' }]}>{t('login.registerStep.passport.title')}</Text>
         <Text style={[sh.sub, { textAlign: 'center', marginBottom: 12 }]}>
-          Xavfsizlik uchun pasportingiz rasmini yuklang.
+          {t('login.registerStep.passport.subtitle')}
         </Text>
 
         <View
@@ -624,7 +627,7 @@ function StepPassport({ data, set, onNext, onExpire }) {
             color={urgent ? '#e03131' : COLORS.orange}
           />
           <Text style={sh.noteTxt}>
-            Rasmlarni yuklash uchun{' '}
+            {t('login.registerStep.passport.timerPrefix')}{' '}
             <Text
               style={{
                 color: urgent ? '#e03131' : COLORS.orange,
@@ -633,8 +636,7 @@ function StepPassport({ data, set, onNext, onExpire }) {
             >
               {mm}:{ss}
             </Text>{' '}
-            vaqtingiz bor. Vaqt tugasa, ro'yxatdan o'tishni qaytadan
-            boshlashingiz kerak bo'ladi.
+            {t('login.registerStep.passport.timerSuffix')}
           </Text>
         </View>
 
@@ -645,8 +647,8 @@ function StepPassport({ data, set, onNext, onExpire }) {
             handlePick('passport_image', 'passport_image_key', 'passport')
           }
           icon="card-account-details-outline"
-          title="Pasport rasmi"
-          desc="Ma'lumotlar sahifasi, aniq va to'liq"
+          title={t('login.registerStep.passport.uploadTitle')}
+          desc={t('login.registerStep.passport.uploadDesc')}
         />
 
         <View style={sh.note}>
@@ -656,13 +658,12 @@ function StepPassport({ data, set, onNext, onExpire }) {
             color={COLORS.success}
           />
           <Text style={sh.noteTxt}>
-            Hujjatlar faqat shaxsingizni tasdiqlash uchun ishlatiladi va
-            shifrlangan holda saqlanadi.
+            {t('login.registerStep.passport.note')}
           </Text>
         </View>
       </ScrollView>
       <View style={sh.footer}>
-        <CtaBtn label="Yakunlash" onPress={onNext} disabled={!ok} checkIcon />
+        <CtaBtn label={t('login.registerStep.passport.cta')} onPress={onNext} disabled={!ok} checkIcon />
       </View>
     </View>
   );
@@ -683,21 +684,6 @@ const parseBirthDate = (str) => {
 };
 
 const daysInMonth = (year, month) => new Date(year, month, 0).getDate();
-
-const MONTH_NAMES_UZ = [
-  'Yanvar',
-  'Fevral',
-  'Mart',
-  'Aprel',
-  'May',
-  'Iyun',
-  'Iyul',
-  'Avgust',
-  'Sentyabr',
-  'Oktyabr',
-  'Noyabr',
-  'Dekabr',
-];
 
 const DATE_ROW_H = 42;
 
@@ -745,6 +731,8 @@ function DateColumn({ values, value, onChange, format }) {
 }
 
 function BirthDateField({ value, onChange }) {
+  const { t } = useLanguage();
+  const monthNames = t('login.registerStep.birthDate.months');
   const [show, setShow] = useState(false);
   const currentYear = new Date().getFullYear();
   const parsed = parseBirthDate(value);
@@ -797,7 +785,7 @@ function BirthDateField({ value, onChange }) {
             fontWeight: value ? '500' : '400',
           }}
         >
-          {value || 'KK.OO.YYYY'}
+          {value || t('login.registerStep.birthDate.placeholder')}
         </Text>
       </TouchableOpacity>
 
@@ -814,7 +802,7 @@ function BirthDateField({ value, onChange }) {
         >
           <TouchableOpacity style={pk.sheet} activeOpacity={1}>
             <View style={pk.header}>
-              <Text style={pk.title}>Tug'ilgan sanani tanlang</Text>
+              <Text style={pk.title}>{t('login.registerStep.birthDate.modalTitle')}</Text>
               <TouchableOpacity
                 onPress={() => setShow(false)}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -833,12 +821,12 @@ function BirthDateField({ value, onChange }) {
                 values={months}
                 value={month}
                 onChange={changeMonth}
-                format={(m) => MONTH_NAMES_UZ[m - 1]}
+                format={(m) => monthNames[m - 1]}
               />
               <DateColumn values={years} value={year} onChange={changeYear} />
             </View>
             <View style={{ padding: 16 }}>
-              <CtaBtn label="Tayyor" onPress={confirm} checkIcon />
+              <CtaBtn label={t('login.registerStep.birthDate.confirm')} onPress={confirm} checkIcon />
             </View>
           </TouchableOpacity>
         </TouchableOpacity>
@@ -850,26 +838,15 @@ function BirthDateField({ value, onChange }) {
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const PASSWORD_RULES = [
-  { key: 'length', label: 'Kamida 8 ta belgi', test: (pw) => pw.length >= 8 },
-  {
-    key: 'upper',
-    label: '1 ta katta harf (A-Z)',
-    test: (pw) => /[A-Z]/.test(pw),
-  },
-  {
-    key: 'lower',
-    label: '1 ta kichik harf (a-z)',
-    test: (pw) => /[a-z]/.test(pw),
-  },
-  { key: 'digit', label: '1 ta raqam (0-9)', test: (pw) => /\d/.test(pw) },
-  {
-    key: 'special',
-    label: '1 ta maxsus belgi (!@#$%)',
-    test: (pw) => /[^A-Za-z0-9]/.test(pw),
-  },
+  { key: 'length', test: (pw) => pw.length >= 8 },
+  { key: 'upper', test: (pw) => /[A-Z]/.test(pw) },
+  { key: 'lower', test: (pw) => /[a-z]/.test(pw) },
+  { key: 'digit', test: (pw) => /\d/.test(pw) },
+  { key: 'special', test: (pw) => /[^A-Za-z0-9]/.test(pw) },
 ];
 
 function PasswordRules({ password }) {
+  const { t } = useLanguage();
   return (
     <View
       style={{
@@ -906,7 +883,7 @@ function PasswordRules({ password }) {
                 flexShrink: 1,
               }}
             >
-              {rule.label}
+              {t(`login.newPasswordStep.rules.${rule.key}`)}
             </Text>
           </View>
         );
@@ -917,6 +894,7 @@ function PasswordRules({ password }) {
 
 // ─── Step 4: Personal info ────────────────────────────────────────────────────
 function StepInfo({ data, set, onNext, genders }) {
+  const { t } = useLanguage();
   const genderRequired = !genders.error && genders.items.length > 0;
   const passwordOk = PASSWORD_RULES.every((rule) => rule.test(data.password));
   const emailOk = EMAIL_REGEX.test(data.email.trim());
@@ -933,23 +911,23 @@ function StepInfo({ data, set, onNext, genders }) {
         contentContainerStyle={sh.body}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={[sh.eyebrow, { textAlign: 'center' }]}>1-QADAM</Text>
+        <Text style={[sh.eyebrow, { textAlign: 'center' }]}>{t('login.registerStep.stepLabel', { n: INFO_STEP })}</Text>
         <Text style={[sh.h1, { textAlign: 'center' }]}>
-          Shaxsiy ma'lumotlar
+          {t('login.registerStep.info.title')}
         </Text>
         <Text style={[sh.sub, { textAlign: 'center' }]}>
-          Pasportingizdagi ma'lumotlarga mos ravishda to'ldiring.
+          {t('login.registerStep.info.subtitle')}
         </Text>
 
         <View style={{ flexDirection: 'row', gap: 10, marginBottom: 13 }}>
           <View style={{ flex: 1 }}>
             <Text style={sh.label}>
-              Ism <Text style={sh.req}>*</Text>
+              {t('login.registerStep.info.firstName')} <Text style={sh.req}>*</Text>
             </Text>
             <View style={[sh.control, data.first_name && sh.controlFilled]}>
               <TextInput
                 style={sh.input}
-                placeholder="Ism"
+                placeholder={t('login.registerStep.info.firstName')}
                 placeholderTextColor={COLORS.faint}
                 value={data.first_name}
                 onChangeText={(v) => set({ first_name: v })}
@@ -958,12 +936,12 @@ function StepInfo({ data, set, onNext, genders }) {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={sh.label}>
-              Familiya <Text style={sh.req}>*</Text>
+              {t('login.registerStep.info.lastName')} <Text style={sh.req}>*</Text>
             </Text>
             <View style={[sh.control, data.last_name && sh.controlFilled]}>
               <TextInput
                 style={sh.input}
-                placeholder="Familiya"
+                placeholder={t('login.registerStep.info.lastName')}
                 placeholderTextColor={COLORS.faint}
                 value={data.last_name}
                 onChangeText={(v) => set({ last_name: v })}
@@ -973,7 +951,7 @@ function StepInfo({ data, set, onNext, genders }) {
         </View>
 
         <Text style={sh.label}>
-          Email <Text style={sh.req}>*</Text>
+          {t('login.registerStep.info.email')} <Text style={sh.req}>*</Text>
         </Text>
         <View
           style={[
@@ -985,7 +963,7 @@ function StepInfo({ data, set, onNext, genders }) {
           <Ionicons name="mail-outline" size={19} color={COLORS.faint} />
           <TextInput
             style={sh.input}
-            placeholder="email@misol.uz"
+            placeholder={t('login.registerStep.info.emailPlaceholder')}
             placeholderTextColor={COLORS.faint}
             keyboardType="email-address"
             autoCapitalize="none"
@@ -1001,22 +979,22 @@ function StepInfo({ data, set, onNext, genders }) {
             opacity: data.email.length > 0 && !emailOk ? 1 : 0,
           }}
         >
-          Email manzili noto'g'ri, masalan: email@misol.uz
+          {t('login.registerStep.info.emailInvalid')}
         </Text>
 
         <Text style={sh.label}>
-          Parol <Text style={sh.req}>*</Text>
+          {t('login.registerStep.info.password')} <Text style={sh.req}>*</Text>
         </Text>
         <PasswordInput
           value={data.password}
           onChangeText={(v) => set({ password: v })}
           theme={{ isDark: true }}
-          placeholder="Parol yarating"
+          placeholder={t('login.registerStep.info.passwordPlaceholder')}
         />
         <PasswordRules password={data.password} />
 
         <Text style={sh.label}>
-          Jinsi {genderRequired && <Text style={sh.req}>*</Text>}
+          {t('login.registerStep.info.gender')} {genderRequired && <Text style={sh.req}>*</Text>}
         </Text>
         <GenderRadioGroup
           genders={genders}
@@ -1027,7 +1005,7 @@ function StepInfo({ data, set, onNext, genders }) {
         />
 
         <Text style={sh.label}>
-          Tug'ilgan sana <Text style={sh.req}>*</Text>
+          {t('login.registerStep.info.birthDate')} <Text style={sh.req}>*</Text>
         </Text>
         <BirthDateField
           value={data.birth_date}
@@ -1041,14 +1019,13 @@ function StepInfo({ data, set, onNext, genders }) {
             color={COLORS.success}
           />
           <Text style={sh.noteTxt}>
-            Ma'lumotlaringiz xavfsiz saqlanadi va uchinchi shaxslarga
-            berilmaydi.
+            {t('login.registerStep.info.note')}
           </Text>
         </View>
       </ScrollView>
 
       <View style={sh.footer}>
-        <CtaBtn label="Davom etish" onPress={onNext} disabled={!ok} />
+        <CtaBtn label={t('login.registerStep.info.cta')} onPress={onNext} disabled={!ok} />
       </View>
     </View>
   );
@@ -1118,6 +1095,7 @@ function PickerModal({
   loading,
   error,
 }) {
+  const { t } = useLanguage();
   return (
     <Modal
       transparent
@@ -1181,7 +1159,7 @@ function PickerModal({
                     padding: 24,
                   }}
                 >
-                  Ma'lumot topilmadi
+                  {t('login.registerStep.picker.empty')}
                 </Text>
               }
             />
@@ -1226,6 +1204,7 @@ const pk = StyleSheet.create({
 
 // ─── Expired modal ─────────────────────────────────────────────────────────────
 function ExpiredModal({ visible, onClose }) {
+  const { t } = useLanguage();
   return (
     <Modal
       transparent
@@ -1240,17 +1219,16 @@ function ExpiredModal({ visible, onClose }) {
               <Ionicons name="alarm-outline" size={30} color="#fff" />
             </View>
           </View>
-          <Text style={ex.title}>Vaqt tugadi</Text>
+          <Text style={ex.title}>{t('login.registerStep.expiredModal.title')}</Text>
           <Text style={ex.desc}>
-            Rasm yuklash uchun berilgan tasdiqlash kodi vaqti tugadi.{'\n'}
-            Ro'yxatdan o'tishni qaytadan boshlang.
+            {t('login.registerStep.expiredModal.desc')}
           </Text>
           <TouchableOpacity
             style={ex.btn}
             onPress={onClose}
             activeOpacity={0.85}
           >
-            <Text style={ex.btnTxt}>Qaytadan boshlash</Text>
+            <Text style={ex.btnTxt}>{t('login.registerStep.expiredModal.btn')}</Text>
             <Ionicons name="refresh" size={18} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -1340,6 +1318,7 @@ const ex = StyleSheet.create({
 
 // ─── OTP error modal ─────────────────────────────────────────────────────────
 function OtpErrorModal({ message, onClose }) {
+  const { t } = useLanguage();
   return (
     <Modal
       transparent
@@ -1354,14 +1333,14 @@ function OtpErrorModal({ message, onClose }) {
               <Ionicons name="hourglass-outline" size={30} color="#fff" />
             </View>
           </View>
-          <Text style={oe.title}>Biroz kuting</Text>
+          <Text style={oe.title}>{t('login.registerStep.otpErrorModal.title')}</Text>
           <Text style={oe.desc}>{message}</Text>
           <TouchableOpacity
             style={oe.btn}
             onPress={onClose}
             activeOpacity={0.85}
           >
-            <Text style={oe.btnTxt}>Tushunarli</Text>
+            <Text style={oe.btnTxt}>{t('login.registerStep.otpErrorModal.btn')}</Text>
             <Ionicons name="checkmark" size={18} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -1451,6 +1430,7 @@ const oe = StyleSheet.create({
 
 // ─── Register error modal ────────────────────────────────────────────────────
 function RegisterErrorModal({ message, onClose }) {
+  const { t } = useLanguage();
   return (
     <Modal
       transparent
@@ -1465,14 +1445,14 @@ function RegisterErrorModal({ message, onClose }) {
               <Ionicons name="alert-circle-outline" size={30} color="#fff" />
             </View>
           </View>
-          <Text style={ex.title}>Xatolik yuz berdi</Text>
+          <Text style={ex.title}>{t('login.registerStep.registerErrorModal.title')}</Text>
           <Text style={ex.desc}>{message}</Text>
           <TouchableOpacity
             style={ex.btn}
             onPress={onClose}
             activeOpacity={0.85}
           >
-            <Text style={ex.btnTxt}>Qayta urinib ko'rish</Text>
+            <Text style={ex.btnTxt}>{t('login.registerStep.registerErrorModal.btn')}</Text>
             <Ionicons name="refresh" size={18} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -1483,6 +1463,7 @@ function RegisterErrorModal({ message, onClose }) {
 
 // ─── Step 5: Address ──────────────────────────────────────────────────────────
 function StepAddress({ data, set, onNext, regions, districts }) {
+  const { t } = useLanguage();
   const [showRegion, setShowRegion] = useState(false);
   const [showDistrict, setShowDistrict] = useState(false);
   const regionRequired = !regions.error && regions.items.length > 0;
@@ -1499,14 +1480,14 @@ function StepAddress({ data, set, onNext, regions, districts }) {
         contentContainerStyle={sh.body}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={[sh.eyebrow, { textAlign: 'center' }]}>2-QADAM</Text>
-        <Text style={[sh.h1, { textAlign: 'center' }]}>Manzilingiz</Text>
+        <Text style={[sh.eyebrow, { textAlign: 'center' }]}>{t('login.registerStep.stepLabel', { n: 2 })}</Text>
+        <Text style={[sh.h1, { textAlign: 'center' }]}>{t('login.registerStep.address.title')}</Text>
         <Text style={[sh.sub, { textAlign: 'center' }]}>
-          Ustalar xizmat ko'rsatadigan asosiy manzilni kiriting.
+          {t('login.registerStep.address.subtitle')}
         </Text>
 
         <Text style={sh.label}>
-          Viloyat / shahar {regionRequired && <Text style={sh.req}>*</Text>}
+          {t('login.registerStep.address.region')} {regionRequired && <Text style={sh.req}>*</Text>}
         </Text>
         <TouchableOpacity
           style={[
@@ -1527,14 +1508,14 @@ function StepAddress({ data, set, onNext, regions, districts }) {
                 fontWeight: data.region_name ? '500' : '400',
               }}
             >
-              {data.region_name || 'Tanlang'}
+              {data.region_name || t('login.registerStep.address.selectPlaceholder')}
             </Text>
           </View>
           <Ionicons name="chevron-down" size={18} color={COLORS.faint} />
         </TouchableOpacity>
 
         <Text style={sh.label}>
-          Tuman {districtRequired && <Text style={sh.req}>*</Text>}
+          {t('login.registerStep.address.district')} {districtRequired && <Text style={sh.req}>*</Text>}
         </Text>
         <TouchableOpacity
           style={[
@@ -1559,14 +1540,16 @@ function StepAddress({ data, set, onNext, regions, districts }) {
               }}
             >
               {data.district_name ||
-                (data.region_id ? 'Tuman tanlang' : 'Avval viloyat tanlang')}
+                (data.region_id
+                  ? t('login.registerStep.address.selectDistrict')
+                  : t('login.registerStep.address.selectRegionFirst'))}
             </Text>
           </View>
           <Ionicons name="chevron-down" size={18} color={COLORS.faint} />
         </TouchableOpacity>
 
         <Text style={sh.label}>
-          To'liq manzil <Text style={sh.req}>*</Text>
+          {t('login.registerStep.address.fullAddress')} <Text style={sh.req}>*</Text>
         </Text>
         <View
           style={[
@@ -1577,7 +1560,7 @@ function StepAddress({ data, set, onNext, regions, districts }) {
         >
           <TextInput
             style={[sh.input, { flex: 1 }]}
-            placeholder="Ko'cha, uy, kvartira raqami"
+            placeholder={t('login.registerStep.address.addressPlaceholder')}
             placeholderTextColor={COLORS.faint}
             multiline
             value={data.address}
@@ -1600,7 +1583,7 @@ function StepAddress({ data, set, onNext, regions, districts }) {
           })
         }
         onClose={() => setShowRegion(false)}
-        title="Viloyat tanlang"
+        title={t('login.registerStep.address.pickRegionTitle')}
       />
       <PickerModal
         visible={showDistrict}
@@ -1611,104 +1594,19 @@ function StepAddress({ data, set, onNext, regions, districts }) {
           set({ district_id: item.id, district_name: item.name })
         }
         onClose={() => setShowDistrict(false)}
-        title="Tuman tanlang"
+        title={t('login.registerStep.address.pickDistrictTitle')}
       />
 
       <View style={sh.footer}>
-        <CtaBtn label="Davom etish" onPress={onNext} disabled={!ok} />
+        <CtaBtn label={t('login.registerStep.address.cta')} onPress={onNext} disabled={!ok} />
       </View>
     </View>
   );
 }
 
-const buildMapHtml = (initLat, initLng) => `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    #map { width:100vw; height:100vh; }
-  </style>
-</head>
-<body>
-<div id="map"></div>
-<script>
-  var map = L.map('map', { zoomControl:true }).setView([41.2995, 69.2401], 12);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19
-  }).addTo(map);
-
-  var marker = null;
-  ${
-    initLat && initLng
-      ? `
-  marker = L.marker([${initLat}, ${initLng}]).addTo(map);
-  map.setView([${initLat}, ${initLng}], 15);
-  `
-      : ''
-  }
-
-  map.on('click', function(e) {
-    if (marker) { marker.setLatLng(e.latlng); }
-    else { marker = L.marker(e.latlng).addTo(map); }
-    window.ReactNativeWebView.postMessage(JSON.stringify({
-      lat: e.latlng.lat.toFixed(6),
-      lng: e.latlng.lng.toFixed(6)
-    }));
-  });
-
-  function goTo(lat, lng) {
-    var ll = L.latLng(lat, lng);
-    if (marker) { marker.setLatLng(ll); }
-    else { marker = L.marker(ll).addTo(map); }
-    map.setView(ll, 16);
-    window.ReactNativeWebView.postMessage(JSON.stringify({
-      lat: lat.toFixed(6), lng: lng.toFixed(6)
-    }));
-  }
-</script>
-</body>
-</html>`;
-
 // ─── Step 6: GPS ─────────────────────────────────────────────────────────────
 function StepGps({ data, set, onNext }) {
-  const webRef = useRef(null);
-  const [locating, setLocating] = useState(false);
-
-  const locate = async () => {
-    setLocating(true);
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Ruxsat kerak', 'Joylashuv uchun ruxsat bering.');
-        return;
-      }
-      const pos = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-      const { latitude, longitude } = pos.coords;
-      webRef.current?.injectJavaScript(
-        `goTo(${latitude}, ${longitude}); true;`
-      );
-    } catch {
-      Alert.alert(
-        'Xato',
-        "Joylashuvni aniqlab bo'lmadi. Qayta urinib ko'ring."
-      );
-    } finally {
-      setLocating(false);
-    }
-  };
-
-  const onMessage = (e) => {
-    try {
-      const { lat, lng } = JSON.parse(e.nativeEvent.data);
-      set({ default_gps_lat: lat, default_gps_lng: lng });
-    } catch {}
-  };
+  const { t } = useLanguage();
 
   return (
     <View style={sh.flex}>
@@ -1717,58 +1615,37 @@ function StepGps({ data, set, onNext }) {
         keyboardShouldPersistTaps="handled"
         scrollEnabled={true}
       >
-        <Text style={[sh.eyebrow, { textAlign: 'center' }]}>3-QADAM</Text>
+        <Text style={[sh.eyebrow, { textAlign: 'center' }]}>{t('login.registerStep.stepLabel', { n: 3 })}</Text>
         <Text style={[sh.h1, { textAlign: 'center' }]}>
-          Joylashuvni belgilang
+          {t('login.registerStep.gps.title')}
         </Text>
         <Text style={[sh.sub, { textAlign: 'center' }]}>
-          Xaritadan nuqtani bosing yoki joriy joylashuvdan foydalaning.
+          {t('login.registerStep.gps.subtitle')}
         </Text>
 
         <View style={gp.mapWrap}>
-          <WebView
-            ref={webRef}
-            style={gp.map}
-            source={{
-              html: buildMapHtml(data.default_gps_lat, data.default_gps_lng),
-            }}
-            onMessage={onMessage}
-            javaScriptEnabled
-            originWhitelist={['*']}
-            scrollEnabled={false}
+          <LocationMapPicker
+            lat={data.default_gps_lat}
+            lng={data.default_gps_lng}
+            onChange={(lat, lng) => set({ default_gps_lat: lat, default_gps_lng: lng })}
+            height={280}
+            locateLabel={t('login.registerStep.gps.currentLocation')}
+            locatingLabel={t('login.registerStep.gps.locating')}
+            tapHint={t('login.registerStep.gps.tapHint')}
+            showTapHint
+            permissionTitle={t('login.registerStep.pickImage.permissionTitle')}
+            permissionMessage={t('login.registerStep.gps.locationPermission')}
+            errorTitle={t('common.errorTitle')}
+            errorMessage={t('login.registerStep.gps.locationError')}
           />
-
-          <TouchableOpacity
-            style={gp.locateBtn}
-            onPress={locate}
-            activeOpacity={0.85}
-            disabled={locating}
-          >
-            {locating ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Ionicons name="navigate" size={15} color="#fff" />
-            )}
-            <Text style={gp.locateTxt}>
-              {locating ? 'Aniqlanmoqda...' : 'Joriy joylashuv'}
-            </Text>
-          </TouchableOpacity>
-
-          {!data.default_gps_lat && (
-            <View style={gp.hintWrap} pointerEvents="none">
-              <Text style={gp.tapHint}>
-                Xaritaga bosib joylashuvni belgilang
-              </Text>
-            </View>
-          )}
         </View>
 
-        <Text style={[sh.label, { marginTop: 4 }]}>Mo'ljal</Text>
+        <Text style={[sh.label, { marginTop: 4 }]}>{t('login.registerStep.gps.landmark')}</Text>
         <View style={[sh.control, data.default_landmark && sh.controlFilled]}>
           <Feather name="flag" size={18} color={COLORS.faint} />
           <TextInput
             style={sh.input}
-            placeholder="Masalan: Mega Planet ro'parasida"
+            placeholder={t('login.registerStep.gps.landmarkPlaceholder')}
             placeholderTextColor={COLORS.faint}
             value={data.default_landmark}
             onChangeText={(v) => set({ default_landmark: v })}
@@ -1776,72 +1653,38 @@ function StepGps({ data, set, onNext }) {
         </View>
       </ScrollView>
       <View style={sh.footer}>
-        <CtaBtn label="Davom etish" onPress={onNext} />
+        <CtaBtn label={t('login.registerStep.gps.cta')} onPress={onNext} />
       </View>
     </View>
   );
 }
 const gp = StyleSheet.create({
   mapWrap: {
-    borderRadius: 18,
-    overflow: 'hidden',
     marginBottom: 14,
-    height: 280,
-    position: 'relative',
   },
-  map: { flex: 1 },
-  hintWrap: {
-    position: 'absolute',
-    bottom: 52,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
-  tapHint: {
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    color: '#fff',
-    fontSize: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-  locateBtn: {
-    position: 'absolute',
-    bottom: 10,
-    right: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: COLORS.orange,
-    borderRadius: 10,
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    elevation: 4,
-  },
-  locateTxt: { color: '#fff', fontSize: 12.5, fontWeight: '600' },
 });
 
 // ─── Done ────────────────────────────────────────────────────────────────────
 function StepDone({ data, onFinish, onEdit, submitting }) {
+  const { t } = useLanguage();
   const rows = [
     {
       icon: 'person-outline',
-      label: 'Foydalanuvchi',
+      label: t('login.registerStep.done.userLabel'),
       value: `${data.first_name} ${data.last_name}${
         data.gender_name ? ' · ' + data.gender_name : ''
       }`,
     },
-    { icon: 'call-outline', label: 'Telefon', value: `+998 ${data.phone}` },
+    { icon: 'call-outline', label: t('login.registerStep.done.phoneLabel'), value: `+998 ${data.phone}` },
     {
       icon: 'location-outline',
-      label: 'Manzil',
+      label: t('login.registerStep.done.addressLabel'),
       value: `${data.region_name || '—'}, ${data.district_name || '—'}`,
     },
     {
       icon: 'shield-checkmark-outline',
-      label: 'Tasdiqlash',
-      value: 'Pasport rasmi yuklandi',
+      label: t('login.registerStep.done.verificationLabel'),
+      value: t('login.registerStep.done.verificationValue'),
     },
   ];
   return (
@@ -1851,20 +1694,20 @@ function StepDone({ data, onFinish, onEdit, submitting }) {
           <Ionicons name="checkmark" size={36} color="#fff" />
         </View>
       </View>
-      <Text style={dn.h}>Ro'yxatdan o'tdingiz!</Text>
+      <Text style={dn.h}>{t('login.registerStep.done.title')}</Text>
       <Text style={dn.p}>
-        Tabriklaymiz,{' '}
+        {t('login.registerStep.done.congrats')}{' '}
         <Text style={{ color: COLORS.white, fontWeight: '700' }}>
-          {data.first_name || 'foydalanuvchi'}
+          {data.first_name || t('login.registerStep.done.defaultName')}
         </Text>
         !{'\n'}
-        Hisobingiz tekshiruvga yuborildi va tez orada faollashtiriladi.
+        {t('login.registerStep.done.congratsSuffix')}
       </Text>
 
       <View style={dn.summary}>
         {rows.map(({ icon, label, value }, i) => (
           <View
-            key={label}
+            key={icon}
             style={[dn.row, i === rows.length - 1 && { borderBottomWidth: 0 }]}
           >
             <View style={dn.iconBox}>
@@ -1891,7 +1734,7 @@ function StepDone({ data, onFinish, onEdit, submitting }) {
           <ActivityIndicator size="small" color="#fff" />
         ) : (
           <>
-            <Text style={ct.txt}>Ilovaga kirish</Text>
+            <Text style={ct.txt}>{t('login.registerStep.done.cta')}</Text>
             <Ionicons name="arrow-forward" size={18} color="#fff" />
           </>
         )}
@@ -1904,7 +1747,7 @@ function StepDone({ data, onFinish, onEdit, submitting }) {
         disabled={submitting}
       >
         <Ionicons name="create-outline" size={17} color={COLORS.orange} />
-        <Text style={dn.editTxt}>Ma'lumotlarni tahrirlash</Text>
+        <Text style={dn.editTxt}>{t('login.registerStep.done.editBtn')}</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -2048,6 +1891,7 @@ const sh = StyleSheet.create({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function RegisterStep({ onBack, onDone }) {
+  const { t } = useLanguage();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [devCode, setDevCode] = useState('');
@@ -2073,8 +1917,8 @@ export default function RegisterStep({ onBack, onDone }) {
   });
 
   useEffect(() => {
-    loadInto(setGenders, getGenders);
-    loadInto(setRegions, getRegions);
+    loadInto(setGenders, getGenders, t('login.registerStep.errors.loadFailed'));
+    loadInto(setRegions, getRegions, t('login.registerStep.errors.loadFailed'));
   }, []);
 
   const [data, setData] = useState({
@@ -2105,7 +1949,7 @@ export default function RegisterStep({ onBack, onDone }) {
       setDistricts({ items: [], loading: false, error: null });
       return;
     }
-    loadInto(setDistricts, () => getDistricts(data.region_id));
+    loadInto(setDistricts, () => getDistricts(data.region_id), t('login.registerStep.errors.loadFailed'));
   }, [data.region_id]);
 
   const sendOtp = async () => {
@@ -2116,7 +1960,7 @@ export default function RegisterStep({ onBack, onDone }) {
       if (res.dev_code) setDevCode(res.dev_code);
       setStep((s) => s + 1);
     } catch (e) {
-      setOtpError(e.message || 'OTP yuborishda muammo yuz berdi');
+      setOtpError(e.message || t('login.registerStep.errors.otpSendFailed'));
     } finally {
       setLoading(false);
     }
@@ -2190,7 +2034,7 @@ export default function RegisterStep({ onBack, onDone }) {
       onDone();
     } catch (e) {
       setFinishError(
-        e.message || "Ro'yxatdan o'tishni yakunlashda muammo yuz berdi"
+        e.message || t('login.registerStep.errors.finishFailed')
       );
     } finally {
       setLoading(false);

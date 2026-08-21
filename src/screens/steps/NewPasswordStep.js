@@ -3,19 +3,21 @@ import { View, Text, Image, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { COLORS } from '../../constants/colors';
+import { useLanguage } from '../../context/LanguageContext';
 import BackBtn from '../../components/login/BackBtn';
 import PasswordInput from '../../components/login/PasswordInput';
 import PrimaryBtn from '../../components/login/PrimaryBtn';
 
 const PASSWORD_RULES = [
-  { key: 'length', label: 'Kamida 8 ta belgi', test: (pw) => pw.length >= 8 },
-  { key: 'upper', label: '1 ta katta harf (A-Z)', test: (pw) => /[A-Z]/.test(pw) },
-  { key: 'lower', label: '1 ta kichik harf (a-z)', test: (pw) => /[a-z]/.test(pw) },
-  { key: 'digit', label: '1 ta raqam (0-9)', test: (pw) => /\d/.test(pw) },
-  { key: 'special', label: '1 ta maxsus belgi (!@#$%)', test: (pw) => /[^A-Za-z0-9]/.test(pw) },
+  { key: 'length', test: (pw) => pw.length >= 8 },
+  { key: 'upper', test: (pw) => /[A-Z]/.test(pw) },
+  { key: 'lower', test: (pw) => /[a-z]/.test(pw) },
+  { key: 'digit', test: (pw) => /\d/.test(pw) },
+  { key: 'special', test: (pw) => /[^A-Za-z0-9]/.test(pw) },
 ];
 
 function PasswordRules({ password }) {
+  const { t } = useLanguage();
   return (
     <View style={styles.rulesWrap}>
       {PASSWORD_RULES.map((rule) => {
@@ -28,7 +30,7 @@ function PasswordRules({ password }) {
               color={passed ? COLORS.success : COLORS.faint}
             />
             <Text style={[styles.ruleLabel, passed && styles.ruleLabelDone]}>
-              {rule.label}
+              {t(`login.newPasswordStep.rules.${rule.key}`)}
             </Text>
           </View>
         );
@@ -43,6 +45,7 @@ export default function NewPasswordStep({
   loading = false,
   error = '',
 }) {
+  const { t } = useLanguage();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
@@ -65,33 +68,33 @@ export default function NewPasswordStep({
           style={styles.logo}
           resizeMode="contain"
         />
-        <Text style={styles.title}>Yangi parol</Text>
+        <Text style={styles.title}>{t('login.newPasswordStep.title')}</Text>
         <Text style={styles.subtitle}>
-          Hisobingiz uchun yangi parol o'rnating.
+          {t('login.newPasswordStep.subtitle')}
         </Text>
       </View>
 
       <View style={styles.fieldWrap}>
-        <Text style={styles.fieldLabel}>Yangi parol</Text>
+        <Text style={styles.fieldLabel}>{t('login.newPasswordStep.newPasswordLabel')}</Text>
         <PasswordInput
           value={newPassword}
           onChangeText={setNewPassword}
           theme={{ isDark: true }}
-          placeholder="Yangi parol yarating"
+          placeholder={t('login.newPasswordStep.newPasswordPlaceholder')}
         />
         <PasswordRules password={newPassword} />
       </View>
 
       <View style={styles.fieldWrap}>
-        <Text style={styles.fieldLabel}>Parolni tasdiqlang</Text>
+        <Text style={styles.fieldLabel}>{t('login.newPasswordStep.confirmPasswordLabel')}</Text>
         <PasswordInput
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           theme={{ isDark: true }}
-          placeholder="Parolni qayta kiriting"
+          placeholder={t('login.newPasswordStep.confirmPasswordPlaceholder')}
         />
         {!!confirmPassword && !matchOk && (
-          <Text style={styles.mismatchTxt}>Parollar mos kelmadi</Text>
+          <Text style={styles.mismatchTxt}>{t('login.newPasswordStep.mismatch')}</Text>
         )}
       </View>
 
@@ -104,7 +107,7 @@ export default function NewPasswordStep({
 
       <View style={styles.footer}>
         <PrimaryBtn
-          label={loading ? '' : 'Parolni saqlash'}
+          label={loading ? '' : t('login.newPasswordStep.save')}
           disabled={!isReady}
           onPress={handleSubmit}
           icon={

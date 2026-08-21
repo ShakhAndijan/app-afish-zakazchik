@@ -26,11 +26,12 @@ import ZakazchiProfileScreen from './ZakazchiProfileScreen';
 import UstaDetailScreen from './UstaDetailScreen';
 import XizmatlarScreen from './XizmatlarScreen';
 import WorkDetailScreen from './WorkDetailScreen';
-import ZakazchiChatScreen from './ZakazchiChatScreen';
+import RentalScreen from './RentalScreen';
 import BottomNav from '../components/BottomNav';
 import ListingCard from '../components/ListingCard';
 import AfishLoader from '../components/AfishLoader';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { useUser } from '../context/UserContext';
 import { getCategories } from '../api/categories';
 import { getWorkers, getFavorites } from '../api/workers';
@@ -423,6 +424,7 @@ const wk = StyleSheet.create({
 
 function TopUstalar({ onSelectUsta, categoryId, initialWorkers }) {
   const { theme: t } = useTheme();
+  const { t: tr } = useLanguage();
   const [workers, setWorkers] = useState(initialWorkers);
   const [loading, setLoading] = useState(false);
   const isFirstRun = useRef(true);
@@ -435,7 +437,7 @@ function TopUstalar({ onSelectUsta, categoryId, initialWorkers }) {
     }
     let cancelled = false;
     setLoading(true);
-    getWorkers({ limit: 5, offset: 0, categoryId })
+    getWorkers({ page: 1, size: 5, categoryId })
       .then((items) => {
         // console.log('workers:', items);
         if (!cancelled) {
@@ -514,7 +516,7 @@ function TopUstalar({ onSelectUsta, categoryId, initialWorkers }) {
                 style={{ fontSize: 12, color: t.muted, flexShrink: 1 }}
                 numberOfLines={1}
               >
-                {u.profession || 'Usta'}
+                {u.profession || tr('zakazchiMain.defaultProfession')}
               </Text>
               <View
                 style={{
@@ -558,6 +560,7 @@ function TopUstalar({ onSelectUsta, categoryId, initialWorkers }) {
 
 function SevimliUstalar({ onSelectUsta, saved }) {
   const { theme: t } = useTheme();
+  const { t: tr } = useLanguage();
   const [savedIdx, setSavedIdx] = useState(0);
   const listRef = useRef(null);
   const idxRef = useRef(0);
@@ -589,13 +592,13 @@ function SevimliUstalar({ onSelectUsta, saved }) {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
           <Ionicons name="heart" size={17} color={t.red} />
           <Text style={{ fontWeight: '700', fontSize: 16.5, color: t.text }}>
-            Sevimli ustalar
+            {tr('zakazchiMain.favorites.title')}
           </Text>
         </View>
         {saved.length > 0 && (
           <TouchableOpacity activeOpacity={0.7}>
             <Text style={{ color: t.orange, fontSize: 12.5, fontWeight: '600' }}>
-              Barchasi
+              {tr('common.seeAll')}
             </Text>
           </TouchableOpacity>
         )}
@@ -615,7 +618,7 @@ function SevimliUstalar({ onSelectUsta, saved }) {
         >
           <Ionicons name="heart-outline" size={22} color={t.muted} />
           <Text style={{ fontSize: 13, fontWeight: '600', color: t.muted }}>
-            Hali sevimli ustalar yo'q
+            {tr('zakazchiMain.favorites.empty')}
           </Text>
         </View>
       ) : (
@@ -680,7 +683,7 @@ function SevimliUstalar({ onSelectUsta, saved }) {
                   }}
                   numberOfLines={1}
                 >
-                  {u.profession || 'Usta'}
+                  {u.profession || tr('zakazchiMain.defaultProfession')}
                 </Text>
               </TouchableOpacity>
             )}
@@ -753,12 +756,21 @@ function Avatar({ letter = 'J', size = 42, bgColor = '#e87a45', uri }) {
   );
 }
 
+function SectionLoader({ height = 140 }) {
+  return (
+    <View style={{ height, alignItems: 'center', justifyContent: 'center' }}>
+      <AfishLoader size={80} />
+    </View>
+  );
+}
+
 export default function ZakazchiMainScreen({ onLogout }) {
   const [activeTab, setActiveTab] = useState('home');
   const [selectedUsta, setSelectedUsta] = useState(null);
   const [selectedWork, setSelectedWork] = useState(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const { theme: t } = useTheme();
+  const { t: tr } = useLanguage();
   const { user } = useUser();
   const serviceCarouselRef = useRef(null);
 
@@ -767,8 +779,19 @@ export default function ZakazchiMainScreen({ onLogout }) {
   const [works, setWorks] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [listings, setListings] = useState([]);
-  const [initialLoading, setInitialLoading] = useState(true);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [workersLoading, setWorkersLoading] = useState(true);
+  const [worksLoading, setWorksLoading] = useState(true);
+  const [favoritesLoading, setFavoritesLoading] = useState(true);
+  const [listingsLoading, setListingsLoading] = useState(true);
+  const initialLoading =
+    categoriesLoading &&
+    workersLoading &&
+    worksLoading &&
+    favoritesLoading &&
+    listingsLoading;
   const [refreshing, setRefreshing] = useState(false);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
     getToken().then((token) => {
@@ -777,40 +800,64 @@ export default function ZakazchiMainScreen({ onLogout }) {
   }, []);
 
   const loadHomeData = useCallback(() => {
-    return Promise.all([
-      getCategories(),
-      getWorkers({ limit: 5, offset: 0, categoryId: null }),
-      getTopOrders({ limit: 10 }),
-      getFavorites({ page: 1, size: 10 }),
-      getListings({ limit: 10, offset: 0 }),
-    ]).then(([cats, wkrs, wrks, favs, lstngs]) => {
-      setCategories(cats);
-      setWorkers(wkrs);
-      setWorks(wrks);
-      setFavorites(favs);
-      setListings(lstngs);
-    });
+    // Har bir so'rov mustaqil ishlaydi: biri xato bersa, qolganlari
+    // baribir o'z holatini yangilaydi (faqat xato bergan bo'lim loading holatida qoladi).
+    return Promise.allSettled([
+      getCategories()
+        .then((cats) => {
+          if (mountedRef.current) {
+            setCategories(cats);
+            setCategoriesLoading(false);
+          }
+        })
+        .catch((err) => console.log('[loadHomeData] categories error:', err?.message ?? err)),
+      getWorkers({ page: 1, size: 5, categoryId: null })
+        .then((wkrs) => {
+          if (mountedRef.current) {
+            setWorkers(wkrs);
+            setWorkersLoading(false);
+          }
+        })
+        .catch((err) => console.log('[loadHomeData] workers error:', err?.message ?? err)),
+      getTopOrders({ limit: 10 })
+        .then((wrks) => {
+          if (mountedRef.current) {
+            setWorks(wrks);
+            setWorksLoading(false);
+          }
+        })
+        .catch((err) => console.log('[loadHomeData] topOrders error:', err?.message ?? err)),
+      getFavorites({ page: 1, size: 10 })
+        .then((favs) => {
+          if (mountedRef.current) {
+            setFavorites(favs);
+            setFavoritesLoading(false);
+          }
+        })
+        .catch((err) => console.log('[loadHomeData] favorites error:', err?.message ?? err)),
+      getListings({ limit: 10, offset: 0 })
+        .then((lstngs) => {
+          if (mountedRef.current) {
+            setListings(lstngs);
+            setListingsLoading(false);
+          }
+        })
+        .catch((err) => console.log('[loadHomeData] listings error:', err?.message ?? err)),
+    ]);
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    loadHomeData()
-      .then(() => {
-        if (!cancelled) setInitialLoading(false);
-      })
-      .catch(() => {
-        // Backend bilan aloqa bo'lmasa, umumiy loader holatida kutamiz
-      });
+    mountedRef.current = true;
+    loadHomeData();
     return () => {
-      cancelled = true;
+      mountedRef.current = false;
     };
   }, [loadHomeData]);
 
   const onRefresh = useCallback(() => {
+    console.log('[onRefresh] pastga tortish aniqlandi, yangilanmoqda...');
     setRefreshing(true);
-    loadHomeData()
-      .catch(() => {})
-      .finally(() => setRefreshing(false));
+    loadHomeData().finally(() => setRefreshing(false));
   }, [loadHomeData]);
 
   if (selectedUsta) {
@@ -843,8 +890,8 @@ export default function ZakazchiMainScreen({ onLogout }) {
     return <XizmatlarScreen activeTab={activeTab} onTabChange={setActiveTab} />;
   }
 
-  if (activeTab === 'chat') {
-    return <ZakazchiChatScreen onTabChange={setActiveTab} />;
+  if (activeTab === 'rental') {
+    return <RentalScreen onTabChange={setActiveTab} />;
   }
 
   return (
@@ -898,7 +945,7 @@ export default function ZakazchiMainScreen({ onLogout }) {
                   marginTop: 3,
                 }}
               >
-                Salom, {user?.last_name} 👋
+                {tr('zakazchiMain.greeting', { name: user?.last_name })}
               </Text>
             </View>
             <Avatar
@@ -933,7 +980,7 @@ export default function ZakazchiMainScreen({ onLogout }) {
                       letterSpacing: 0.3,
                     }}
                   >
-                    FAOL BUYURTMA
+                    {tr('zakazchiMain.activeOrder.badge')}
                   </Text>
                 </View>
                 <Text style={{ fontSize: 11.5, color: t.muted }}>#A-2481</Text>
@@ -946,10 +993,10 @@ export default function ZakazchiMainScreen({ onLogout }) {
                   <Text
                     style={{ fontWeight: '700', fontSize: 14.5, color: t.text }}
                   >
-                    Alisher yo'lda
+                    {tr('zakazchiMain.activeOrder.workerStatus')}
                   </Text>
                   <Text style={{ fontSize: 12, color: t.muted, marginTop: 2 }}>
-                    Santexnik · 12 daqiqada keladi
+                    {tr('zakazchiMain.activeOrder.eta')}
                   </Text>
                 </View>
                 <TouchableOpacity style={s.callBtn} activeOpacity={0.8}>
@@ -960,7 +1007,7 @@ export default function ZakazchiMainScreen({ onLogout }) {
                 <Text
                   style={{ color: '#fff', fontWeight: '700', fontSize: 13.5 }}
                 >
-                  Buyurtmani kuzatish
+                  {tr('zakazchiMain.activeOrder.track')}
                 </Text>
                 <Ionicons
                   name="arrow-forward"
@@ -989,7 +1036,7 @@ export default function ZakazchiMainScreen({ onLogout }) {
             <View style={{ marginTop: 24 }}>
               <View style={[s.sectionHeader, { paddingHorizontal: 20 }]}>
                 <Text style={[s.sectionTitle, { color: t.text }]}>
-                  Taklif xizmatlar
+                  {tr('app.taklifXizmatlar.title')}
                 </Text>
                 <TouchableOpacity
                   activeOpacity={0.7}
@@ -1002,98 +1049,118 @@ export default function ZakazchiMainScreen({ onLogout }) {
                       fontWeight: '600',
                     }}
                   >
-                    Barchasi
+                    {tr('common.seeAll')}
                   </Text>
                 </TouchableOpacity>
               </View>
-              <ServiceCarousel
-                ref={serviceCarouselRef}
-                categories={categories}
-                onSelectCategory={setSelectedCategoryId}
-              />
+              {categoriesLoading ? (
+                <SectionLoader height={110} />
+              ) : (
+                <ServiceCarousel
+                  ref={serviceCarouselRef}
+                  categories={categories}
+                  onSelectCategory={setSelectedCategoryId}
+                />
+              )}
             </View>
 
             {/* ── Top ustalar ── */}
             <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
               <View style={s.sectionHeader}>
                 <Text style={[s.sectionTitle, { color: t.text }]}>
-                  Eng zo'r ustalar
+                  {tr('app.engZorUstalar.title')}
                 </Text>
                 <Text
                   style={{ color: t.orange, fontSize: 12.5, fontWeight: '600' }}
                 >
-                  Reyting
+                  {tr('app.engZorUstalar.rating')}
                 </Text>
               </View>
-              <TopUstalar
-                onSelectUsta={setSelectedUsta}
-                categoryId={selectedCategoryId}
-                initialWorkers={workers}
-              />
+              {workersLoading ? (
+                <SectionLoader height={176} />
+              ) : (
+                <TopUstalar
+                  onSelectUsta={setSelectedUsta}
+                  categoryId={selectedCategoryId}
+                  initialWorkers={workers}
+                />
+              )}
             </View>
 
             {/* ── Best works ── */}
             <View style={{ marginTop: 24 }}>
               <View style={[s.sectionHeader, { paddingHorizontal: 20 }]}>
                 <Text style={[s.sectionTitle, { color: t.text }]}>
-                  Eng zo'r ishlar
+                  {tr('app.engZorIshlar.title')}
                 </Text>
                 <Text
                   style={{ color: t.orange, fontSize: 12.5, fontWeight: '600' }}
                 >
-                  Galereya
+                  {tr('app.engZorIshlar.gallery')}
                 </Text>
               </View>
-              <WorksCarousel works={works} onSelectWork={setSelectedWork} />
+              {worksLoading ? (
+                <SectionLoader height={150} />
+              ) : (
+                <WorksCarousel works={works} onSelectWork={setSelectedWork} />
+              )}
             </View>
 
             {/* ── Sevimli ustalar ── */}
-            <SevimliUstalar onSelectUsta={setSelectedUsta} saved={favorites} />
+            {favoritesLoading ? (
+              <SectionLoader height={150} />
+            ) : (
+              <SevimliUstalar onSelectUsta={setSelectedUsta} saved={favorites} />
+            )}
 
             {/* ── Yangi e'lonlar ── */}
             <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
               <View style={s.sectionHeader}>
                 <Text style={[s.sectionTitle, { color: t.text }]}>
-                  Yangi e'lonlar
+                  {tr('zakazchiMain.newListings.title')}
                 </Text>
                 <TouchableOpacity activeOpacity={0.7}>
                   <Text
                     style={{ color: t.orange, fontSize: 12.5, fontWeight: '600' }}
                   >
-                    Barchasi
+                    {tr('common.seeAll')}
                   </Text>
                 </TouchableOpacity>
               </View>
-              <View style={{ gap: 12 }}>
-                {listings.map((l) => (
-                  <ListingCard
-                    key={l.id}
-                    listing={l}
-                    accent={t.orange}
-                    colors={{
-                      card: t.card,
-                      border: t.border,
-                      text: t.text,
-                      muted: t.muted,
-                      gold: t.gold,
-                      ratingBg: 'rgba(245,196,81,0.13)',
-                    }}
-                    onPress={() =>
-                      setSelectedUsta({
-                        id: l.workerId,
-                        initial: l.initial,
-                        name: l.name,
-                        bgColor: l.color,
-                        profile_photo: l.profile_photo,
-                        rating: l.rating,
-                        startingPrice: String(l.price),
-                        reliability_badge: l.reliability_badge,
-                        is_online: l.is_online,
-                      })
-                    }
-                  />
-                ))}
-              </View>
+              {listingsLoading ? (
+                <SectionLoader height={150} />
+              ) : (
+                <View style={{ gap: 12 }}>
+                  {listings.map((l) => (
+                    <ListingCard
+                      key={l.id}
+                      listing={l}
+                      accent={t.orange}
+                      colors={{
+                        card: t.card,
+                        border: t.border,
+                        text: t.text,
+                        muted: t.muted,
+                        gold: t.gold,
+                        ratingBg: 'rgba(245,196,81,0.13)',
+                      }}
+                      onPress={() =>
+                        setSelectedUsta({
+                          id: l.workerId,
+                          initial: l.initial,
+                          name: l.name,
+                          bgColor: l.color,
+                          profile_photo: l.profile_photo,
+                          rating: l.rating,
+                          startingPrice: String(l.price),
+                          reliability_badge: l.reliability_badge,
+                          is_online: l.is_online,
+                        })
+                      }
+                    />
+                  ))}
+                </View>
+              )}
             </View>
           </>
         )}

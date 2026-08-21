@@ -17,20 +17,20 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import Feather from '@expo/vector-icons/Feather';
-import * as Location from 'expo-location';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { useUser } from '../context/UserContext';
 import { getGenders, getRegions, getDistricts } from '../api/reference';
 import { getCustomerMe, updateCustomerMe } from '../api/user';
 import SuccessModal from '../components/SuccessModal';
 import AfishLoader from '../components/AfishLoader';
+import LocationMapPicker from '../components/LocationMapPicker';
 
 // Backend hali javob bermasa ham forma bo'sh qolmasligi uchun mahalliy zaxira
 // ro'yxatlar — real API javob bersa, ular ustidan yoziladi.
 const FALLBACK_GENDERS = [
-  { id: 1, code: 'male', name: 'Erkak' },
-  { id: 2, code: 'female', name: 'Ayol' },
+  { id: 1, code: 'male', nameKey: 'male' },
+  { id: 2, code: 'female', nameKey: 'female' },
 ];
 const FALLBACK_REGIONS = [
   { id: 1, name: 'Toshkent shahri' },
@@ -45,20 +45,6 @@ const FALLBACK_DISTRICTS = [
   { id: 3, name: "Mirzo Ulug'bek" },
   { id: 4, name: 'Sergeli' },
   { id: 5, name: 'Shayxontohur' },
-];
-const MONTH_NAMES_UZ = [
-  'Yanvar',
-  'Fevral',
-  'Mart',
-  'Aprel',
-  'May',
-  'Iyun',
-  'Iyul',
-  'Avgust',
-  'Sentyabr',
-  'Oktyabr',
-  'Noyabr',
-  'Dekabr',
 ];
 const pad2 = (n) => String(n).padStart(2, '0');
 const daysInMonth = (year, month) => new Date(year, month, 0).getDate();
@@ -118,12 +104,13 @@ function TextField({
 
 /* ── Ikkita tugmali jins tanlash ── */
 function GenderToggle({ genders, selectedId, onSelect, loading, t }) {
+  const { t: tr } = useLanguage();
   const iconFor = (code) =>
     code === 'female' ? 'gender-female' : code === 'male' ? 'gender-male' : 'account';
 
   return (
     <View style={{ gap: 8 }}>
-      <Text style={[s.fieldLabel, { color: t.muted }]}>Jinsi</Text>
+      <Text style={[s.fieldLabel, { color: t.muted }]}>{tr('editProfile.genderLabel')}</Text>
       {loading ? (
         <ActivityIndicator
           size="small"
@@ -155,7 +142,7 @@ function GenderToggle({ genders, selectedId, onSelect, loading, t }) {
                 <Text
                   style={[s.genderBtnText, { color: on ? '#fff' : t.text }]}
                 >
-                  {g.name}
+                  {g.nameKey ? tr(`editProfile.genders.${g.nameKey}`) : g.name}
                 </Text>
               </TouchableOpacity>
             );
@@ -210,6 +197,7 @@ function OptionSheet({
   t,
   loading,
 }) {
+  const { t: tr } = useLanguage();
   return (
     <Modal
       visible={visible}
@@ -247,7 +235,7 @@ function OptionSheet({
           />
         ) : options.length === 0 ? (
           <Text style={[s.sheetEmpty, { color: t.muted }]}>
-            Ma'lumot topilmadi
+            {tr('editProfile.emptyOptions')}
           </Text>
         ) : (
           <FlatList
@@ -327,6 +315,8 @@ function DateColumn({ values, value, onChange, format, t }) {
 }
 
 function BirthDateSheet({ visible, onClose, value, onChange, t }) {
+  const { t: tr } = useLanguage();
+  const monthNames = tr('login.registerStep.birthDate.months');
   const currentYear = new Date().getFullYear();
   const parsed = parseIsoDate(value);
   const [day, setDay] = useState(parsed?.day ?? 1);
@@ -383,7 +373,7 @@ function BirthDateSheet({ visible, onClose, value, onChange, t }) {
           <View style={[s.grabber, { backgroundColor: t.border }]} />
         </View>
         <View style={s.sheetHeaderRow}>
-          <Text style={[s.sheetTitle, { color: t.text }]}>Tug'ilgan sana</Text>
+          <Text style={[s.sheetTitle, { color: t.text }]}>{tr('editProfile.birthDateLabel')}</Text>
           <TouchableOpacity
             style={[s.sheetCloseBtn, { backgroundColor: t.rowIconBg }]}
             onPress={onClose}
@@ -403,7 +393,7 @@ function BirthDateSheet({ visible, onClose, value, onChange, t }) {
             values={months}
             value={month}
             onChange={changeMonth}
-            format={(m) => MONTH_NAMES_UZ[m - 1]}
+            format={(m) => monthNames[m - 1]}
             t={t}
           />
           <DateColumn values={years} value={year} onChange={changeYear} t={t} />
@@ -415,43 +405,11 @@ function BirthDateSheet({ visible, onClose, value, onChange, t }) {
             activeOpacity={0.85}
             onPress={confirm}
           >
-            <Text style={s.confirmBtnText}>Tasdiqlash</Text>
+            <Text style={s.confirmBtnText}>{tr('common.confirm')}</Text>
           </TouchableOpacity>
         </View>
       </View>
     </Modal>
-  );
-}
-
-/* ── GPS joylashuvni aniqlash tugmasi ── */
-function LocationField({ lat, lng, locating, onLocate, t }) {
-  const hasCoords = lat != null && lat !== '' && lng != null && lng !== '';
-  return (
-    <View style={{ gap: 8 }}>
-      <Text style={[s.fieldLabel, { color: t.muted }]}>Joylashuv (GPS)</Text>
-      <TouchableOpacity
-        style={[
-          s.locateBtn,
-          { backgroundColor: t.inputBg, borderColor: t.border },
-        ]}
-        onPress={onLocate}
-        activeOpacity={0.7}
-        disabled={locating}
-      >
-        <Feather name="navigation" size={16} color={t.orange} />
-        <Text
-          style={[s.locateBtnText, { color: t.text }]}
-          numberOfLines={1}
-        >
-          {locating
-            ? 'Aniqlanmoqda...'
-            : hasCoords
-            ? `${Number(lat).toFixed(5)}, ${Number(lng).toFixed(5)}`
-            : 'Joriy joylashuvni aniqlash'}
-        </Text>
-        {locating && <ActivityIndicator size="small" color={t.orange} />}
-      </TouchableOpacity>
-    </View>
   );
 }
 
@@ -461,6 +419,7 @@ function GroupLabel({ children, t }) {
 
 export default function EditProfileScreen({ onBack }) {
   const { theme: t } = useTheme();
+  const { t: tr } = useLanguage();
   const { refreshUser } = useUser();
 
   const [firstName, setFirstName] = useState('');
@@ -486,7 +445,6 @@ export default function EditProfileScreen({ onBack }) {
   const [showDistrictSheet, setShowDistrictSheet] = useState(false);
   const [showDateSheet, setShowDateSheet] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [locating, setLocating] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -525,8 +483,8 @@ export default function EditProfileScreen({ onBack }) {
       })
       .catch((e) => {
         Alert.alert(
-          'Xatolik',
-          e.message || "Profil ma'lumotlarini yuklab bo'lmadi"
+          tr('common.errorTitle'),
+          e.message || tr('editProfile.loadError')
         );
       })
       .finally(() => alive && setInitialLoading(false));
@@ -580,29 +538,6 @@ export default function EditProfileScreen({ onBack }) {
   const isReady =
     firstName.trim().length > 0 && lastName.trim().length > 0 && !saving;
 
-  const handleLocate = async () => {
-    setLocating(true);
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Ruxsat kerak', 'Joylashuv uchun ruxsat bering.');
-        return;
-      }
-      const pos = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-      setGpsLat(pos.coords.latitude);
-      setGpsLng(pos.coords.longitude);
-    } catch {
-      Alert.alert(
-        'Xato',
-        "Joylashuvni aniqlab bo'lmadi. Qayta urinib ko'ring."
-      );
-    } finally {
-      setLocating(false);
-    }
-  };
-
   const handleSave = async () => {
     if (!isReady) return;
     const payload = {
@@ -625,8 +560,8 @@ export default function EditProfileScreen({ onBack }) {
       setShowSuccess(true);
     } catch (e) {
       Alert.alert(
-        'Xatolik',
-        e.message || 'Profilni saqlashda xatolik yuz berdi'
+        tr('common.errorTitle'),
+        e.message || tr('editProfile.saveError')
       );
     } finally {
       setSaving(false);
@@ -656,7 +591,7 @@ export default function EditProfileScreen({ onBack }) {
             />
           </TouchableOpacity>
           <Text style={[s.headerTitle, { color: t.text }]}>
-            Profilni tahrirlash
+            {tr('editProfile.headerTitle')}
           </Text>
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -702,22 +637,22 @@ export default function EditProfileScreen({ onBack }) {
           contentContainerStyle={s.scroll}
           keyboardShouldPersistTaps="handled"
         >
-          <GroupLabel t={t}>SHAXSIY MA'LUMOTLAR</GroupLabel>
+          <GroupLabel t={t}>{tr('editProfile.groups.personal')}</GroupLabel>
           <View
             style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}
           >
             <TextField
-              label="Ism"
+              label={tr('editProfile.firstNameLabel')}
               value={firstName}
               onChangeText={setFirstName}
-              placeholder="Ismingiz"
+              placeholder={tr('editProfile.firstNamePlaceholder')}
               t={t}
             />
             <TextField
-              label="Familiya"
+              label={tr('editProfile.lastNameLabel')}
               value={lastName}
               onChangeText={setLastName}
-              placeholder="Familiyangiz"
+              placeholder={tr('editProfile.lastNamePlaceholder')}
               t={t}
             />
             <GenderToggle
@@ -728,68 +663,80 @@ export default function EditProfileScreen({ onBack }) {
               t={t}
             />
             <SelectField
-              label="Tug'ilgan sana"
+              label={tr('editProfile.birthDateLabel')}
               value={formatDisplayDate(birthDate)}
-              placeholder="Kun.Oy.Yil"
+              placeholder={tr('editProfile.birthDatePlaceholder')}
               onPress={() => setShowDateSheet(true)}
               t={t}
             />
           </View>
 
-          <GroupLabel t={t}>ALOQA</GroupLabel>
+          <GroupLabel t={t}>{tr('editProfile.groups.contact')}</GroupLabel>
           <View
             style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}
           >
             <TextField
-              label="Email"
+              label={tr('editProfile.emailLabel')}
               value={email}
               onChangeText={setEmail}
-              placeholder="email@example.com"
+              placeholder={tr('editProfile.emailPlaceholder')}
               t={t}
               keyboardType="email-address"
             />
           </View>
 
-          <GroupLabel t={t}>MANZIL</GroupLabel>
+          <GroupLabel t={t}>{tr('editProfile.groups.address')}</GroupLabel>
           <View
             style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}
           >
             <SelectField
-              label="Viloyat"
+              label={tr('editProfile.regionLabel')}
               value={selectedRegion?.name}
-              placeholder="Viloyatni tanlang"
+              placeholder={tr('editProfile.regionPlaceholder')}
               onPress={() => setShowRegionSheet(true)}
               t={t}
             />
             <SelectField
-              label="Tuman"
+              label={tr('editProfile.districtLabel')}
               value={selectedDistrict?.name}
               placeholder={
-                regionId ? 'Tumanni tanlang' : 'Avval viloyatni tanlang'
+                regionId ? tr('editProfile.districtPlaceholder') : tr('editProfile.districtPlaceholderNoRegion')
               }
               onPress={() => setShowDistrictSheet(true)}
               t={t}
               disabled={!regionId}
             />
             <TextField
-              label="To'liq manzil"
+              label={tr('editProfile.addressLabel')}
               value={address}
               onChangeText={setAddress}
-              placeholder="Ko'cha, uy raqami"
+              placeholder={tr('editProfile.addressPlaceholder')}
               t={t}
             />
-            <LocationField
-              lat={gpsLat}
-              lng={gpsLng}
-              locating={locating}
-              onLocate={handleLocate}
-              t={t}
-            />
+            <View style={{ gap: 8 }}>
+              <Text style={[s.fieldLabel, { color: t.muted }]}>{tr('editProfile.gpsLabel')}</Text>
+              <View style={s.mapWrap}>
+                <LocationMapPicker
+                  lat={gpsLat}
+                  lng={gpsLng}
+                  onChange={(lat, lng) => {
+                    setGpsLat(Number(lat));
+                    setGpsLng(Number(lng));
+                  }}
+                  height={180}
+                  locatingLabel={tr('editProfile.gpsLocating')}
+                  permissionTitle={tr('editProfile.locationPermissionTitle')}
+                  permissionMessage={tr('editProfile.locationPermissionMsg')}
+                  errorTitle={tr('common.errorTitle')}
+                  errorMessage={tr('editProfile.locationError')}
+                />
+              </View>
+            </View>
             <TextField
-              label="Mo'ljal"
+              label={tr('editProfile.landmarkLabel')}
               value={landmark}
               onChangeText={setLandmark}
-              placeholder="Masalan: Mega Planet ro'parasida"
+              placeholder={tr('editProfile.landmarkPlaceholder')}
               t={t}
             />
           </View>
@@ -806,7 +753,7 @@ export default function EditProfileScreen({ onBack }) {
             {saving ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={s.saveBtnText}>Saqlash</Text>
+              <Text style={s.saveBtnText}>{tr('editProfile.saveBtn')}</Text>
             )}
           </TouchableOpacity>
         </ScrollView>
@@ -815,7 +762,7 @@ export default function EditProfileScreen({ onBack }) {
       <OptionSheet
         visible={showRegionSheet}
         onClose={() => setShowRegionSheet(false)}
-        title="Viloyatni tanlang"
+        title={tr('editProfile.pickRegionTitle')}
         options={regions}
         selectedId={regionId}
         onSelect={(item) => setRegionId(item.id)}
@@ -825,7 +772,7 @@ export default function EditProfileScreen({ onBack }) {
       <OptionSheet
         visible={showDistrictSheet}
         onClose={() => setShowDistrictSheet(false)}
-        title="Tumanni tanlang"
+        title={tr('editProfile.pickDistrictTitle')}
         options={districts}
         selectedId={districtId}
         onSelect={(item) => setDistrictId(item.id)}
@@ -846,7 +793,7 @@ export default function EditProfileScreen({ onBack }) {
           onBack();
         }}
         t={t}
-        message="Profil ma'lumotlari muvaffaqiyatli yangilandi."
+        message={tr('editProfile.successMessage')}
       />
     </SafeAreaView>
   );
@@ -920,16 +867,10 @@ const s = StyleSheet.create({
   },
   genderBtnText: { fontSize: 14, fontWeight: '700' },
 
-  locateBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    height: 52,
+  mapWrap: {
     borderRadius: 13,
-    borderWidth: 1.5,
-    paddingHorizontal: 14,
+    overflow: 'hidden',
   },
-  locateBtnText: { flex: 1, fontSize: 13.5, fontWeight: '600' },
 
   saveBtn: {
     height: 54,

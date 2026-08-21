@@ -16,6 +16,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import Feather from '@expo/vector-icons/Feather';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { useUser } from '../context/UserContext';
 import { getAvatarUploadUrl, confirmAvatar, deleteAvatar } from '../api/user';
 import { uploadImageToPresignedUrl } from '../api/auth';
@@ -76,10 +77,10 @@ function Avatar({ letter = 'J', size = 80, bgColor, uri }) {
   );
 }
 
-async function pickFromGallery(onPicked) {
+async function pickFromGallery(onPicked, tr) {
   const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (!perm.granted) {
-    Alert.alert('Ruxsat kerak', 'Galereyadan foydalanish uchun ruxsat bering.');
+    Alert.alert(tr('profile.errors.permissionTitle'), tr('profile.errors.galleryPermission'));
     return;
   }
   const result = await ImagePicker.launchImageLibraryAsync({
@@ -94,10 +95,10 @@ async function pickFromGallery(onPicked) {
   }
 }
 
-async function pickFromCamera(onPicked) {
+async function pickFromCamera(onPicked, tr) {
   const perm = await ImagePicker.requestCameraPermissionsAsync();
   if (!perm.granted) {
-    Alert.alert('Ruxsat kerak', 'Kameradan foydalanish uchun ruxsat bering.');
+    Alert.alert(tr('profile.errors.permissionTitle'), tr('profile.errors.cameraPermission'));
     return;
   }
   const result = await ImagePicker.launchCameraAsync({
@@ -145,9 +146,9 @@ function SettingsRow({ icon, label, value, danger, color, onPress, t }) {
 
 export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
   const { theme: t, toggleTheme } = useTheme();
+  const { language: lang, setLanguage: setLang, t: tr } = useLanguage();
   const { user, refreshUser } = useUser();
   const [screen, setScreen] = useState('profile');
-  const [lang, setLang] = useState('uz');
   const [showTil, setShowTil] = useState(false);
   const [avatarUri, setAvatarUri] = useState(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -178,8 +179,8 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
     } catch (e) {
       setAvatarUri(null);
       Alert.alert(
-        'Xatolik',
-        e.message || "Avatar yuklanmadi, qayta urinib ko'ring"
+        tr('common.errorTitle'),
+        e.message || tr('profile.errors.avatarUploadFailed')
       );
     } finally {
       setAvatarUploading(false);
@@ -188,12 +189,12 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
 
   const handlePickCamera = () => {
     setShowAvatarSheet(false);
-    pickFromCamera(commitAvatar);
+    pickFromCamera(commitAvatar, tr);
   };
 
   const handlePickGallery = () => {
     setShowAvatarSheet(false);
-    pickFromGallery(commitAvatar);
+    pickFromGallery(commitAvatar, tr);
   };
 
   const handleRemoveAvatar = async () => {
@@ -205,8 +206,8 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
       await refreshUser();
     } catch (e) {
       Alert.alert(
-        'Xatolik',
-        e.message || "Rasmni o'chirib bo'lmadi, qayta urinib ko'ring"
+        tr('common.errorTitle'),
+        e.message || tr('profile.errors.avatarDeleteFailed')
       );
     } finally {
       setAvatarUploading(false);
@@ -355,7 +356,7 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
                     marginLeft: 6,
                   }}
                 >
-                  Tahrirlash
+                  {tr('common.edit')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -388,19 +389,19 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
             {[
               {
                 value: '18',
-                label: 'Buyurtma',
+                label: tr('profile.stats.orders'),
                 icon: 'archive-outline',
                 color: t.orange,
               },
               {
                 value: '12',
-                label: 'Sevimli usta',
+                label: tr('profile.stats.favoriteMasters'),
                 icon: 'heart-outline',
                 color: t.red,
               },
               {
                 value: '4.8',
-                label: 'Bahoyingiz',
+                label: tr('profile.stats.yourRating'),
                 icon: 'star-outline',
                 color: t.gold,
               },
@@ -455,7 +456,7 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
                 <Text
                   style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.9)' }}
                 >
-                  AFISH.uz hamyon
+                  {tr('profile.wallet.title')}
                 </Text>
                 <Text
                   style={{
@@ -469,7 +470,7 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
                   <Text
                     style={{ fontSize: 12, fontWeight: '600', opacity: 0.85 }}
                   >
-                    so'm
+                    {tr('common.currencySom')}
                   </Text>
                 </Text>
               </View>
@@ -481,7 +482,7 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
                     fontSize: 12.5,
                   }}
                 >
-                  To'ldirish
+                  {tr('profile.wallet.topup')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -509,13 +510,13 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
                   <Text
                     style={{ fontSize: 12.5, fontWeight: '700', color: '#fff' }}
                   >
-                    Kumush mijoz
+                    {tr('profile.loyalty.silverCustomer')}
                   </Text>
                 </View>
                 <Text
                   style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.9)' }}
                 >
-                  Oltingacha 3 buyurtma
+                  {tr('profile.loyalty.toNextLevel')}
                 </Text>
               </View>
               <View style={s.progressTrack}>
@@ -535,8 +536,8 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
           >
             <SettingsRow
               icon="format-list-bulleted"
-              label="Buyurtmalar tarixi"
-              value="18 ta"
+              label={tr('profile.menu.orderHistory')}
+              value={tr('profile.menu.itemCount', { n: 18 })}
               color={t.blue}
               t={t}
               onPress={() => setScreen('orders')}
@@ -544,15 +545,15 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
             <View style={[s.divider, { backgroundColor: t.border }]} />
             <SettingsRow
               icon="map-marker-outline"
-              label="Mening manzillarim"
-              value="3 ta"
+              label={tr('profile.menu.myAddresses')}
+              value={tr('profile.menu.itemCount', { n: 3 })}
               color={t.green}
               t={t}
             />
             <View style={[s.divider, { backgroundColor: t.border }]} />
             <SettingsRow
               icon="receipt-text-outline"
-              label="To'lov tarixi"
+              label={tr('profile.menu.paymentHistory')}
               color={t.blue}
               t={t}
               onPress={() => setScreen('paymentHistory')}
@@ -562,7 +563,7 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
 
         {/* ── Sozlamalar ── */}
         <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
-          <Text style={[s.groupLabel, { color: t.faint }]}>SOZLAMALAR</Text>
+          <Text style={[s.groupLabel, { color: t.faint }]}>{tr('profile.settings.title')}</Text>
           <View
             style={[
               s.menuCard,
@@ -571,14 +572,14 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
           >
             <SettingsRow
               icon="bell-outline"
-              label="Bildirishnomalar"
+              label={tr('profile.settings.notifications')}
               t={t}
               onPress={() => setScreen('notif')}
             />
             <View style={[s.divider, { backgroundColor: t.border }]} />
             <SettingsRow
               icon="earth"
-              label="Til"
+              label={tr('profile.settings.language')}
               value={LANGS.find((l) => l.code === lang)?.name}
               t={t}
               onPress={() => setShowTil(true)}
@@ -586,21 +587,21 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
             <View style={[s.divider, { backgroundColor: t.border }]} />
             <SettingsRow
               icon="phone-outline"
-              label="Telefon raqamini almashtirish"
+              label={tr('profile.settings.changePhone')}
               t={t}
               onPress={() => setScreen('changePhone')}
             />
             <View style={[s.divider, { backgroundColor: t.border }]} />
             <SettingsRow
               icon="lock-outline"
-              label="Parolni almashtirish"
+              label={tr('profile.settings.changePassword')}
               t={t}
               onPress={() => setScreen('password')}
             />
             <View style={[s.divider, { backgroundColor: t.border }]} />
             <SettingsRow
               icon="help-circle-outline"
-              label="Yordam markazi"
+              label={tr('profile.settings.helpCenter')}
               t={t}
               onPress={() => setScreen('help')}
             />
@@ -619,7 +620,7 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
           >
             <SettingsRow
               icon="logout"
-              label="Hisobdan chiqish"
+              label={tr('profile.logout')}
               danger
               t={t}
               onPress={onLogout}
@@ -633,7 +634,7 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
               marginTop: 16,
             }}
           >
-            AFISH.uz · versiya 1.0.1
+            {tr('profile.footer')}
           </Text>
         </View>
       </ScrollView>

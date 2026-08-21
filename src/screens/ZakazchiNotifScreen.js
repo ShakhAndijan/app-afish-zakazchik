@@ -12,6 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 
 function Toggle({ on, onPress, accent }) {
   const anim = useRef(new Animated.Value(on ? 1 : 0)).current;
@@ -57,6 +58,7 @@ function ToggleRow({ iconName, iconColor, label, sub, on, onPress, border, t }) 
 
 export default function ZakazchiNotifScreen({ onBack }) {
   const { theme: t } = useTheme();
+  const { t: tr } = useLanguage();
   const [master, setMaster] = useState(true);
   const [tog, setTog] = useState({
     order: true,
@@ -91,7 +93,7 @@ export default function ZakazchiNotifScreen({ onBack }) {
         >
           <MaterialCommunityIcons name="chevron-left" size={24} color={t.text} />
         </TouchableOpacity>
-        <Text style={[s.headerTitle, { color: t.text }]}>Bildirishnomalar</Text>
+        <Text style={[s.headerTitle, { color: t.text }]}>{tr('notif.headerTitle')}</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
@@ -113,9 +115,9 @@ export default function ZakazchiNotifScreen({ onBack }) {
             <Ionicons name={master ? 'notifications' : 'notifications-off'} size={24} color="#fff" />
           </View>
           <View style={s.masterTextBox}>
-            <Text style={s.masterTitle}>Barcha bildirishnomalar</Text>
+            <Text style={s.masterTitle}>{tr('notif.allNotifications')}</Text>
             <Text style={[s.masterSub, { color: master ? 'rgba(255,255,255,0.9)' : t.muted }]}>
-              {master ? 'Yoqilgan' : "O'chirilgan"}
+              {master ? tr('notif.enabled') : tr('notif.disabled')}
             </Text>
           </View>
           <Toggle on={master} onPress={() => setMaster((m) => !m)} accent="#1c8c5e" />
@@ -124,13 +126,13 @@ export default function ZakazchiNotifScreen({ onBack }) {
         {/* Categories */}
         <View style={{ opacity: master ? 1 : 0.4 }} pointerEvents={master ? 'auto' : 'none'}>
 
-          <GroupTitle t={t}>BUYURTMALAR</GroupTitle>
+          <GroupTitle t={t}>{tr('notif.groups.orders')}</GroupTitle>
           <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
             <ToggleRow
               iconName="shopping-outline"
               iconColor={t.orange}
-              label="Buyurtma holati"
-              sub="Usta yo'lda, yetib keldi, yakunlandi"
+              label={tr('notif.rows.orderStatus.label')}
+              sub={tr('notif.rows.orderStatus.sub')}
               on={tog.order}
               onPress={() => flip('order')}
               t={t}
@@ -138,8 +140,8 @@ export default function ZakazchiNotifScreen({ onBack }) {
             <ToggleRow
               iconName="chat-processing-outline"
               iconColor={t.blue}
-              label="Chat xabarlari"
-              sub="Ustadan yangi xabar"
+              label={tr('notif.rows.chatMessages.label')}
+              sub={tr('notif.rows.chatMessages.sub')}
               on={tog.chat}
               onPress={() => flip('chat')}
               border
@@ -147,13 +149,13 @@ export default function ZakazchiNotifScreen({ onBack }) {
             />
           </View>
 
-          <GroupTitle t={t}>MARKETING</GroupTitle>
+          <GroupTitle t={t}>{tr('notif.groups.marketing')}</GroupTitle>
           <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
             <ToggleRow
               iconName="tag-outline"
               iconColor={t.green}
-              label="Aksiya va chegirmalar"
-              sub="Maxsus takliflar"
+              label={tr('notif.rows.promos.label')}
+              sub={tr('notif.rows.promos.sub')}
               on={tog.promo}
               onPress={() => flip('promo')}
               t={t}
@@ -161,8 +163,8 @@ export default function ZakazchiNotifScreen({ onBack }) {
             <ToggleRow
               iconName="message-text-outline"
               iconColor={t.violet}
-              label="Yangiliklar"
-              sub="Ilova yangiliklari"
+              label={tr('notif.rows.news.label')}
+              sub={tr('notif.rows.news.sub')}
               on={tog.news}
               onPress={() => flip('news')}
               border
@@ -170,13 +172,13 @@ export default function ZakazchiNotifScreen({ onBack }) {
             />
           </View>
 
-          <GroupTitle t={t}>HISOB VA XAVFSIZLIK</GroupTitle>
+          <GroupTitle t={t}>{tr('notif.groups.accountSecurity')}</GroupTitle>
           <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
             <ToggleRow
               iconName="shield-check-outline"
               iconColor={t.blue}
-              label="Kirish va xavfsizlik"
-              sub="Yangi qurilmadan kirish"
+              label={tr('notif.rows.loginSecurity.label')}
+              sub={tr('notif.rows.loginSecurity.sub')}
               on={tog.login}
               onPress={() => flip('login')}
               t={t}
@@ -184,8 +186,8 @@ export default function ZakazchiNotifScreen({ onBack }) {
             <ToggleRow
               iconName="wallet-outline"
               iconColor={t.gold}
-              label="To'lov va hisob"
-              sub="To'lov tasdig'i, qaytarish"
+              label={tr('notif.rows.paymentAccount.label')}
+              sub={tr('notif.rows.paymentAccount.sub')}
               on={tog.payment}
               onPress={() => flip('payment')}
               border

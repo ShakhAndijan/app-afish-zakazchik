@@ -14,46 +14,35 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Feather from '@expo/vector-icons/Feather';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import UstaDetailScreen from './UstaDetailScreen';
 
 const HIT_SLOP = { top: 10, bottom: 10, left: 10, right: 10 };
 
 const fmt = (n) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
-const STATUS_CFG = {
-  done: {
-    label: 'Bajarildi',
-    color: '#2fa37a',
-    bg: 'rgba(47,163,122,0.15)',
-    icon: 'check-circle-outline',
-    subtext: 'Ish muvaffaqiyatli yakunlandi',
-  },
-  cancelled: {
-    label: 'Bekor qilindi',
-    color: '#e0473a',
-    bg: 'rgba(224,71,58,0.13)',
-    icon: 'close-circle-outline',
-    subtext: 'Bu buyurtma bekor qilingan',
-  },
-  active: {
-    label: 'Jarayonda',
-    color: '#e87a45',
-    bg: 'rgba(232,122,69,0.15)',
-    icon: 'clock-outline',
-    subtext: 'Usta hozirda ish ustida',
-  },
+const STATUS_META = {
+  done: { color: '#2fa37a', bg: 'rgba(47,163,122,0.15)', icon: 'check-circle-outline' },
+  cancelled: { color: '#e0473a', bg: 'rgba(224,71,58,0.13)', icon: 'close-circle-outline' },
+  active: { color: '#e87a45', bg: 'rgba(232,122,69,0.15)', icon: 'clock-outline' },
 };
 
-const PAYMENT_STATUS_CFG = {
-  paid: { label: "To'landi", color: '#2fa37a' },
-  refunded: { label: "Mablag' qaytarildi", color: '#3f7fd4' },
-  not_charged: { label: 'Hisoblanmagan', color: '#8da0ba' },
-};
+const getStatusCfg = (tr) => ({
+  done: { ...STATUS_META.done, label: tr('orders.statusDone'), subtext: tr('orderDetail.statusSubtext.done') },
+  cancelled: { ...STATUS_META.cancelled, label: tr('orders.statusCancelled'), subtext: tr('orderDetail.statusSubtext.cancelled') },
+  active: { ...STATUS_META.active, label: tr('orders.statusActive'), subtext: tr('orderDetail.statusSubtext.active') },
+});
 
-const CANCEL_BY_LABEL = {
-  usta: 'Usta tomonidan',
-  mijoz: 'Siz tomoningizdan',
-};
+const getPaymentStatusCfg = (tr) => ({
+  paid: { label: tr('orderDetail.paymentStatus.paid'), color: '#2fa37a' },
+  refunded: { label: tr('orderDetail.paymentStatus.refunded'), color: '#3f7fd4' },
+  not_charged: { label: tr('orderDetail.paymentStatus.not_charged'), color: '#8da0ba' },
+});
+
+const getCancelByLabel = (tr) => ({
+  usta: tr('orderDetail.cancelBy.usta'),
+  mijoz: tr('orderDetail.cancelBy.mijoz'),
+});
 
 function hashOf(str) {
   let h = 0;
@@ -142,6 +131,7 @@ function Stars({ rating, t }) {
 
 export default function OrderDetailScreen({ order, onBack }) {
   const { theme: t } = useTheme();
+  const { t: tr } = useLanguage();
   const [beforeIndex, setBeforeIndex] = useState(0);
   const [afterIndex, setAfterIndex] = useState(0);
   const [selectedUsta, setSelectedUsta] = useState(null);
@@ -158,8 +148,8 @@ export default function OrderDetailScreen({ order, onBack }) {
     );
   }
 
-  const cfg = STATUS_CFG[order.status] || STATUS_CFG.active;
-  const payCfg = PAYMENT_STATUS_CFG[order.paymentStatus] || PAYMENT_STATUS_CFG.paid;
+  const cfg = getStatusCfg(tr)[order.status] || getStatusCfg(tr).active;
+  const payCfg = getPaymentStatusCfg(tr)[order.paymentStatus] || getPaymentStatusCfg(tr).paid;
   const isCancelled = order.status === 'cancelled';
   const { material, labor } = priceBreakdown(order);
 
@@ -169,7 +159,7 @@ export default function OrderDetailScreen({ order, onBack }) {
 
   const share = () => {
     Share.share({
-      message: `Buyurtma #${order.id} — ${order.task}. Holati: ${cfg.label}. ${fmt(order.price)} so'm.`,
+      message: tr('orderDetail.shareMessage', { id: order.id, task: order.task, status: cfg.label, price: fmt(order.price) }),
     }).catch(() => {});
   };
 
@@ -197,7 +187,7 @@ export default function OrderDetailScreen({ order, onBack }) {
           <MaterialCommunityIcons name="chevron-left" size={24} color={t.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: t.text }]} numberOfLines={1}>
-          Buyurtma tafsilotlari
+          {tr('orderDetail.headerTitle')}
         </Text>
         <TouchableOpacity
           style={[styles.iconBtn, { backgroundColor: t.card, borderColor: t.border }]}
@@ -221,7 +211,7 @@ export default function OrderDetailScreen({ order, onBack }) {
         </View>
 
         <Text style={[styles.title, { color: t.text }]}>{order.task}</Text>
-        <Text style={[styles.orderNumber, { color: t.muted }]}>Buyurtma #{order.id}</Text>
+        <Text style={[styles.orderNumber, { color: t.muted }]}>{tr('orderDetail.orderNumber', { id: order.id })}</Text>
 
         <View style={styles.metaRow}>
           <View style={[styles.metaChip, { backgroundColor: t.orange + '18' }]}>
@@ -248,7 +238,7 @@ export default function OrderDetailScreen({ order, onBack }) {
         </View>
 
         {/* Master */}
-        <Text style={[styles.sectionLabel, { color: t.text }]}>Tanlangan usta</Text>
+        <Text style={[styles.sectionLabel, { color: t.text }]}>{tr('orderDetail.selectedMaster')}</Text>
         <TouchableOpacity
           style={[styles.masterCard, { backgroundColor: t.card, borderColor: t.border }]}
           onPress={openUstaProfile}
@@ -275,11 +265,11 @@ export default function OrderDetailScreen({ order, onBack }) {
         </TouchableOpacity>
 
         {/* Order status / payment */}
-        <Text style={[styles.sectionLabel, { color: t.text }]}>Buyurtma va to'lov</Text>
+        <Text style={[styles.sectionLabel, { color: t.text }]}>{tr('orderDetail.orderAndPayment')}</Text>
         <View style={[styles.infoCard, { backgroundColor: t.card, borderColor: t.border }]}>
           <InfoRow
             icon="info"
-            label="Holati"
+            label={tr('orderDetail.status')}
             t={t}
             right={
               <View style={[styles.smallPill, { backgroundColor: cfg.bg }]}>
@@ -288,11 +278,11 @@ export default function OrderDetailScreen({ order, onBack }) {
             }
           />
           <View style={[styles.infoDivider, { backgroundColor: t.border }]} />
-          <InfoRow icon="credit-card" label="To'lov usuli" value={order.paymentMethod} t={t} />
+          <InfoRow icon="credit-card" label={tr('orderDetail.paymentMethod')} value={order.paymentMethod} t={t} />
           <View style={[styles.infoDivider, { backgroundColor: t.border }]} />
           <InfoRow
             icon="pocket"
-            label="To'lov holati"
+            label={tr('orderDetail.paymentStatusLabel')}
             t={t}
             right={
               <View style={[styles.smallPill, { backgroundColor: payCfg.color + '22' }]}>
@@ -305,12 +295,12 @@ export default function OrderDetailScreen({ order, onBack }) {
         {/* Cancellation */}
         {isCancelled && order.cancelReason && (
           <>
-            <Text style={[styles.sectionLabel, { color: t.text }]}>Bekor qilinish sababi</Text>
+            <Text style={[styles.sectionLabel, { color: t.text }]}>{tr('orderDetail.cancelReasonTitle')}</Text>
             <View style={[styles.cancelCard, { backgroundColor: cfg.bg, borderColor: cfg.color + '33' }]}>
               <View style={styles.cancelHeader}>
                 <MaterialCommunityIcons name="alert-circle-outline" size={17} color={cfg.color} />
                 <Text style={[styles.cancelBy, { color: cfg.color }]}>
-                  {CANCEL_BY_LABEL[order.cancelBy] || "Sabab noma'lum"}
+                  {getCancelByLabel(tr)[order.cancelBy] || tr('orderDetail.cancelBy.unknown')}
                 </Text>
               </View>
               <Text style={[styles.cancelText, { color: t.text }]}>{order.cancelReason}</Text>
@@ -321,15 +311,15 @@ export default function OrderDetailScreen({ order, onBack }) {
         {/* Price */}
         {!isCancelled && (
           <>
-            <Text style={[styles.sectionLabel, { color: t.text }]}>Ish narxi</Text>
+            <Text style={[styles.sectionLabel, { color: t.text }]}>{tr('orderDetail.priceTitle')}</Text>
             <View style={[styles.priceCard, { backgroundColor: t.card, borderColor: t.border }]}>
               <View style={styles.priceHeaderRow}>
-                <Text style={[styles.priceTotalLabel, { color: t.muted }]}>Umumiy narx</Text>
-                <Text style={[styles.priceTotalValue, { color: t.text }]}>{fmt(order.price)} so'm</Text>
+                <Text style={[styles.priceTotalLabel, { color: t.muted }]}>{tr('orderDetail.totalPrice')}</Text>
+                <Text style={[styles.priceTotalValue, { color: t.text }]}>{fmt(order.price)} {tr('common.currencySom')}</Text>
               </View>
               <View style={[styles.priceDivider, { backgroundColor: t.border }]} />
-              <InfoRow icon="package" label="Materiallar" value={`${fmt(material)} so'm`} t={t} />
-              <InfoRow icon="tool" label="Ish haqi" value={`${fmt(labor)} so'm`} t={t} />
+              <InfoRow icon="package" label={tr('orderDetail.materials')} value={`${fmt(material)} ${tr('common.currencySom')}`} t={t} />
+              <InfoRow icon="tool" label={tr('orderDetail.labor')} value={`${fmt(labor)} ${tr('common.currencySom')}`} t={t} />
             </View>
           </>
         )}
@@ -338,7 +328,7 @@ export default function OrderDetailScreen({ order, onBack }) {
         {beforePhotos.length > 0 && (
           <>
             <Text style={[styles.sectionLabel, { color: t.text }]}>
-              Ish boshlanishidan oldin ({beforePhotos.length} ta)
+              {tr('orderDetail.beforePhotos', { n: beforePhotos.length })}
             </Text>
             <PhotoGallery
               photos={beforePhotos}
@@ -354,7 +344,7 @@ export default function OrderDetailScreen({ order, onBack }) {
         {afterPhotos.length > 0 && (
           <>
             <Text style={[styles.sectionLabel, { color: t.text }]}>
-              Yakunlangandan keyin ({afterPhotos.length} ta)
+              {tr('orderDetail.afterPhotos', { n: afterPhotos.length })}
             </Text>
             <PhotoGallery
               photos={afterPhotos}
@@ -369,7 +359,7 @@ export default function OrderDetailScreen({ order, onBack }) {
         {/* Master note */}
         {order.masterNote && (
           <>
-            <Text style={[styles.sectionLabel, { color: t.text }]}>Usta izohi</Text>
+            <Text style={[styles.sectionLabel, { color: t.text }]}>{tr('orderDetail.masterNoteTitle')}</Text>
             <View style={[styles.noteCard, { backgroundColor: t.card, borderColor: t.border }]}>
               <TouchableOpacity style={styles.noteHeader} onPress={openUstaProfile} activeOpacity={0.7}>
                 <View style={[styles.noteAvatar, { backgroundColor: order.color }]}>
@@ -388,13 +378,13 @@ export default function OrderDetailScreen({ order, onBack }) {
         {/* Customer review */}
         {order.customerNote && order.rating > 0 && (
           <>
-            <Text style={[styles.sectionLabel, { color: t.text }]}>Sizning sharhingiz</Text>
+            <Text style={[styles.sectionLabel, { color: t.text }]}>{tr('orderDetail.yourReviewTitle')}</Text>
             <View style={[styles.noteCard, { backgroundColor: t.card, borderColor: t.border }]}>
               <View style={styles.noteHeader}>
                 <View style={[styles.noteAvatar, { backgroundColor: t.orange }]}>
                   <MaterialCommunityIcons name="account" size={16} color="#fff" />
                 </View>
-                <Text style={[styles.noteName, { color: t.text, flex: 1 }]}>Siz</Text>
+                <Text style={[styles.noteName, { color: t.text, flex: 1 }]}>{tr('orderDetail.you')}</Text>
                 <Stars rating={order.rating} t={t} />
               </View>
               <Text style={[styles.noteText, { color: t.muted }]}>{order.customerNote}</Text>
@@ -406,7 +396,7 @@ export default function OrderDetailScreen({ order, onBack }) {
         <View style={styles.actionRow}>
           <TouchableOpacity style={[styles.reorderBtn, { backgroundColor: t.orange }]} activeOpacity={0.8}>
             <Feather name="repeat" size={14} color="#fff" />
-            <Text style={styles.reorderText}>Qayta buyurtma berish</Text>
+            <Text style={styles.reorderText}>{tr('orderDetail.reorder')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.flagBtn, { backgroundColor: 'rgba(224,71,58,0.13)' }]}

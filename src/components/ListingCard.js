@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
+import { useLanguage } from '../context/LanguageContext';
 
 const DEFAULT_COLORS = {
   card: '#142639',
@@ -16,6 +17,7 @@ function formatPrice(n) {
 }
 
 export default function ListingCard({ listing, accent, onPress, colors }) {
+  const { t } = useLanguage();
   const c = { ...DEFAULT_COLORS, ...colors };
   const [photoFailed, setPhotoFailed] = useState(false);
   const showPhoto = listing.profile_photo && !photoFailed;
@@ -67,11 +69,13 @@ export default function ListingCard({ listing, accent, onPress, colors }) {
 
       <View style={[styles.footer, { borderTopColor: c.border }]}>
         <View>
-          <Text style={[styles.price, { color: c.text }]}>{formatPrice(listing.price)} so'm</Text>
-          <Text style={[styles.priceSub, { color: c.muted }]}>dan boshlab</Text>
+          <Text style={[styles.price, { color: c.text }]}>
+            {t('listingCard.priceLine', { price: formatPrice(listing.price) })}
+          </Text>
+          <Text style={[styles.priceSub, { color: c.muted }]}>{t('listingCard.priceCaption')}</Text>
         </View>
         <View style={[styles.viewProfileBtn, { backgroundColor: accent }]}>
-          <Text style={styles.viewProfileText}>Profilni ko'rish</Text>
+          <Text style={styles.viewProfileText}>{t('listingCard.viewProfile')}</Text>
           <Feather name="chevron-right" size={13} color="#fff" />
         </View>
       </View>

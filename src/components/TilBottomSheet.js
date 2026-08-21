@@ -9,11 +9,18 @@ import {
 } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
+
+const LANG_SUB = {
+  uz: { uz: "O'zbekcha", ru: 'узбекский', en: 'Uzbek' },
+  ru: { uz: 'Ruscha', ru: 'русский', en: 'Russian' },
+  en: { uz: 'Inglizcha', ru: 'английский', en: 'English' },
+};
 
 export const LANGS = [
-  { code: 'uz', name: "O'zbek", sub: "O'zbekcha", flag: '🇺🇿' },
-  { code: 'ru', name: 'Русский', sub: 'Ruscha', flag: '🇷🇺' },
-  { code: 'en', name: 'English', sub: 'Inglizcha', flag: '🇬🇧' },
+  { code: 'uz', name: "O'zbek", flag: '🇺🇿' },
+  { code: 'ru', name: 'Русский', flag: '🇷🇺' },
+  { code: 'en', name: 'English', flag: '🇬🇧' },
 ];
 
 export default function TilBottomSheet({
@@ -23,6 +30,7 @@ export default function TilBottomSheet({
   onClose,
 }) {
   const { theme: t } = useTheme();
+  const { language, t: tr } = useLanguage();
   const [selected, setSelected] = useState(currentLang);
 
   useEffect(() => {
@@ -57,7 +65,7 @@ export default function TilBottomSheet({
         {/* Header */}
         <View style={s.headerRow}>
           <Text style={{ fontWeight: '700', fontSize: 19, color: '#fff' }}>
-            Tilni tanlang
+            {tr('languagePicker.title')}
           </Text>
           <TouchableOpacity
             style={[s.closeBtn, { backgroundColor: t.card }]}
@@ -68,7 +76,7 @@ export default function TilBottomSheet({
           </TouchableOpacity>
         </View>
         <Text style={[s.subtitle, { color: t.muted }]}>
-          Ilova interfeysi shu tilda ko'rsatiladi
+          {tr('languagePicker.subtitle')}
         </Text>
 
         {/* Options */}
@@ -98,7 +106,7 @@ export default function TilBottomSheet({
                   <Text
                     style={{ fontSize: 11.5, color: t.muted, marginTop: 1 }}
                   >
-                    {l.sub}
+                    {LANG_SUB[l.code][language]}
                   </Text>
                 </View>
                 <View
@@ -126,7 +134,7 @@ export default function TilBottomSheet({
             activeOpacity={0.85}
           >
             <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>
-              Tasdiqlash
+              {tr('languagePicker.confirm')}
             </Text>
           </TouchableOpacity>
         </View>

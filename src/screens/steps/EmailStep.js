@@ -1,19 +1,20 @@
 import {
-  View, Text, StyleSheet, TouchableOpacity,
+  View, Text, StyleSheet, ActivityIndicator,
   KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '../../constants/colors';
+import { useLanguage } from '../../context/LanguageContext';
 import BackBtn from '../../components/login/BackBtn';
 import InputField from '../../components/login/InputField';
 import PrimaryBtn from '../../components/login/PrimaryBtn';
 
-export default function EmailStep({ onBack, onLogin }) {
+export default function EmailStep({ onBack, onSubmit, loading = false, error = '' }) {
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
-  const [pass, setPass] = useState('');
 
-  const isReady = email.includes('@') && pass.length >= 4;
+  const isReady = email.includes('@') && !loading;
 
   return (
     <KeyboardAvoidingView
@@ -29,34 +30,35 @@ export default function EmailStep({ onBack, onLogin }) {
           <BackBtn onPress={onBack} />
 
           <View style={styles.heading}>
-            <Text style={styles.title}>Email orqali kirish</Text>
-            <Text style={styles.subtitle}>Email va parolingizni kiriting.</Text>
+            <Text style={styles.title}>{t('login.emailStep.title')}</Text>
+            <Text style={styles.subtitle}>{t('login.emailStep.subtitle')}</Text>
           </View>
 
           <View style={styles.form}>
             <InputField
-              label="Email manzil"
-              placeholder="siz@email.com"
+              label={t('login.emailStep.emailLabel')}
+              placeholder={t('login.emailStep.emailPlaceholder')}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
               autoFocus
               icon={<Ionicons name="mail-outline" size={19} color={COLORS.faint} />}
             />
-            <InputField
-              label="Parol"
-              placeholder="••••••••"
-              value={pass}
-              onChangeText={setPass}
-              secureTextEntry
-              icon={<Ionicons name="lock-closed-outline" size={19} color={COLORS.faint} />}
-            />
-            <TouchableOpacity>
-              <Text style={styles.forgot}>Parolni unutdingizmi?</Text>
-            </TouchableOpacity>
           </View>
 
-          <PrimaryBtn label="Kirish" disabled={!isReady} onPress={onLogin} />
+          {!!error && (
+            <View style={styles.errorBox}>
+              <MaterialCommunityIcons name="alert-circle" size={18} color="#e0473a" />
+              <Text style={styles.errorTxt}>{error}</Text>
+            </View>
+          )}
+
+          <PrimaryBtn
+            label={t('login.emailStep.sendCode')}
+            disabled={!isReady}
+            icon={loading ? <ActivityIndicator size="small" color={COLORS.white} /> : undefined}
+            onPress={() => onSubmit?.(email)}
+          />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -81,10 +83,16 @@ const styles = StyleSheet.create({
   },
   subtitle: { color: COLORS.muted, fontSize: 14 },
   form: { gap: 13 },
-  forgot: {
-    color: COLORS.orange,
-    fontSize: 13,
-    fontWeight: '600',
-    textAlign: 'right',
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    borderWidth: 1,
+    borderRadius: 13,
+    paddingVertical: 11,
+    paddingHorizontal: 13,
+    backgroundColor: 'rgba(224,71,58,0.13)',
+    borderColor: 'rgba(224,71,58,0.32)',
   },
+  errorTxt: { flex: 1, fontSize: 12.5, fontWeight: '600', lineHeight: 17, color: '#e0473a' },
 });
