@@ -27,18 +27,19 @@ function ServiceIcon({ icon, color }) {
 }
 
 export default function PhoneStep({
+  mode = 'otp',
   phone,
   onChange,
   password,
   onPasswordChange,
   onLogin,
+  onRequestOtp,
   loginLoading,
   error,
   onForgot,
   onGoogle,
   googleLoading,
   onEmail,
-  onRegister,
   onBack,
   actorType = 'customer',
 }) {
@@ -46,7 +47,11 @@ export default function PhoneStep({
   const { t } = useLanguage();
   const isDark = theme.isDark !== false;
   const isUsta = actorType === 'worker';
-  const isReady = phone.length === 9 && password.length >= 4 && !loginLoading;
+  const isPasswordMode = mode === 'password';
+  const isReady = isPasswordMode
+    ? phone.length === 9 && password.length >= 4 && !loginLoading
+    : phone.length === 9 && !loginLoading;
+  const handleCta = isPasswordMode ? onLogin : onRequestOtp;
 
   return (
     <KeyboardAvoidingView
@@ -135,14 +140,16 @@ export default function PhoneStep({
             <PhoneInput value={phone} onChangeText={onChange} theme={theme} />
           </View>
 
-          {/* ── Password field ── */}
-          <View style={s.fieldWrap}>
-            <Text style={[s.fieldLabel, { color: theme.muted }]}>{t('login.phoneStep.passwordLabel')}</Text>
-            <PasswordInput value={password} onChangeText={onPasswordChange} theme={theme} />
-            <TouchableOpacity onPress={onForgot} activeOpacity={0.7} style={s.forgotRow}>
-              <Text style={[s.forgotTxt, { color: theme.orange }]}>{t('login.phoneStep.forgotPassword')}</Text>
-            </TouchableOpacity>
-          </View>
+          {/* ── Password field (faqat parol rejimida) ── */}
+          {isPasswordMode && (
+            <View style={s.fieldWrap}>
+              <Text style={[s.fieldLabel, { color: theme.muted }]}>{t('login.phoneStep.passwordLabel')}</Text>
+              <PasswordInput value={password} onChangeText={onPasswordChange} theme={theme} />
+              <TouchableOpacity onPress={onForgot} activeOpacity={0.7} style={s.forgotRow}>
+                <Text style={[s.forgotTxt, { color: theme.orange }]}>{t('login.phoneStep.forgotPassword')}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {/* ── Error ── */}
           {!!error && (
@@ -163,14 +170,16 @@ export default function PhoneStep({
           {/* ── CTA ── */}
           <TouchableOpacity
             style={[s.cta, !isReady && s.ctaDisabled]}
-            onPress={isReady ? onLogin : undefined}
+            onPress={isReady ? handleCta : undefined}
             activeOpacity={0.85}
           >
             {loginLoading ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
               <>
-                <Text style={[s.ctaTxt, !isReady && s.ctaTxtDisabled]}>{t('login.phoneStep.loginCta')}</Text>
+                <Text style={[s.ctaTxt, !isReady && s.ctaTxtDisabled]}>
+                  {isPasswordMode ? t('login.phoneStep.loginCta') : t('login.phoneStep.continueCta')}
+                </Text>
                 <Feather name="arrow-right" size={18} color={isReady ? '#fff' : '#7a6253'} />
               </>
             )}
@@ -232,14 +241,6 @@ export default function PhoneStep({
               <Text style={{ color: theme.text, fontWeight: '700' }}>{t('login.phoneStep.privacyLink')}</Text>
               {t('login.phoneStep.termsSuffix')}
             </Text>
-            <View style={s.regRow}>
-              <Text style={[s.regHint, { color: theme.muted }]}>
-                {isUsta ? t('login.phoneStep.registerHintUsta') : t('login.phoneStep.registerHintCustomer')}
-              </Text>
-              <TouchableOpacity onPress={onRegister} activeOpacity={0.7}>
-                <Text style={[s.regLink, { color: theme.orange }]}>{t('login.phoneStep.registerLink')}</Text>
-              </TouchableOpacity>
-            </View>
           </View>
         </View>
       </ScrollView>
@@ -400,7 +401,4 @@ const s = StyleSheet.create({
 
   footer: { gap: 12, alignItems: 'center' },
   terms: { fontSize: 12, textAlign: 'center', lineHeight: 18 },
-  regRow: { flexDirection: 'row', alignItems: 'center' },
-  regHint: { fontSize: 14 },
-  regLink: { fontSize: 14, fontWeight: '700' },
 });

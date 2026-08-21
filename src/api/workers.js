@@ -183,6 +183,7 @@ export async function getWorkerById(workerId) {
   }
 
   const json = await res.json();
+  console.log('[getWorkerById] /workers/{id} response:', json.response_data);
   return mapWorkerDetail(json.response_data);
 }
 
@@ -221,5 +222,6 @@ export async function getWorkerCertificates(workerId, categoryId) {
   }
 
   const json = await res.json();
+  console.log('[getWorkerCertificates] /workers/{id}/certificates response:', json.response_data);
   return (json.response_data ?? []).map(mapCertificate);
 }

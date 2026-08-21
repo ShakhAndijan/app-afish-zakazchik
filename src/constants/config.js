@@ -1,14 +1,12 @@
-export const API_BASE_URL = "http://dev-back.afish.uz";
+export const API_BASE_URL = 'https://dev-back.afish.uz';
 
-export const YANDEX_MAPS_API_KEY = "e9e77baf-a133-46b1-9f59-055744b55c57";
+export const YANDEX_MAPS_API_KEY = 'e9e77baf-a133-46b1-9f59-055744b55c57';
 
 export const ENDPOINTS = {
   AUTH_GOOGLE_LOGIN: `${API_BASE_URL}/api/v1/auth/google/login`,
-  REGISTER_REQUEST_OTP: `${API_BASE_URL}/api/v1/auth/customer/register/request-otp`,
-  REGISTER_UPLOAD_URL: `${API_BASE_URL}/api/v1/auth/customer/register/upload-url`,
-  REGISTER_VERIFY_OTP: `${API_BASE_URL}/api/v1/auth/customer/register/verify-otp`,
   CUSTOMER_LOGIN: `${API_BASE_URL}/api/v1/auth/customer/login`,
   LOGIN_REQUEST_OTP: `${API_BASE_URL}/api/v1/auth/customer/login/request-otp`,
+  LOGIN_VERIFY_OTP: `${API_BASE_URL}/api/v1/auth/customer/login/verify-otp`,
   AUTH_ME: `${API_BASE_URL}/api/v1/auth/me`,
   AUTH_SET_PASSWORD: `${API_BASE_URL}/api/v1/auth/set-password`,
   AUTH_CHANGE_PHONE_REQUEST_OTP: `${API_BASE_URL}/api/v1/auth/change-phone/request-otp`,

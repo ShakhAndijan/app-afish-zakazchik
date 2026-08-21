@@ -12,7 +12,11 @@ const HAS_SESSION_KEY = 'has_session';
 let cachedToken = null;
 let cachedRefreshToken = null;
 
+// Vaqtincha (dev/test uchun) biometrik tekshiruvni o'chirib qo'yish uchun false qiling.
+const BIOMETRIC_ENABLED = false;
+
 async function canUseBiometrics() {
+  if (!BIOMETRIC_ENABLED) return false;
   const hasHardware = await LocalAuthentication.hasHardwareAsync();
   if (!hasHardware) return false;
   return LocalAuthentication.isEnrolledAsync();

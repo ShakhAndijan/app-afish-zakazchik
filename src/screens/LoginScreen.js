@@ -7,6 +7,8 @@ import { useLanguage } from '../context/LanguageContext';
 import {
   googleLogin,
   loginCustomer,
+  requestLoginOtp,
+  verifyLoginOtp,
   requestResetPasswordOtp,
   verifyResetPasswordOtp,
   requestEmailLoginOtp,
@@ -18,7 +20,7 @@ import ForgotPasswordStep from './steps/ForgotPasswordStep';
 import CodeStep from './steps/CodeStep';
 import NewPasswordStep from './steps/NewPasswordStep';
 import EmailStep from './steps/EmailStep';
-import RegisterStep from './steps/RegisterStep';
+import CompleteProfileStep from './steps/CompleteProfileStep';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -48,16 +50,79 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
   const [emailVerifyLoading, setEmailVerifyLoading] = useState(false);
   const [emailVerifyError, setEmailVerifyError] = useState('');
 
+  // ── Telefon + OTP (login va register birlashgan oqimi) ──
+  const [otpCode, setOtpCode] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpError, setOtpError] = useState('');
+  const [devCode, setDevCode] = useState('');
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [verifyError, setVerifyError] = useState('');
+  const [completeLoading, setCompleteLoading] = useState(false);
+  const [completeError, setCompleteError] = useState('');
+
+  const finishLogin = async (data) => {
+    if (data?.access_token) await saveToken(data.access_token);
+    if (data?.refresh_token) await saveRefreshToken(data.refresh_token);
+    await saveActorType(actorType);
+    (onLoginSuccess ?? onBack)(actorType);
+  };
+
+  const handleRequestOtp = async () => {
+    try {
+      setOtpLoading(true);
+      setOtpError('');
+      const fullPhone = '+998' + phone.replace(/\D/g, '');
+      const data = await requestLoginOtp(fullPhone);
+      setDevCode(data?.dev_code || '');
+      setStep('code');
+    } catch (e) {
+      setOtpError(e.message || t('login.errors.sendCodeFailed'));
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (code) => {
+    try {
+      setVerifyLoading(true);
+      setVerifyError('');
+      const fullPhone = '+998' + phone.replace(/\D/g, '');
+      const data = await verifyLoginOtp(fullPhone, code);
+      if (data?.access_token) {
+        await finishLogin(data);
+      } else {
+        setOtpCode(code);
+        setCompleteError('');
+        setStep('completeProfile');
+      }
+    } catch (e) {
+      setVerifyError(e.message || t('login.errors.loginFailed'));
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
+  const handleCompleteProfile = async (fields) => {
+    try {
+      setCompleteLoading(true);
+      setCompleteError('');
+      const fullPhone = '+998' + phone.replace(/\D/g, '');
+      const data = await verifyLoginOtp(fullPhone, otpCode, fields);
+      await finishLogin(data);
+    } catch (e) {
+      setCompleteError(e.message || t('login.registerStep.errors.finishFailed'));
+    } finally {
+      setCompleteLoading(false);
+    }
+  };
+
   const handleLogin = async () => {
     try {
       setLoginLoading(true);
       setLoginError('');
       const fullPhone = '+998' + phone.replace(/\D/g, '');
       const data = await loginCustomer(fullPhone, password);
-      if (data?.access_token) await saveToken(data.access_token);
-      if (data?.refresh_token) await saveRefreshToken(data.refresh_token);
-      await saveActorType(actorType);
-      (onLoginSuccess ?? onBack)(actorType);
+      await finishLogin(data);
     } catch (e) {
       setLoginError(e.message || t('login.errors.loginFailed'));
     } finally {
@@ -116,10 +181,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
     try {
       setGoogleLoading(true);
       const { token, refreshToken } = await googleLogin(actorType);
-      if (token) await saveToken(token);
-      if (refreshToken) await saveRefreshToken(refreshToken);
-      await saveActorType(actorType);
-      (onLoginSuccess ?? onBack)(actorType);
+      await finishLogin({ access_token: token, refresh_token: refreshToken });
     } catch (e) {
       if (e.message !== 'cancelled') {
         Alert.alert(t('common.errorTitle'), e.message || t('login.errors.googleFailed'));
@@ -161,10 +223,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
       setEmailVerifyLoading(true);
       setEmailVerifyError('');
       const data = await verifyEmailLoginOtp(emailLoginEmail, code);
-      if (data?.access_token) await saveToken(data.access_token);
-      if (data?.refresh_token) await saveRefreshToken(data.refresh_token);
-      await saveActorType(actorType);
-      (onLoginSuccess ?? onBack)(actorType);
+      await finishLogin(data);
     } catch (e) {
       setEmailVerifyError(e.message || t('login.errors.loginFailed'));
     } finally {
@@ -175,6 +234,38 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
   const steps = {
     phone: (
       <PhoneStep
+        mode="otp"
+        phone={phone}
+        onChange={(v) => {
+          setPhone(v);
+          setOtpError('');
+        }}
+        onRequestOtp={handleRequestOtp}
+        loginLoading={otpLoading}
+        error={otpError}
+        onBack={onBack}
+        onGoogle={handleGoogle}
+        googleLoading={googleLoading}
+        onEmail={() => setStep('email')}
+        actorType={actorType}
+      />
+    ),
+    code: (
+      <CodeStep
+        phone={phone}
+        devCode={devCode}
+        onBack={() => setStep('phone')}
+        onConfirm={handleVerifyOtp}
+        confirmLoading={verifyLoading}
+        error={verifyError}
+        onResend={handleRequestOtp}
+        resendLoading={otpLoading}
+        onAltLogin={() => setStep('password')}
+      />
+    ),
+    password: (
+      <PhoneStep
+        mode="password"
         phone={phone}
         onChange={(v) => {
           setPhone(v);
@@ -192,12 +283,19 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
           setForgotPhone(phone);
           setStep('forgot');
         }}
-        onBack={onBack}
+        onBack={() => setStep('code')}
         onGoogle={handleGoogle}
         googleLoading={googleLoading}
         onEmail={() => setStep('email')}
-        onRegister={() => setStep('register')}
         actorType={actorType}
+      />
+    ),
+    completeProfile: (
+      <CompleteProfileStep
+        onBack={() => setStep('code')}
+        onSubmit={handleCompleteProfile}
+        loading={completeLoading}
+        error={completeError}
       />
     ),
     forgot: (
@@ -254,12 +352,6 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
         error={emailVerifyError}
         onResend={handleEmailResend}
         resendLoading={emailResendLoading}
-      />
-    ),
-    register: (
-      <RegisterStep
-        onBack={() => setStep('phone')}
-        onDone={() => (onLoginSuccess ?? onBack)('customer')}
       />
     ),
   };

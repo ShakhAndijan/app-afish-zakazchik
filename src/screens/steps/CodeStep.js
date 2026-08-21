@@ -27,6 +27,7 @@ export default function CodeStep({
   resendLoading,
   confirmLoading,
   error,
+  onAltLogin,
 }) {
   const { t } = useLanguage();
   const [code, setCode] = useState('');
@@ -92,6 +93,12 @@ export default function CodeStep({
         icon={confirmLoading ? <ActivityIndicator size="small" color={COLORS.white} /> : undefined}
         onPress={() => onConfirm?.(code)}
       />
+
+      {!!onAltLogin && (
+        <Text style={styles.altLogin} onPress={onAltLogin}>
+          {t('login.codeStep.altLogin')}
+        </Text>
+      )}
     </View>
   );
 }
@@ -155,5 +162,12 @@ const styles = StyleSheet.create({
   resend: {
     color: COLORS.orange,
     fontWeight: '700',
+  },
+  altLogin: {
+    color: COLORS.orange,
+    fontWeight: '700',
+    fontSize: 13.5,
+    textAlign: 'center',
+    marginTop: -6,
   },
 });

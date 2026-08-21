@@ -3,48 +3,6 @@ import * as Linking from 'expo-linking';
 import * as FileSystem from 'expo-file-system/legacy';
 import { ENDPOINTS } from '../constants/config';
 
-export async function requestRegisterOtp(phone) {
-  const res = await fetch(ENDPOINTS.REGISTER_REQUEST_OTP, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || 'OTP yuborishda xatolik yuz berdi');
-  }
-  const data = await res.json();
-  return data.response_data;
-}
-
-export async function getRegisterUploadUrl(phone, code, contentType) {
-  const res = await fetch(ENDPOINTS.REGISTER_UPLOAD_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone, code, content_type: contentType }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || 'Yuklash URL olishda xatolik');
-  }
-  const data = await res.json();
-  return data.response_data; // { upload_url, temp_key, expires_in }
-}
-
-export async function verifyRegisterOtp(payload) {
-  const res = await fetch(ENDPOINTS.REGISTER_VERIFY_OTP, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || "Ro'yxatdan o'tishni yakunlashda xatolik");
-  }
-  const data = await res.json();
-  return data.response_data;
-}
-
 export async function uploadImageToPresignedUrl(
   uploadUrl,
   imageUri,
@@ -106,6 +64,27 @@ export async function requestLoginOtp(phone) {
   }
   const data = await res.json();
   return data.response_data; // { sent, dev_code }
+}
+
+/**
+ * Login va ro'yxatdan o'tish uchun birlashgan OTP tasdiqlash.
+ * Faqat phone+code yuborilsa: mavjud mijoz uchun tokenlarni qaytaradi.
+ * Mijoz hali ro'yxatdan o'tmagan bo'lsa, `extra`ga first_name/last_name/email/password
+ * qo'shib qayta chaqiriladi va yangi hisob shu yerda yaratiladi.
+ * @returns {Promise<{ is_registered: boolean, access_token?: string, refresh_token?: string }>}
+ */
+export async function verifyLoginOtp(phone, code, extra = {}) {
+  const res = await fetch(ENDPOINTS.LOGIN_VERIFY_OTP, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone, code, ...extra }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || 'Kodni tasdiqlashda xatolik yuz berdi');
+  }
+  const data = await res.json();
+  return data.response_data;
 }
 
 export async function requestResetPasswordOtp(phone) {

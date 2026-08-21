@@ -23,10 +23,12 @@ export function UserProvider({ children }) {
     setRefreshing(true);
     try {
       const fresh = await getMe();
+      console.log('[UserContext] refreshUser fresh user:', fresh);
       setUser(fresh);
       setUnauthorized(false);
       AsyncStorage.setItem(CACHE_KEY, JSON.stringify(fresh)).catch(() => {});
     } catch (err) {
+      console.log('[UserContext] refreshUser error:', err?.status, err?.message ?? err);
       if (err.status === 401) setUnauthorized(true);
     } finally {
       setRefreshing(false);

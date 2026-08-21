@@ -19,6 +19,8 @@ import UstaDetailScreen from './UstaDetailScreen';
 import AfishLoader from '../components/AfishLoader';
 import { getCategories } from '../api/categories';
 import { getWorkers } from '../api/workers';
+import { getRegions, getDistricts } from '../api/reference';
+import { ENDPOINTS } from '../constants/config';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 

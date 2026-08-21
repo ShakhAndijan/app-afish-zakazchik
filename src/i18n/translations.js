@@ -54,6 +54,7 @@ export const translations = {
         passwordLabel: 'Parol',
         forgotPassword: 'Parolni unutdingizmi?',
         loginCta: 'Kirish',
+        continueCta: 'Davom etish',
         services: {
           plumber: 'Santexnik',
           electrician: 'Elektrik',
@@ -84,6 +85,7 @@ export const translations = {
         devCode: 'Dev kod:',
         resendIn: 'Qayta yuborish',
         resendNow: 'Kodni qayta yuborish',
+        altLogin: "Boshqa yo'l orqali kirish",
       },
       newPasswordStep: {
         title: 'Yangi parol',
@@ -387,6 +389,10 @@ export const translations = {
         avatarDeleteFailed: "Rasmni o'chirib bo'lmadi, qayta urinib ko'ring",
       },
       stats: { orders: 'Buyurtma', favoriteMasters: 'Sevimli usta', yourRating: 'Bahoyingiz' },
+      incompleteBanner: {
+        title: 'Manzilingizni to\'ldiring',
+        subtitle: 'Buyurtma berishni tezlashtirish uchun manzil qo\'shing',
+      },
       wallet: { title: 'AFISH.uz hamyon', topup: "To'ldirish" },
       loyalty: { silverCustomer: 'Kumush mijoz', toNextLevel: 'Oltingacha 3 buyurtma' },
       menu: {
@@ -772,6 +778,7 @@ export const translations = {
         passwordLabel: 'Пароль',
         forgotPassword: 'Забыли пароль?',
         loginCta: 'Войти',
+        continueCta: 'Продолжить',
         services: {
           plumber: 'Сантехник',
           electrician: 'Электрик',
@@ -802,6 +809,7 @@ export const translations = {
         devCode: 'Тестовый код:',
         resendIn: 'Отправить снова',
         resendNow: 'Отправить код снова',
+        altLogin: 'Войти другим способом',
       },
       newPasswordStep: {
         title: 'Новый пароль',
@@ -1105,6 +1113,10 @@ export const translations = {
         avatarDeleteFailed: 'Не удалось удалить фото, попробуйте снова',
       },
       stats: { orders: 'Заказов', favoriteMasters: 'Избранных мастеров', yourRating: 'Ваш рейтинг' },
+      incompleteBanner: {
+        title: 'Заполните адрес',
+        subtitle: 'Добавьте адрес, чтобы ускорить оформление заказа',
+      },
       wallet: { title: 'Кошелёк AFISH.uz', topup: 'Пополнить' },
       loyalty: { silverCustomer: 'Серебряный клиент', toNextLevel: 'До золотого: 3 заказа' },
       menu: {
@@ -1490,6 +1502,7 @@ export const translations = {
         passwordLabel: 'Password',
         forgotPassword: 'Forgot your password?',
         loginCta: 'Log in',
+        continueCta: 'Continue',
         services: {
           plumber: 'Plumber',
           electrician: 'Electrician',
@@ -1520,6 +1533,7 @@ export const translations = {
         devCode: 'Dev code:',
         resendIn: 'Resend in',
         resendNow: 'Resend code',
+        altLogin: 'Log in another way',
       },
       newPasswordStep: {
         title: 'New password',
@@ -1823,6 +1837,10 @@ export const translations = {
         avatarDeleteFailed: 'Failed to delete photo, please try again',
       },
       stats: { orders: 'Orders', favoriteMasters: 'Favorite pros', yourRating: 'Your rating' },
+      incompleteBanner: {
+        title: 'Add your address',
+        subtitle: 'Add an address to speed up placing an order',
+      },
       wallet: { title: 'AFISH.uz wallet', topup: 'Top up' },
       loyalty: { silverCustomer: 'Silver customer', toNextLevel: '3 orders to Gold' },
       menu: {
