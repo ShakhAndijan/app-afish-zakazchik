@@ -3,6 +3,10 @@ import * as Linking from 'expo-linking';
 import * as FileSystem from 'expo-file-system/legacy';
 import { ENDPOINTS } from '../constants/config';
 
+const logReq = (name, payload) => console.log(`[auth] → ${name}`, payload);
+const logOk = (name, data) => console.log(`[auth] ✓ ${name}`, data);
+const logErr = (name, err) => console.log(`[auth] ✗ ${name}`, err?.message || err);
+
 export async function uploadImageToPresignedUrl(
   uploadUrl,
   imageUri,
@@ -39,6 +43,7 @@ export async function uploadImageToPresignedUrl(
 }
 
 export async function loginCustomer(phone, password) {
+  logReq('loginCustomer', { phone });
   const res = await fetch(ENDPOINTS.CUSTOMER_LOGIN, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -46,48 +51,118 @@ export async function loginCustomer(phone, password) {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
+    logErr('loginCustomer', err);
     throw new Error(err.message || 'Kirishda xatolik yuz berdi');
   }
   const data = await res.json();
+  logOk('loginCustomer', data.response_data);
   return data.response_data;
 }
 
-export async function requestLoginOtp(phone) {
-  const res = await fetch(ENDPOINTS.LOGIN_REQUEST_OTP, {
+/**
+ * Telefon/emailga tasdiqlash kodini yuboradi. Hisob mavjudligidan qat'i nazar
+ * javob har doim bir xil (200) — bu raqamni "bazada bormi yo'qmi" deb sinab
+ * ko'rishning oldini oladi.
+ * @returns {Promise<{ sent: boolean, dev_code?: string }>}
+ */
+export async function startCustomerAuth(identifier, channel = 'sms') {
+  logReq('startCustomerAuth', { identifier, channel });
+  const res = await fetch(ENDPOINTS.AUTH_CUSTOMER_START, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone }),
+    body: JSON.stringify({ identifier, channel }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
+    logErr('startCustomerAuth', err);
     throw new Error(err.message || 'Kod yuborishda xatolik yuz berdi');
   }
   const data = await res.json();
-  return data.response_data; // { sent, dev_code }
+  logOk('startCustomerAuth', data.response_data);
+  return data.response_data;
 }
 
 /**
- * Login va ro'yxatdan o'tish uchun birlashgan OTP tasdiqlash.
- * Faqat phone+code yuborilsa: mavjud mijoz uchun tokenlarni qaytaradi.
- * Mijoz hali ro'yxatdan o'tmagan bo'lsa, `extra`ga first_name/last_name/email/password
- * qo'shib qayta chaqiriladi va yangi hisob shu yerda yaratiladi.
- * @returns {Promise<{ is_registered: boolean, access_token?: string, refresh_token?: string }>}
+ * Kodni tasdiqlaydi. Uch xil natija bo'lishi mumkin (AuthVerifyOut):
+ * - hisob mavjud: access_token/refresh_token qaytadi, shu bilan kirish tugaydi;
+ * - status: 'needs_name' — hisob topilmadi, `ticket` qaytadi (tasdiqlangan
+ *   kodning isboti), keyingi qadamda ism-familiya so'rab completeCustomerAuth
+ *   chaqiriladi;
+ * - `other_actor` maydoni to'ldirilgan bo'lsa — bu identifikator boshqa turdagi
+ *   hisobga (masalan usta) tegishli, mijoz sifatida ro'yxatdan o'tish
+ *   so'ralmaydi, `ticket` bilan claimCustomerAuth chaqiriladi.
+ * @returns {Promise<{ access_token: string|null, refresh_token: string|null, status?: string, other_actor?: unknown, ticket?: string }>}
  */
-export async function verifyLoginOtp(phone, code, extra = {}) {
-  const res = await fetch(ENDPOINTS.LOGIN_VERIFY_OTP, {
+export async function verifyCustomerAuth(identifier, code) {
+  logReq('verifyCustomerAuth', { identifier, code });
+  const res = await fetch(ENDPOINTS.AUTH_CUSTOMER_VERIFY, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone, code, ...extra }),
+    body: JSON.stringify({ identifier, code }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
+    logErr('verifyCustomerAuth', err);
     throw new Error(err.message || 'Kodni tasdiqlashda xatolik yuz berdi');
   }
   const data = await res.json();
+  logOk('verifyCustomerAuth', data.response_data);
+  return data.response_data;
+}
+
+/**
+ * `other_actor` natijasidan keyin: bu identifikator boshqa turdagi hisobga
+ * (masalan usta) tegishli bo'lsa-da, foydalanuvchi "ha, shu mening raqamim,
+ * mijoz sifatida ham kiraman" desa chaqiriladi. Ism qayta so'ralmaydi — u
+ * allaqachon boshqa hisobdan ma'lum.
+ * @returns {Promise<{ access_token: string, refresh_token: string, already_registered: boolean }>}
+ */
+export async function claimCustomerAuth(ticket) {
+  logReq('claimCustomerAuth', { ticket });
+  const res = await fetch(ENDPOINTS.AUTH_CUSTOMER_CLAIM, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ticket }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    logErr('claimCustomerAuth', err);
+    throw new Error(err.message || 'Hisobga kirishda xatolik yuz berdi');
+  }
+  const data = await res.json();
+  logOk('claimCustomerAuth', data.response_data);
+  return data.response_data;
+}
+
+/**
+ * Yangi mijoz hisobini yaratadi va kirishni yakunlaydi. Faqat verify hisobni
+ * topa olmagan holatda chaqiriladi — `ticket` allaqachon tasdiqlangan kodning
+ * isboti bo'lgani uchun kod qayta so'ralmaydi, faqat ism-familiya kerak.
+ * @returns {Promise<{ access_token: string, refresh_token: string }>}
+ */
+export async function completeCustomerAuth(ticket, firstName, lastName) {
+  logReq('completeCustomerAuth', { ticket, first_name: firstName, last_name: lastName });
+  const res = await fetch(ENDPOINTS.AUTH_CUSTOMER_COMPLETE, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ticket,
+      first_name: firstName,
+      last_name: lastName,
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    logErr('completeCustomerAuth', err);
+    throw new Error(err.message || "Hisob yaratishda xatolik yuz berdi");
+  }
+  const data = await res.json();
+  logOk('completeCustomerAuth', data.response_data);
   return data.response_data;
 }
 
 export async function requestResetPasswordOtp(phone) {
+  logReq('requestResetPasswordOtp', { phone });
   const res = await fetch(ENDPOINTS.RESET_PASSWORD_REQUEST_OTP, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -95,13 +170,16 @@ export async function requestResetPasswordOtp(phone) {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
+    logErr('requestResetPasswordOtp', err);
     throw new Error(err.message || 'Kod yuborishda xatolik yuz berdi');
   }
   const data = await res.json();
+  logOk('requestResetPasswordOtp', data.response_data);
   return data.response_data; // { sent, dev_code }
 }
 
 export async function verifyResetPasswordOtp(phone, code, newPassword) {
+  logReq('verifyResetPasswordOtp', { phone, code });
   const res = await fetch(ENDPOINTS.RESET_PASSWORD_VERIFY_OTP, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -114,38 +192,12 @@ export async function verifyResetPasswordOtp(phone, code, newPassword) {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
+    logErr('verifyResetPasswordOtp', err);
     throw new Error(err.message || 'Parolni saqlashda xatolik yuz berdi');
   }
   const data = await res.json();
+  logOk('verifyResetPasswordOtp', data.response_data);
   return data.response_data;
-}
-
-export async function requestEmailLoginOtp(email) {
-  const res = await fetch(ENDPOINTS.EMAIL_LOGIN_REQUEST_OTP, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || 'Kod yuborishda xatolik yuz berdi');
-  }
-  const data = await res.json();
-  return data.response_data; // { sent, dev_code }
-}
-
-export async function verifyEmailLoginOtp(email, code) {
-  const res = await fetch(ENDPOINTS.EMAIL_LOGIN_VERIFY_OTP, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, code }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || 'Kodni tasdiqlashda xatolik yuz berdi');
-  }
-  const data = await res.json();
-  return data.response_data; // { access_token, refresh_token }
 }
 
 export async function googleLogin(actorType = 'customer') {
@@ -154,9 +206,11 @@ export async function googleLogin(actorType = 'customer') {
     `${ENDPOINTS.AUTH_GOOGLE_LOGIN}?actor_type=${actorType}` +
     `&redirect_uri=${encodeURIComponent(redirectUri)}`;
 
+  logReq('googleLogin', { actorType, loginUrl });
   const result = await WebBrowser.openAuthSessionAsync(loginUrl, redirectUri);
 
   if (result.type !== 'success') {
+    logErr('googleLogin', 'cancelled');
     throw new Error('cancelled');
   }
 
@@ -165,8 +219,10 @@ export async function googleLogin(actorType = 'customer') {
   const token = params.token || params.access_token;
 
   if (!token) {
+    logErr('googleLogin', 'token topilmadi');
     throw new Error('Tokenni olishda xatolik');
   }
 
+  logOk('googleLogin', { hasToken: !!token, hasRefreshToken: !!params.refresh_token });
   return { token, refreshToken: params.refresh_token };
 }

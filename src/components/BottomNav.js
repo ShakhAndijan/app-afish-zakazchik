@@ -4,10 +4,10 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLanguage } from '../context/LanguageContext';
 
 const NAV = [
-  { key: 'home',     labelKey: 'bottomNav.home',     on: 'home',    off: 'home-outline' },
-  { key: 'services', labelKey: 'bottomNav.services', on: 'grid',    off: 'grid-outline' },
-  { key: 'rental',   labelKey: 'bottomNav.rental',   on: 'key',     off: 'key-outline' },
-  { key: 'profile',  labelKey: 'bottomNav.profile',  on: 'person',  off: 'person-outline' },
+  { key: 'home',     labelKey: 'bottomNav.home',     on: 'home',            off: 'home-outline' },
+  { key: 'newOrder', labelKey: 'bottomNav.newOrder', on: 'add-circle',      off: 'add-circle-outline' },
+  { key: 'services', labelKey: 'bottomNav.services', on: 'grid',            off: 'grid-outline' },
+  { key: 'profile',  labelKey: 'bottomNav.profile',  on: 'person',          off: 'person-outline' },
 ];
 
 export default function BottomNav({

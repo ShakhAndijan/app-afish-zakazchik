@@ -5,46 +5,26 @@ import { COLORS } from '../../constants/colors';
 import { useLanguage } from '../../context/LanguageContext';
 import BackBtn from '../../components/login/BackBtn';
 import PrimaryBtn from '../../components/login/PrimaryBtn';
-import PasswordInput from '../../components/login/PasswordInput';
+import { detectIdentifierMode } from '../../utils/identifier';
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const formatPhone = (raw = '') => {
+  const d = raw.replace(/\D/g, '').slice(0, 9);
+  let s = '';
+  if (d.length > 0) s += d.slice(0, 2);
+  if (d.length > 2) s += ' ' + d.slice(2, 5);
+  if (d.length > 5) s += ' ' + d.slice(5, 7);
+  if (d.length > 7) s += ' ' + d.slice(7, 9);
+  return s;
+};
 
-const PASSWORD_RULES = [
-  { key: 'length', test: (pw) => pw.length >= 8 },
-  { key: 'upper', test: (pw) => /[A-Z]/.test(pw) },
-  { key: 'lower', test: (pw) => /[a-z]/.test(pw) },
-  { key: 'digit', test: (pw) => /\d/.test(pw) },
-  { key: 'special', test: (pw) => /[^A-Za-z0-9]/.test(pw) },
-];
-
-function PasswordRules({ password, t }) {
-  return (
-    <View style={styles.rulesWrap}>
-      {PASSWORD_RULES.map((rule) => {
-        const passed = rule.test(password);
-        return (
-          <Text
-            key={rule.key}
-            style={[styles.ruleTxt, passed && styles.ruleTxtPassed]}
-          >
-            {t(`login.newPasswordStep.rules.${rule.key}`)}
-          </Text>
-        );
-      })}
-    </View>
-  );
-}
-
-export default function CompleteProfileStep({ onBack, onSubmit, loading, error }) {
+export default function CompleteProfileStep({ onBack, onSubmit, loading, error, identifier = '' }) {
   const { t } = useLanguage();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
 
-  const emailOk = EMAIL_REGEX.test(email.trim());
-  const passwordOk = PASSWORD_RULES.every((rule) => rule.test(password));
-  const ready = firstName.trim() && lastName.trim() && emailOk && passwordOk && !loading;
+  const ready = firstName.trim() && lastName.trim() && !loading;
+  const identifierMode = detectIdentifierMode(identifier);
+  const identifierLabel = identifierMode === 'phone' ? `+998 ${formatPhone(identifier)}` : identifier;
 
   return (
     <View style={styles.container}>
@@ -56,8 +36,19 @@ export default function CompleteProfileStep({ onBack, onSubmit, loading, error }
           style={styles.logo}
           resizeMode="contain"
         />
+
+        <View style={styles.badge}>
+          <Text style={styles.badgeTxt}>{t('login.registerStep.info.newBadge')}</Text>
+        </View>
+
         <Text style={styles.title}>{t('login.registerStep.info.title')}</Text>
-        <Text style={styles.subtitle}>{t('login.registerStep.info.subtitle')}</Text>
+        <Text style={styles.subtitle}>{t('login.registerStep.info.nameSubtitle')}</Text>
+
+        {!!identifierLabel && (
+          <View style={styles.identifierPill}>
+            <Text style={styles.identifierTxt}>{identifierLabel}</Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.row}>
@@ -77,23 +68,7 @@ export default function CompleteProfileStep({ onBack, onSubmit, loading, error }
         />
       </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder={t('login.registerStep.info.emailPlaceholder')}
-        placeholderTextColor={COLORS.faint}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        value={email}
-        onChangeText={setEmail}
-      />
-
-      <PasswordInput
-        value={password}
-        onChangeText={setPassword}
-        theme={{ isDark: true }}
-        placeholder={t('login.registerStep.info.passwordPlaceholder')}
-      />
-      <PasswordRules password={password} t={t} />
+      <Text style={styles.note}>{t('login.registerStep.info.note')}</Text>
 
       {!!error && <Text style={styles.errorText}>{error}</Text>}
 
@@ -101,14 +76,7 @@ export default function CompleteProfileStep({ onBack, onSubmit, loading, error }
         label={t('login.registerStep.info.cta')}
         disabled={!ready}
         icon={loading ? <ActivityIndicator size="small" color={COLORS.white} /> : undefined}
-        onPress={() =>
-          onSubmit?.({
-            first_name: firstName.trim(),
-            last_name: lastName.trim(),
-            email: email.trim(),
-            password,
-          })
-        }
+        onPress={() => onSubmit?.(firstName.trim(), lastName.trim())}
       />
     </View>
   );
@@ -123,6 +91,17 @@ const styles = StyleSheet.create({
   },
   header: { gap: 10, marginTop: 8, alignItems: 'center', marginBottom: 4 },
   logo: { width: 180, height: 100 },
+  badge: {
+    backgroundColor: 'rgba(232,122,69,0.15)',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  badgeTxt: {
+    color: COLORS.orange,
+    fontSize: 12.5,
+    fontWeight: '700',
+  },
   title: {
     color: COLORS.white,
     fontSize: 24,
@@ -136,6 +115,20 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     textAlign: 'center',
   },
+  identifierPill: {
+    backgroundColor: COLORS.inputBg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    marginTop: 2,
+  },
+  identifierTxt: {
+    color: COLORS.white,
+    fontSize: 14,
+    fontWeight: '700',
+  },
   row: { flexDirection: 'row', gap: 10 },
   rowInput: { flex: 1 },
   input: {
@@ -148,13 +141,13 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: 15,
   },
-  rulesWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: -4 },
-  ruleTxt: {
-    fontSize: 11.5,
+  note: {
     color: COLORS.faint,
-    fontWeight: '600',
+    fontSize: 12,
+    lineHeight: 17,
+    textAlign: 'center',
+    marginTop: -6,
   },
-  ruleTxtPassed: { color: COLORS.success },
   errorText: {
     color: '#e0473a',
     fontSize: 13,

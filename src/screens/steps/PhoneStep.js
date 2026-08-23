@@ -12,8 +12,10 @@ import {
 import { Feather, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
-import PhoneInput from '../../components/login/PhoneInput';
-import PasswordInput from '../../components/login/PasswordInput';
+import IdentifierInput from '../../components/login/IdentifierInput';
+import { detectIdentifierMode } from '../../utils/identifier';
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const SERVICES = [
   { key: 'plumber', color: '#22b8cf', icon: 'wrench',          lib: 'MaterialCommunityIcons' },
@@ -27,19 +29,14 @@ function ServiceIcon({ icon, color }) {
 }
 
 export default function PhoneStep({
-  mode = 'otp',
-  phone,
-  onChange,
-  password,
-  onPasswordChange,
-  onLogin,
+  identifier,
+  onIdentifierChange,
   onRequestOtp,
   loginLoading,
+  telegramLoading,
   error,
-  onForgot,
   onGoogle,
   googleLoading,
-  onEmail,
   onBack,
   actorType = 'customer',
 }) {
@@ -47,11 +44,20 @@ export default function PhoneStep({
   const { t } = useLanguage();
   const isDark = theme.isDark !== false;
   const isUsta = actorType === 'worker';
-  const isPasswordMode = mode === 'password';
-  const isReady = isPasswordMode
-    ? phone.length === 9 && password.length >= 4 && !loginLoading
-    : phone.length === 9 && !loginLoading;
-  const handleCta = isPasswordMode ? onLogin : onRequestOtp;
+  const identifierMode = detectIdentifierMode(identifier);
+  const isIdentifierReady = identifierMode === 'phone'
+    ? identifier.length === 9
+    : identifierMode === 'email'
+      ? EMAIL_REGEX.test(identifier.trim())
+      : false;
+  const anyOtpLoading = loginLoading || telegramLoading;
+  const isReady = isIdentifierReady && !anyOtpLoading;
+  const handleCta = () => onRequestOtp('sms');
+  const identifierLabel = identifierMode === 'phone'
+    ? t('login.phoneStep.phoneLabel')
+    : identifierMode === 'email'
+      ? t('login.phoneStep.emailLabel')
+      : t('login.phoneStep.identifierLabel');
 
   return (
     <KeyboardAvoidingView
@@ -134,22 +140,16 @@ export default function PhoneStep({
             </View>
           )}
 
-          {/* ── Phone field ── */}
+          {/* ── Telefon/email maydoni ── */}
           <View style={s.fieldWrap}>
-            <Text style={[s.fieldLabel, { color: theme.muted }]}>{t('login.phoneStep.phoneLabel')}</Text>
-            <PhoneInput value={phone} onChangeText={onChange} theme={theme} />
+            <Text style={[s.fieldLabel, { color: theme.muted }]}>{identifierLabel}</Text>
+            <IdentifierInput
+              value={identifier}
+              onChangeText={onIdentifierChange}
+              theme={theme}
+              placeholder={t('login.phoneStep.identifierPlaceholder')}
+            />
           </View>
-
-          {/* ── Password field (faqat parol rejimida) ── */}
-          {isPasswordMode && (
-            <View style={s.fieldWrap}>
-              <Text style={[s.fieldLabel, { color: theme.muted }]}>{t('login.phoneStep.passwordLabel')}</Text>
-              <PasswordInput value={password} onChangeText={onPasswordChange} theme={theme} />
-              <TouchableOpacity onPress={onForgot} activeOpacity={0.7} style={s.forgotRow}>
-                <Text style={[s.forgotTxt, { color: theme.orange }]}>{t('login.phoneStep.forgotPassword')}</Text>
-              </TouchableOpacity>
-            </View>
-          )}
 
           {/* ── Error ── */}
           {!!error && (
@@ -178,7 +178,7 @@ export default function PhoneStep({
             ) : (
               <>
                 <Text style={[s.ctaTxt, !isReady && s.ctaTxtDisabled]}>
-                  {isPasswordMode ? t('login.phoneStep.loginCta') : t('login.phoneStep.continueCta')}
+                  {t('login.phoneStep.continueCta')}
                 </Text>
                 <Feather name="arrow-right" size={18} color={isReady ? '#fff' : '#7a6253'} />
               </>
@@ -223,12 +223,19 @@ export default function PhoneStep({
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[s.socBtn, { borderColor: theme.border, backgroundColor: theme.card }]}
-              onPress={onEmail}
+              style={[
+                s.socBtn,
+                { borderColor: theme.border, backgroundColor: theme.card },
+                !isIdentifierReady && s.socBtnDisabled,
+              ]}
+              onPress={anyOtpLoading || !isIdentifierReady ? undefined : () => onRequestOtp('telegram')}
               activeOpacity={0.85}
             >
-              <Ionicons name="mail-outline" size={20} color={theme.text} />
-              <Text style={[s.socTxt, { color: theme.text }]}>Email</Text>
+              {telegramLoading
+                ? <ActivityIndicator size="small" color="#229ED9" />
+                : <Ionicons name="paper-plane" size={20} color="#229ED9" />
+              }
+              <Text style={[s.socTxt, { color: theme.text }]}>Telegram</Text>
             </TouchableOpacity>
           </View>
 
@@ -346,8 +353,6 @@ const s = StyleSheet.create({
 
   fieldWrap: { gap: 8 },
   fieldLabel: { fontSize: 13, fontWeight: '600' },
-  forgotRow: { alignSelf: 'flex-end' },
-  forgotTxt: { fontSize: 12.5, fontWeight: '600' },
 
   errorBox: {
     flexDirection: 'row',
@@ -398,6 +403,7 @@ const s = StyleSheet.create({
     gap: 8,
   },
   socTxt: { fontSize: 14, fontWeight: '700' },
+  socBtnDisabled: { opacity: 0.45 },
 
   footer: { gap: 12, alignItems: 'center' },
   terms: { fontSize: 12, textAlign: 'center', lineHeight: 18 },

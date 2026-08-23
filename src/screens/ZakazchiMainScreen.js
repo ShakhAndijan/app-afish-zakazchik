@@ -26,17 +26,16 @@ import ZakazchiProfileScreen from './ZakazchiProfileScreen';
 import UstaDetailScreen from './UstaDetailScreen';
 import XizmatlarScreen from './XizmatlarScreen';
 import WorkDetailScreen from './WorkDetailScreen';
-import RentalScreen from './RentalScreen';
+import NewOrderScreen from './NewOrderScreen';
 import BottomNav from '../components/BottomNav';
-import ListingCard from '../components/ListingCard';
 import AfishLoader from '../components/AfishLoader';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useUser } from '../context/UserContext';
 import { getCategories } from '../api/categories';
 import { getWorkers, getFavorites } from '../api/workers';
-import { getTopOrders } from '../api/reviews';
-import { getListings } from '../api/listings';
+import { getTopOrders, getTopComments } from '../api/reviews';
+import { getSystemStats } from '../api/stats';
 import { getToken } from '../utils/token';
 
 const SVC_GAP = 10;
@@ -45,6 +44,12 @@ const SVC_VISIBLE = 4;
 
 const SAVED_CARD_W = 148;
 const SAVED_CARD_GAP = 12;
+
+const BENEFITS = [
+  { icon: 'shield-check', color: '#2ecc71', key: 'guaranteed' },
+  { icon: 'check-decagram', color: '#3b82f6', key: 'verified' },
+  { icon: 'lightning-bolt', color: '#f5b81f', key: 'fast' },
+];
 
 const ServiceCarousel = forwardRef(function ServiceCarousel(
   { categories, onSelectCategory },
@@ -258,6 +263,7 @@ function WorkPhotoCarousel({ photos, t, onManualNav }) {
 
 function WorksCarousel({ works, onSelectWork }) {
   const { theme: t } = useTheme();
+  const { t: tr } = useLanguage();
   const listRef = useRef(null);
   const idxRef = useRef(0);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -280,7 +286,31 @@ function WorksCarousel({ works, onSelectWork }) {
     return () => clearInterval(timer);
   }, [total]);
 
-  if (total === 0) return null;
+  if (total === 0) {
+    return (
+      <View
+        style={{
+          marginHorizontal: 20,
+          paddingVertical: 22,
+          paddingHorizontal: 18,
+          borderRadius: 14,
+          borderWidth: 1,
+          borderColor: t.border,
+          backgroundColor: t.card,
+          alignItems: 'center',
+          gap: 6,
+        }}
+      >
+        <MaterialCommunityIcons name="image-multiple-outline" size={22} color={t.muted} />
+        <Text style={{ fontSize: 13, fontWeight: '600', color: t.muted, textAlign: 'center' }}>
+          {tr('app.engZorIshlar.emptyTitle')}
+        </Text>
+        <Text style={{ fontSize: 12, color: t.faint, textAlign: 'center', lineHeight: 17 }}>
+          {tr('app.engZorIshlar.emptySubtitle')}
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View>
@@ -558,7 +588,7 @@ function TopUstalar({ onSelectUsta, categoryId, initialWorkers }) {
   );
 }
 
-function SevimliUstalar({ onSelectUsta, saved }) {
+function SevimliUstalar({ onSelectUsta, saved, onBrowse }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
   const [savedIdx, setSavedIdx] = useState(0);
@@ -617,9 +647,41 @@ function SevimliUstalar({ onSelectUsta, saved }) {
           }}
         >
           <Ionicons name="heart-outline" size={22} color={t.muted} />
-          <Text style={{ fontSize: 13, fontWeight: '600', color: t.muted }}>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: t.muted, textAlign: 'center' }}>
             {tr('zakazchiMain.favorites.empty')}
           </Text>
+          <Text
+            style={{
+              fontSize: 12,
+              color: t.faint,
+              textAlign: 'center',
+              lineHeight: 17,
+              marginTop: -2,
+            }}
+          >
+            {tr('zakazchiMain.favorites.emptySubtitle')}
+          </Text>
+          {!!onBrowse && (
+            <TouchableOpacity
+              onPress={onBrowse}
+              activeOpacity={0.85}
+              style={{
+                marginTop: 6,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 6,
+                backgroundColor: t.orange,
+                paddingHorizontal: 16,
+                paddingVertical: 9,
+                borderRadius: 10,
+              }}
+            >
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12.5 }}>
+                {tr('zakazchiMain.favorites.browseCta')}
+              </Text>
+              <Ionicons name="arrow-forward" size={14} color="#fff" />
+            </TouchableOpacity>
+          )}
         </View>
       ) : (
         <>
@@ -778,18 +840,21 @@ export default function ZakazchiMainScreen({ onLogout }) {
   const [workers, setWorkers] = useState([]);
   const [works, setWorks] = useState([]);
   const [favorites, setFavorites] = useState([]);
-  const [listings, setListings] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [reviews, setReviews] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [workersLoading, setWorkersLoading] = useState(true);
   const [worksLoading, setWorksLoading] = useState(true);
   const [favoritesLoading, setFavoritesLoading] = useState(true);
-  const [listingsLoading, setListingsLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
   const initialLoading =
     categoriesLoading &&
     workersLoading &&
     worksLoading &&
     favoritesLoading &&
-    listingsLoading;
+    statsLoading &&
+    reviewsLoading;
   const [refreshing, setRefreshing] = useState(false);
   const mountedRef = useRef(true);
 
@@ -835,14 +900,22 @@ export default function ZakazchiMainScreen({ onLogout }) {
           }
         })
         .catch((err) => console.log('[loadHomeData] favorites error:', err?.message ?? err)),
-      getListings({ limit: 10, offset: 0 })
-        .then((lstngs) => {
+      getSystemStats()
+        .then((data) => {
           if (mountedRef.current) {
-            setListings(lstngs);
-            setListingsLoading(false);
+            setStats(data);
+            setStatsLoading(false);
           }
         })
-        .catch((err) => console.log('[loadHomeData] listings error:', err?.message ?? err)),
+        .catch((err) => console.log('[loadHomeData] stats error:', err?.message ?? err)),
+      getTopComments({ limit: 10 })
+        .then((cmts) => {
+          if (mountedRef.current) {
+            setReviews(cmts);
+            setReviewsLoading(false);
+          }
+        })
+        .catch((err) => console.log('[loadHomeData] reviews error:', err?.message ?? err)),
     ]);
   }, []);
 
@@ -890,8 +963,8 @@ export default function ZakazchiMainScreen({ onLogout }) {
     return <XizmatlarScreen activeTab={activeTab} onTabChange={setActiveTab} />;
   }
 
-  if (activeTab === 'rental') {
-    return <RentalScreen onTabChange={setActiveTab} />;
+  if (activeTab === 'newOrder') {
+    return <NewOrderScreen onTabChange={setActiveTab} />;
   }
 
   return (
@@ -1110,58 +1183,166 @@ export default function ZakazchiMainScreen({ onLogout }) {
             {favoritesLoading ? (
               <SectionLoader height={150} />
             ) : (
-              <SevimliUstalar onSelectUsta={setSelectedUsta} saved={favorites} />
+              <SevimliUstalar
+                onSelectUsta={setSelectedUsta}
+                saved={favorites}
+                onBrowse={() => setActiveTab('services')}
+              />
             )}
 
-            {/* ── Yangi e'lonlar ── */}
+            {/* ── Statistika ── */}
             <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
-              <View style={s.sectionHeader}>
-                <Text style={[s.sectionTitle, { color: t.text }]}>
-                  {tr('zakazchiMain.newListings.title')}
-                </Text>
-                <TouchableOpacity activeOpacity={0.7}>
-                  <Text
-                    style={{ color: t.orange, fontSize: 12.5, fontWeight: '600' }}
-                  >
-                    {tr('common.seeAll')}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              {listingsLoading ? (
-                <SectionLoader height={150} />
+              {statsLoading ? (
+                <SectionLoader height={90} />
               ) : (
-                <View style={{ gap: 12 }}>
-                  {listings.map((l) => (
-                    <ListingCard
-                      key={l.id}
-                      listing={l}
-                      accent={t.orange}
-                      colors={{
-                        card: t.card,
-                        border: t.border,
-                        text: t.text,
-                        muted: t.muted,
-                        gold: t.gold,
-                        ratingBg: 'rgba(245,196,81,0.13)',
-                      }}
-                      onPress={() =>
-                        setSelectedUsta({
-                          id: l.workerId,
-                          initial: l.initial,
-                          name: l.name,
-                          bgColor: l.color,
-                          profile_photo: l.profile_photo,
-                          rating: l.rating,
-                          startingPrice: String(l.price),
-                          reliability_badge: l.reliability_badge,
-                          is_online: l.is_online,
-                        })
-                      }
-                    />
+                <View
+                  style={[
+                    s.statsBand,
+                    { backgroundColor: t.card, borderColor: t.border },
+                  ]}
+                >
+                  {[
+                    {
+                      value: stats?.worker_count != null ? `${stats.worker_count}+` : '—',
+                      key: 'workers',
+                    },
+                    {
+                      value: stats?.order_count != null ? `${stats.order_count}+` : '—',
+                      key: 'completedJobs',
+                    },
+                    {
+                      value:
+                        stats?.average_rating != null
+                          ? `${stats.average_rating.toFixed(1)}★`
+                          : '—',
+                      key: 'avgRating',
+                    },
+                  ].map((item, i) => (
+                    <View
+                      key={item.key}
+                      style={[
+                        s.statsBandItem,
+                        { borderRightColor: t.border, borderRightWidth: i < 2 ? 1 : 0 },
+                      ]}
+                    >
+                      <Text style={{ fontSize: 19, fontWeight: '800', color: t.text }}>
+                        {item.value}
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          color: t.muted,
+                          marginTop: 3,
+                          textAlign: 'center',
+                        }}
+                      >
+                        {tr(`app.stats.${item.key}`)}
+                      </Text>
+                    </View>
                   ))}
                 </View>
               )}
             </View>
+
+            {/* ── Nega AFISH? ── */}
+            <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
+              <Text style={[s.sectionTitle, { color: t.text, marginBottom: 13 }]}>
+                {tr('app.sectionHead.whyAfish')}
+              </Text>
+              <View style={{ gap: 12 }}>
+                {BENEFITS.map((b) => (
+                  <View
+                    key={b.key}
+                    style={[
+                      s.benefitCard,
+                      { backgroundColor: t.card, borderColor: t.border },
+                    ]}
+                  >
+                    <View style={[s.benefitIcon, { backgroundColor: b.color + '22' }]}>
+                      <MaterialCommunityIcons name={b.icon} size={22} color={b.color} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={{
+                          fontWeight: '700',
+                          fontSize: 14,
+                          color: t.text,
+                          marginBottom: 3,
+                        }}
+                      >
+                        {tr(`app.benefits.${b.key}Title`)}
+                      </Text>
+                      <Text style={{ fontSize: 12.5, color: t.muted, lineHeight: 18 }}>
+                        {tr(`app.benefits.${b.key}Desc`)}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </View>
+
+            {/* ── Mijozlar fikri ── */}
+            {reviewsLoading ? (
+              <View style={{ marginTop: 24 }}>
+                <SectionLoader height={150} />
+              </View>
+            ) : (
+              reviews.length > 0 && (
+                <View style={{ marginTop: 24 }}>
+                  <Text
+                    style={[
+                      s.sectionTitle,
+                      { color: t.text, paddingHorizontal: 20, marginBottom: 13 },
+                    ]}
+                  >
+                    {tr('app.sectionHead.reviews')}
+                  </Text>
+                  <FlatList
+                    data={reviews}
+                    keyExtractor={(_, i) => String(i)}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
+                    renderItem={({ item: r }) => (
+                      <View
+                        style={[
+                          s.reviewCard,
+                          { backgroundColor: t.card, borderColor: t.border },
+                        ]}
+                      >
+                        <View style={{ flexDirection: 'row', gap: 3, marginBottom: 10 }}>
+                          {[0, 1, 2, 3, 4].map((j) => (
+                            <Ionicons
+                              key={j}
+                              name="star"
+                              size={13}
+                              color={j < r.stars ? t.gold : t.border}
+                            />
+                          ))}
+                        </View>
+                        <Text
+                          style={{ color: t.muted, fontSize: 13, lineHeight: 19, marginBottom: 14 }}
+                          numberOfLines={4}
+                        >
+                          {r.text}
+                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                          <Avatar letter={r.initial} size={34} bgColor={r.color} />
+                          <View>
+                            <Text style={{ color: t.text, fontWeight: '600', fontSize: 13 }}>
+                              {r.name}
+                            </Text>
+                            <Text style={{ color: t.faint, fontSize: 11, marginTop: 1 }}>
+                              {r.location}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                    )}
+                  />
+                </View>
+              )
+            )}
           </>
         )}
       </ScrollView>
@@ -1240,6 +1421,37 @@ const s = StyleSheet.create({
     marginBottom: 13,
   },
   sectionTitle: { fontWeight: '700', fontSize: 16.5 },
+
+  statsBand: {
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderRadius: 18,
+    paddingVertical: 18,
+  },
+  statsBandItem: { flex: 1, alignItems: 'center' },
+
+  benefitCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 14,
+    borderRadius: 16,
+    padding: 15,
+    borderWidth: 1,
+  },
+  benefitIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  reviewCard: {
+    width: 240,
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+  },
 
   svcItem: {
     height: 90,

@@ -7,20 +7,22 @@ import { useLanguage } from '../context/LanguageContext';
 import {
   googleLogin,
   loginCustomer,
-  requestLoginOtp,
-  verifyLoginOtp,
+  startCustomerAuth,
+  verifyCustomerAuth,
+  completeCustomerAuth,
+  claimCustomerAuth,
   requestResetPasswordOtp,
   verifyResetPasswordOtp,
-  requestEmailLoginOtp,
-  verifyEmailLoginOtp,
 } from '../api/auth';
 import { saveToken, saveRefreshToken, saveActorType } from '../utils/token';
+import { detectIdentifierMode, buildIdentifier } from '../utils/identifier';
 import PhoneStep from './steps/PhoneStep';
+import PasswordStep from './steps/PasswordStep';
 import ForgotPasswordStep from './steps/ForgotPasswordStep';
 import CodeStep from './steps/CodeStep';
 import NewPasswordStep from './steps/NewPasswordStep';
-import EmailStep from './steps/EmailStep';
 import CompleteProfileStep from './steps/CompleteProfileStep';
+import OtherActorStep from './steps/OtherActorStep';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -42,23 +44,21 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
-  const [emailLoginEmail, setEmailLoginEmail] = useState('');
-  const [emailOtpLoading, setEmailOtpLoading] = useState(false);
-  const [emailOtpError, setEmailOtpError] = useState('');
-  const [emailDevCode, setEmailDevCode] = useState('');
-  const [emailResendLoading, setEmailResendLoading] = useState(false);
-  const [emailVerifyLoading, setEmailVerifyLoading] = useState(false);
-  const [emailVerifyError, setEmailVerifyError] = useState('');
 
-  // ── Telefon + OTP (login va register birlashgan oqimi) ──
-  const [otpCode, setOtpCode] = useState('');
+  // ── Telefon/email + OTP (login va register birlashgan oqimi: start → verify → complete) ──
+  const [identifier, setIdentifier] = useState('');
+  const identifierMode = detectIdentifierMode(identifier);
+  const [ticket, setTicket] = useState('');
   const [otpLoading, setOtpLoading] = useState(false);
+  const [otpChannel, setOtpChannel] = useState('sms');
   const [otpError, setOtpError] = useState('');
   const [devCode, setDevCode] = useState('');
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [verifyError, setVerifyError] = useState('');
   const [completeLoading, setCompleteLoading] = useState(false);
   const [completeError, setCompleteError] = useState('');
+  const [claimLoading, setClaimLoading] = useState(false);
+  const [claimError, setClaimError] = useState('');
 
   const finishLogin = async (data) => {
     if (data?.access_token) await saveToken(data.access_token);
@@ -67,12 +67,12 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
     (onLoginSuccess ?? onBack)(actorType);
   };
 
-  const handleRequestOtp = async () => {
+  const handleRequestOtp = async (channel = 'sms') => {
     try {
+      setOtpChannel(channel);
       setOtpLoading(true);
       setOtpError('');
-      const fullPhone = '+998' + phone.replace(/\D/g, '');
-      const data = await requestLoginOtp(fullPhone);
+      const data = await startCustomerAuth(buildIdentifier(identifier), channel);
       setDevCode(data?.dev_code || '');
       setStep('code');
     } catch (e) {
@@ -86,14 +86,20 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
     try {
       setVerifyLoading(true);
       setVerifyError('');
-      const fullPhone = '+998' + phone.replace(/\D/g, '');
-      const data = await verifyLoginOtp(fullPhone, code);
+      const data = await verifyCustomerAuth(buildIdentifier(identifier), code);
+      console.log('[login] verify status:', data?.status, data);
       if (data?.access_token) {
         await finishLogin(data);
-      } else {
-        setOtpCode(code);
+      } else if (data?.status === 'needs_name') {
+        setTicket(data?.ticket || '');
         setCompleteError('');
         setStep('completeProfile');
+      } else if (data?.other_actor || data?.status === 'other_actor') {
+        setTicket(data?.ticket || '');
+        setClaimError('');
+        setStep('otherActor');
+      } else {
+        setVerifyError(t('login.errors.loginFailed'));
       }
     } catch (e) {
       setVerifyError(e.message || t('login.errors.loginFailed'));
@@ -102,17 +108,29 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
     }
   };
 
-  const handleCompleteProfile = async (fields) => {
+  const handleCompleteProfile = async (firstName, lastName) => {
     try {
       setCompleteLoading(true);
       setCompleteError('');
-      const fullPhone = '+998' + phone.replace(/\D/g, '');
-      const data = await verifyLoginOtp(fullPhone, otpCode, fields);
+      const data = await completeCustomerAuth(ticket, firstName, lastName);
       await finishLogin(data);
     } catch (e) {
       setCompleteError(e.message || t('login.registerStep.errors.finishFailed'));
     } finally {
       setCompleteLoading(false);
+    }
+  };
+
+  const handleClaim = async () => {
+    try {
+      setClaimLoading(true);
+      setClaimError('');
+      const data = await claimCustomerAuth(ticket);
+      await finishLogin(data);
+    } catch (e) {
+      setClaimError(e.message || t('login.errors.loginFailed'));
+    } finally {
+      setClaimLoading(false);
     }
   };
 
@@ -191,111 +209,74 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
     }
   };
 
-  const handleEmailOtpRequest = async (email) => {
-    try {
-      setEmailOtpLoading(true);
-      setEmailOtpError('');
-      setEmailLoginEmail(email);
-      const data = await requestEmailLoginOtp(email);
-      setEmailDevCode(data?.dev_code || '');
-      setStep('emailCode');
-    } catch (e) {
-      setEmailOtpError(e.message || t('login.errors.sendCodeFailed'));
-    } finally {
-      setEmailOtpLoading(false);
-    }
-  };
-
-  const handleEmailResend = async () => {
-    try {
-      setEmailResendLoading(true);
-      const data = await requestEmailLoginOtp(emailLoginEmail);
-      setEmailDevCode(data?.dev_code || '');
-    } catch (e) {
-      Alert.alert(t('common.errorTitle'), e.message || t('login.errors.sendCodeFailed'));
-    } finally {
-      setEmailResendLoading(false);
-    }
-  };
-
-  const handleEmailVerify = async (code) => {
-    try {
-      setEmailVerifyLoading(true);
-      setEmailVerifyError('');
-      const data = await verifyEmailLoginOtp(emailLoginEmail, code);
-      await finishLogin(data);
-    } catch (e) {
-      setEmailVerifyError(e.message || t('login.errors.loginFailed'));
-    } finally {
-      setEmailVerifyLoading(false);
-    }
-  };
-
   const steps = {
     phone: (
       <PhoneStep
-        mode="otp"
-        phone={phone}
-        onChange={(v) => {
-          setPhone(v);
+        identifier={identifier}
+        onIdentifierChange={(v) => {
+          setIdentifier(v);
           setOtpError('');
         }}
         onRequestOtp={handleRequestOtp}
-        loginLoading={otpLoading}
+        loginLoading={otpLoading && otpChannel === 'sms'}
+        telegramLoading={otpLoading && otpChannel === 'telegram'}
         error={otpError}
         onBack={onBack}
         onGoogle={handleGoogle}
         googleLoading={googleLoading}
-        onEmail={() => setStep('email')}
         actorType={actorType}
       />
     ),
     code: (
       <CodeStep
-        phone={phone}
+        phone={identifierMode === 'phone' ? identifier : undefined}
+        email={identifierMode === 'email' ? identifier : undefined}
         devCode={devCode}
         onBack={() => setStep('phone')}
         onConfirm={handleVerifyOtp}
         confirmLoading={verifyLoading}
         error={verifyError}
-        onResend={handleRequestOtp}
+        onResend={() => handleRequestOtp(otpChannel)}
         resendLoading={otpLoading}
-        onAltLogin={() => setStep('password')}
+        onAltLogin={identifierMode === 'phone' ? () => {
+          setPhone(identifier);
+          setStep('password');
+        } : undefined}
       />
     ),
     password: (
-      <PhoneStep
-        mode="password"
-        phone={phone}
-        onChange={(v) => {
-          setPhone(v);
-          setLoginError('');
-        }}
+      <PasswordStep
+        identifier={phone}
         password={password}
         onPasswordChange={(v) => {
           setPassword(v);
           setLoginError('');
         }}
         onLogin={handleLogin}
-        loginLoading={loginLoading}
+        loading={loginLoading}
         error={loginError}
         onForgot={() => {
           setForgotPhone(phone);
           setStep('forgot');
         }}
         onBack={() => setStep('code')}
-        onGoogle={handleGoogle}
-        googleLoading={googleLoading}
-        onEmail={() => setStep('email')}
-        actorType={actorType}
       />
     ),
     completeProfile: (
       <CompleteProfileStep
+        identifier={identifier}
         onBack={() => setStep('code')}
         onSubmit={handleCompleteProfile}
         loading={completeLoading}
         error={completeError}
+      />
+    ),
+    otherActor: (
+      <OtherActorStep
+        onBack={() => setStep('code')}
+        onConfirm={handleClaim}
+        loading={claimLoading}
+        error={claimError}
       />
     ),
     forgot: (
@@ -332,26 +313,6 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
         onSubmit={handleResetPasswordSubmit}
         loading={resetLoading}
         error={resetError}
-      />
-    ),
-    email: (
-      <EmailStep
-        onBack={() => setStep('phone')}
-        onSubmit={handleEmailOtpRequest}
-        loading={emailOtpLoading}
-        error={emailOtpError}
-      />
-    ),
-    emailCode: (
-      <CodeStep
-        email={emailLoginEmail}
-        devCode={emailDevCode}
-        onBack={() => setStep('email')}
-        onConfirm={handleEmailVerify}
-        confirmLoading={emailVerifyLoading}
-        error={emailVerifyError}
-        onResend={handleEmailResend}
-        resendLoading={emailResendLoading}
       />
     ),
   };

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, ActivityIndicator, Modal, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
@@ -6,6 +6,12 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { COLORS } from '../constants/colors';
 import { YANDEX_MAPS_API_KEY } from '../constants/config';
+
+// Yandex API kaliti "afish.uz" domeniga bog'lab yaratilgan, lekin WebView xarita
+// HTML'ni to'g'ridan-to'g'ri matn sifatida (haqiqiy domensiz) yuklaydi —
+// shuning uchun geokoder so'rovlari "scriptError" bilan rad etilishi mumkin.
+// `baseUrl` WebView'ga shu domenni "sahifa manbai" sifatida beradi.
+const MAP_BASE_URL = 'https://dev.afish.uz/';
 
 const buildMapHtml = (initLat, initLng) => `
 <!DOCTYPE html>
@@ -39,11 +45,109 @@ const buildMapHtml = (initLat, initLng) => `
     }
   }
 
-  function goTo(lat, lng) {
+  function goTo(lat, lng, zoom) {
     var coords = [lat, lng];
     setPlacemark(coords);
-    myMap.setCenter(coords, 16);
+    myMap.setCenter(coords, zoom || 16);
     post(lat, lng);
+    reverseGeocode(lat, lng);
+  }
+
+  // Bosilgan/tanlangan nuqtani manzil matniga aylantiradi (ko'cha, tuman,
+  // viloyat) va formaga to'ldirish uchun RN tomonga yuboradi.
+  function reverseGeocode(lat, lng) {
+    if (typeof ymaps === 'undefined') {
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        debug: 'reverse_geocode_no_ymaps', lat: lat, lng: lng
+      }));
+      return;
+    }
+    ymaps.geocode([lat, lng], { results: 1 }).then(function (res) {
+      var obj = res.geoObjects.get(0);
+      if (!obj) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          debug: 'reverse_geocode_empty', lat: lat, lng: lng
+        }));
+        return;
+      }
+      var meta = obj.properties.get('metaDataProperty') || {};
+      var geocoderMeta = meta.GeocoderMetaData || {};
+      var addrComponents = (geocoderMeta.Address && geocoderMeta.Address.Components) || [];
+      var parts = {};
+      addrComponents.forEach(function (c) {
+        parts[c.kind] = c.name;
+      });
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        debug: 'reverse_geocode_ok', lat: lat, lng: lng, parts: parts
+      }));
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        addressResolved: true,
+        addressLine: geocoderMeta.text || obj.getAddressLine(),
+        street: parts.street || null,
+        house: parts.house || null,
+        district: parts.district || null,
+        locality: parts.locality || null,
+        area: parts.area || null,
+        province: parts.province || null
+      }));
+    }, function (err) {
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        debug: 'reverse_geocode_error', lat: lat, lng: lng, message: String(err && err.message)
+      }));
+    });
+  }
+
+  // Faqat ko'rinishni suradi — pin/placemark qo'ymaydi. Viloyat/tuman
+  // tanlangandagina xarita shu tomonga qaraydi, aniq nuqta hali belgilanmagan
+  // bo'ladi — foydalanuvchi bosgandagina (yoki "hozirgi joylashuv"da) pin chiqadi.
+  function panTo(lat, lng, zoom) {
+    myMap.setCenter([lat, lng], zoom || 10);
+  }
+
+  function panToSafe(lat, lng, zoom) {
+    if (!myMap) {
+      ymaps.ready(function () { panTo(lat, lng, zoom); });
+      return;
+    }
+    panTo(lat, lng, zoom);
+  }
+
+  function geocodeAndGoTo(query, zoom, drop) {
+    // Xarita/API hali tayyor bo'lmasligi mumkin (masalan modal ochilgach
+    // darrov tanlansa) — shu holatda ymaps.ready orqali navbatga qo'yamiz.
+    if (typeof ymaps === 'undefined' || !myMap) {
+      if (typeof ymaps !== 'undefined') {
+        ymaps.ready(function () { geocodeAndGoTo(query, zoom, drop); });
+      } else {
+        setTimeout(function () { geocodeAndGoTo(query, zoom, drop); }, 300);
+      }
+      return;
+    }
+    ymaps.geocode(query, { results: 1 }).then(function (res) {
+      var obj = res.geoObjects.get(0);
+      if (obj) {
+        var coords = obj.geometry.getCoordinates();
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          debug: 'geocode_ok', query: query, coords: coords
+        }));
+        // drop=true: aniq manzil qidiruvi — pin qo'yiladi (masalan ko'cha
+        // nomi kiritilganda). drop=false: faqat viloyat/tuman darajasida
+        // ko'rinishni surish, pin qo'yilmaydi.
+        if (drop) {
+          goTo(coords[0], coords[1], zoom);
+        } else {
+          panTo(coords[0], coords[1], zoom);
+        }
+      } else {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          debug: 'geocode_empty', query: query
+        }));
+      }
+    }, function (err) {
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        debug: 'geocode_error', query: query, message: String(err && err.message)
+      }));
+    });
   }
 
   ymaps.ready(function () {
@@ -51,6 +155,11 @@ const buildMapHtml = (initLat, initLng) => `
       center: [41.2995, 69.2401],
       zoom: 12,
       controls: ['zoomControl']
+    }, {
+      suppressMapOpenBlock: true,
+      copyrightLogoVisible: false,
+      copyrightProvidersVisible: false,
+      copyrightUaVisible: false
     });
 
     ${
@@ -63,6 +172,7 @@ const buildMapHtml = (initLat, initLng) => `
       var coords = e.get('coords');
       setPlacemark(coords);
       post(coords[0], coords[1]);
+      reverseGeocode(coords[0], coords[1]);
     });
   });
 </script>
@@ -79,6 +189,17 @@ export default function LocationMapPicker({
   lng,
   onChange,
   height = 220,
+  fill = false,
+  showExpand = true,
+  borderRadius = 18,
+  geocodeQuery,
+  geocodeZoom,
+  panLat,
+  panLng,
+  panZoom,
+  searchQuery,
+  searchZoom,
+  onAddressResolved,
   locateLabel,
   locatingLabel,
   tapHint,
@@ -116,18 +237,53 @@ export default function LocationMapPicker({
 
   const onMessage = (e) => {
     try {
-      const { lat: newLat, lng: newLng } = JSON.parse(e.nativeEvent.data);
-      onChange?.(newLat, newLng);
+      const data = JSON.parse(e.nativeEvent.data);
+      if (data.debug) {
+        console.log('[LocationMapPicker]', data.debug, data);
+        return;
+      }
+      if (data.addressResolved) {
+        onAddressResolved?.(data);
+        return;
+      }
+      onChange?.(data.lat, data.lng);
     } catch {}
   };
 
+  // Viloyat/tuman tanlanganda WebView'ni qayta yuklamasdan, Yandex'ning o'z
+  // geokoderi orqali shu manzilga markazni suradi (backend koordinata bermaydi).
+  // Pin qo'yilmaydi — faqat ko'rinish suriladi.
+  useEffect(() => {
+    if (!geocodeQuery) return;
+    const js = `geocodeAndGoTo(${JSON.stringify(geocodeQuery)}, ${geocodeZoom || 13}, false); true;`;
+    webRef.current?.injectJavaScript(js);
+  }, [geocodeQuery, geocodeZoom]);
+
+  // Foydalanuvchi ko'cha/manzil matnini kiritganda (masalan qidiruv orqali) —
+  // aniq nuqta bo'lgani uchun pin ham qo'yiladi va manzil qayta tasdiqlanadi.
+  useEffect(() => {
+    if (!searchQuery) return;
+    const js = `geocodeAndGoTo(${JSON.stringify(searchQuery)}, ${searchZoom || 16}, true); true;`;
+    webRef.current?.injectJavaScript(js);
+  }, [searchQuery, searchZoom]);
+
+  // Faqat ko'rinishni suradi, pin qo'ymaydi — viloyat/tuman tanlanganda
+  // ishlatiladi (aniq zaxira koordinatalar bilan). Primitivlar orqali —
+  // obyekt bo'lsa har renderda yangi reference hosil bo'lib, effekt
+  // keraksiz qayta ishga tushib ketardi.
+  useEffect(() => {
+    if (panLat == null || panLng == null) return;
+    const js = `panToSafe(${panLat}, ${panLng}, ${panZoom || 10}); true;`;
+    webRef.current?.injectJavaScript(js);
+  }, [panLat, panLng, panZoom]);
+
   return (
     <>
-      <View style={[styles.wrap, { height }]}>
+      <View style={[styles.wrap, fill ? { flex: 1 } : { height }, { borderRadius }]}>
         <WebView
           ref={webRef}
           style={styles.map}
-          source={{ html: buildMapHtml(lat, lng) }}
+          source={{ html: buildMapHtml(lat, lng), baseUrl: MAP_BASE_URL }}
           onMessage={onMessage}
           javaScriptEnabled
           originWhitelist={['*']}
@@ -141,13 +297,15 @@ export default function LocationMapPicker({
         )}
 
         <View style={styles.btnRow}>
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={() => setFullscreen(true)}
-            activeOpacity={0.85}
-          >
-            <Ionicons name="expand" size={16} color="#fff" />
-          </TouchableOpacity>
+          {showExpand && (
+            <TouchableOpacity
+              style={styles.iconBtn}
+              onPress={() => setFullscreen(true)}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="expand" size={16} color="#fff" />
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
             style={styles.locateBtn}
             onPress={() => locate(webRef)}
@@ -177,7 +335,7 @@ export default function LocationMapPicker({
           <WebView
             ref={fullRef}
             style={styles.fullMap}
-            source={{ html: buildMapHtml(lat, lng) }}
+            source={{ html: buildMapHtml(lat, lng), baseUrl: MAP_BASE_URL }}
             onMessage={onMessage}
             javaScriptEnabled
             originWhitelist={['*']}
