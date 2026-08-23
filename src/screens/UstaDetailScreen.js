@@ -212,6 +212,7 @@ export default function UstaDetailScreen({
   usta,
   onBack,
   onGoToLogin,
+  onOrderWorker,
   isLoggedIn = false,
 }) {
   const insets = useSafeAreaInsets();
@@ -384,6 +385,19 @@ export default function UstaDetailScreen({
     (next ? likeWorker(workerId) : unlikeWorker(workerId))
       .catch(() => setLiked(!next))
       .finally(() => setLikeSubmitting(false));
+  };
+
+  const handleOrderThisWorker = () => {
+    const workerId = usta?.id ?? detail?.id;
+    if (!workerId) return;
+    onOrderWorker?.({
+      id: workerId,
+      name,
+      trade,
+      bgColor,
+      initial,
+      categoryId: detail?.mainCategoryId ?? null,
+    });
   };
 
   if (selectedWork) {
@@ -994,7 +1008,7 @@ export default function UstaDetailScreen({
         <TouchableOpacity
           style={st.callBtn}
           activeOpacity={0.85}
-          onPress={isLoggedIn ? undefined : onGoToLogin}
+          onPress={isLoggedIn ? handleOrderThisWorker : onGoToLogin}
         >
           <MaterialCommunityIcons
             name="lightning-bolt"

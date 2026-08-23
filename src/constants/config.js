@@ -1,6 +1,7 @@
 export const API_BASE_URL = 'https://dev-back.afish.uz';
 
 export const YANDEX_MAPS_API_KEY = 'e9e77baf-a133-46b1-9f59-055744b55c57';
+export const YANDEX_GEOCODER_API_KEY = 'ca902206-f8b0-42a0-8ba2-9ae813f026d8';
 
 export const ENDPOINTS = {
   AUTH_GOOGLE_LOGIN: `${API_BASE_URL}/api/v1/auth/google/login`,
@@ -41,6 +42,7 @@ export const ENDPOINTS = {
   CUSTOMER_AVATAR_UPLOAD_URL: `${API_BASE_URL}/api/v1/customers/me/avatar/upload-url`,
   CUSTOMER_AVATAR_CONFIRM: `${API_BASE_URL}/api/v1/customers/me/avatar/confirm`,
   CUSTOMER_AVATAR: `${API_BASE_URL}/api/v1/customers/me/avatar`,
+  ORDERS: `${API_BASE_URL}/api/v1/orders`,
 };
 // https://engraver-garnet-scalded.ngrok-free.dev
 // http://10.240.8.109:9494

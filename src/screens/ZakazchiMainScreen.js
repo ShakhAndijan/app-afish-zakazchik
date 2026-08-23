@@ -828,6 +828,8 @@ function SectionLoader({ height = 140 }) {
 
 export default function ZakazchiMainScreen({ onLogout }) {
   const [activeTab, setActiveTab] = useState('home');
+  const [justCreatedOrder, setJustCreatedOrder] = useState(null);
+  const [orderTargetWorker, setOrderTargetWorker] = useState(null);
   const [selectedUsta, setSelectedUsta] = useState(null);
   const [selectedWork, setSelectedWork] = useState(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
@@ -938,6 +940,11 @@ export default function ZakazchiMainScreen({ onLogout }) {
       <UstaDetailScreen
         usta={selectedUsta}
         onBack={() => setSelectedUsta(null)}
+        onOrderWorker={(worker) => {
+          setOrderTargetWorker(worker);
+          setSelectedUsta(null);
+          setActiveTab('newOrder');
+        }}
         isLoggedIn
       />
     );
@@ -960,11 +967,32 @@ export default function ZakazchiMainScreen({ onLogout }) {
   }
 
   if (activeTab === 'services') {
-    return <XizmatlarScreen activeTab={activeTab} onTabChange={setActiveTab} />;
+    return (
+      <XizmatlarScreen
+        activeTab={activeTab}
+        onTabChange={(tab) => {
+          setOrderTargetWorker(null);
+          setActiveTab(tab);
+        }}
+        onOrderWorker={(worker) => {
+          setOrderTargetWorker(worker);
+          setActiveTab('newOrder');
+        }}
+      />
+    );
   }
 
   if (activeTab === 'newOrder') {
-    return <NewOrderScreen onTabChange={setActiveTab} />;
+    return (
+      <NewOrderScreen
+        onTabChange={(tab) => {
+          setOrderTargetWorker(null);
+          setActiveTab(tab);
+        }}
+        onOrderCreated={setJustCreatedOrder}
+        targetWorker={orderTargetWorker}
+      />
+    );
   }
 
   return (
@@ -1088,6 +1116,48 @@ export default function ZakazchiMainScreen({ onLogout }) {
                   color="#fff"
                   style={{ marginLeft: 8 }}
                 />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {!!justCreatedOrder && (
+          <View style={{ paddingHorizontal: 20, marginTop: 6 }}>
+            <View
+              style={[
+                s.successCard,
+                { backgroundColor: t.card, borderColor: 'rgba(31,163,124,0.35)' },
+              ]}
+            >
+              <View style={[s.successIconWrap, { backgroundColor: '#1FA37C' }]}>
+                <MaterialCommunityIcons name="check" size={18} color="#fff" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontWeight: '700', fontSize: 14, color: t.text }}>
+                  {tr('zakazchiMain.newOrderSuccess.title')}
+                </Text>
+                {!!justCreatedOrder.category && (
+                  <Text
+                    style={{ fontSize: 12.5, color: t.muted, marginTop: 3 }}
+                    numberOfLines={1}
+                  >
+                    {justCreatedOrder.category}
+                  </Text>
+                )}
+                {!!justCreatedOrder.address && (
+                  <Text
+                    style={{ fontSize: 12, color: t.muted, marginTop: 1 }}
+                    numberOfLines={1}
+                  >
+                    {justCreatedOrder.address}
+                  </Text>
+                )}
+              </View>
+              <TouchableOpacity
+                onPress={() => setJustCreatedOrder(null)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <MaterialCommunityIcons name="close" size={16} color={t.muted} />
               </TouchableOpacity>
             </View>
           </View>
@@ -1366,6 +1436,21 @@ const s = StyleSheet.create({
     borderColor: 'rgba(232,122,69,0.32)',
     borderRadius: 18,
     padding: 15,
+  },
+  successCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 14,
+  },
+  successIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   pulseDot: {
     width: 8,

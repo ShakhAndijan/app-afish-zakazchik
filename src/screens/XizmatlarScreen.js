@@ -186,7 +186,7 @@ function PopularCategories({ categories, onSelect, styles }) {
 
 // ─── Ekran ─────────────────────────────────────────────────────
 
-export default function XizmatlarScreen({ activeTab, onTabChange }) {
+export default function XizmatlarScreen({ activeTab, onTabChange, onOrderWorker }) {
   const { height: windowH } = useWindowDimensions();
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
@@ -339,6 +339,10 @@ export default function XizmatlarScreen({ activeTab, onTabChange }) {
       <UstaDetailScreen
         usta={profileMaster}
         onBack={() => setProfileMaster(null)}
+        onOrderWorker={(worker) => {
+          setProfileMaster(null);
+          onOrderWorker?.(worker);
+        }}
         isLoggedIn
       />
     );
