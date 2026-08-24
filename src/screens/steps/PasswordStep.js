@@ -1,6 +1,6 @@
 import {
   View, Text, StyleSheet, ActivityIndicator,
-  KeyboardAvoidingView, Platform, ScrollView,
+  KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -83,6 +83,16 @@ export default function PasswordStep({
             </Text>
           </View>
 
+          <View style={styles.securityCard}>
+            <View style={styles.securityIcon}>
+              <Ionicons name="shield-checkmark" size={18} color={COLORS.success} />
+            </View>
+            <View style={styles.securityTextWrap}>
+              <Text style={styles.securityTitle}>{t('login.passwordStep.securityTitle')}</Text>
+              <Text style={styles.securityText}>{t('login.passwordStep.securityText')}</Text>
+            </View>
+          </View>
+
           {!!error && <Text style={styles.errorText}>{error}</Text>}
 
           <PrimaryBtn
@@ -93,6 +103,13 @@ export default function PasswordStep({
           />
 
           <Text style={styles.note}>{t('login.passwordStep.note')}</Text>
+
+          <View style={styles.altRow}>
+            <Text style={styles.altHint}>{t('login.passwordStep.altCodeHint')}</Text>
+            <TouchableOpacity onPress={onBack} activeOpacity={0.7}>
+              <Text style={styles.altLink}>{t('login.passwordStep.altCodeLink')}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -163,6 +180,36 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     fontWeight: '600',
   },
+  securityCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: COLORS.card,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  securityIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(47,163,122,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  securityTextWrap: { flex: 1, gap: 2 },
+  securityTitle: {
+    color: COLORS.white,
+    fontSize: 13.5,
+    fontWeight: '700',
+  },
+  securityText: {
+    color: COLORS.muted,
+    fontSize: 12,
+    lineHeight: 16,
+  },
   errorText: {
     color: '#e0473a',
     fontSize: 13,
@@ -174,5 +221,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 17,
     textAlign: 'center',
+  },
+  altRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  altHint: {
+    color: COLORS.muted,
+    fontSize: 13,
+  },
+  altLink: {
+    color: COLORS.orange,
+    fontSize: 13,
+    fontWeight: '700',
   },
 });

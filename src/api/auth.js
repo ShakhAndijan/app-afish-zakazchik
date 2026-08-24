@@ -83,15 +83,16 @@ export async function startCustomerAuth(identifier, channel = 'sms') {
 }
 
 /**
- * Kodni tasdiqlaydi. Uch xil natija bo'lishi mumkin (AuthVerifyOut):
+ * Kodni tasdiqlaydi. Ikki xil natija bo'lishi mumkin (AuthVerifyOut):
  * - hisob mavjud: access_token/refresh_token qaytadi, shu bilan kirish tugaydi;
- * - status: 'needs_name' — hisob topilmadi, `ticket` qaytadi (tasdiqlangan
- *   kodning isboti), keyingi qadamda ism-familiya so'rab completeCustomerAuth
- *   chaqiriladi;
- * - `other_actor` maydoni to'ldirilgan bo'lsa — bu identifikator boshqa turdagi
- *   hisobga (masalan usta) tegishli, mijoz sifatida ro'yxatdan o'tish
- *   so'ralmaydi, `ticket` bilan claimCustomerAuth chaqiriladi.
- * @returns {Promise<{ access_token: string|null, refresh_token: string|null, status?: string, other_actor?: unknown, ticket?: string }>}
+ * - hisob topilmadi (`status: 'needs_name'`), `ticket` qaytadi (tasdiqlangan
+ *   kodning isboti). Agar shu bilan birga `suggested_first_name`/
+ *   `suggested_last_name` ham qaytgan bo'lsa (masalan avval usta sifatida
+ *   ro'yxatdan o'tgan bo'lsa, ismi ma'lum), foydalanuvchidan qayta
+ *   so'ramasdan shu qiymatlar bilan completeCustomerAuth avtomatik
+ *   chaqiriladi; aks holda ism-familiya so'raladi va shu bilan
+ *   completeCustomerAuth chaqiriladi.
+ * @returns {Promise<{ access_token: string|null, refresh_token: string|null, status?: string, ticket?: string, suggested_first_name?: string, suggested_last_name?: string }>}
  */
 export async function verifyCustomerAuth(identifier, code) {
   logReq('verifyCustomerAuth', { identifier, code });
@@ -107,30 +108,6 @@ export async function verifyCustomerAuth(identifier, code) {
   }
   const data = await res.json();
   logOk('verifyCustomerAuth', data.response_data);
-  return data.response_data;
-}
-
-/**
- * `other_actor` natijasidan keyin: bu identifikator boshqa turdagi hisobga
- * (masalan usta) tegishli bo'lsa-da, foydalanuvchi "ha, shu mening raqamim,
- * mijoz sifatida ham kiraman" desa chaqiriladi. Ism qayta so'ralmaydi — u
- * allaqachon boshqa hisobdan ma'lum.
- * @returns {Promise<{ access_token: string, refresh_token: string, already_registered: boolean }>}
- */
-export async function claimCustomerAuth(ticket) {
-  logReq('claimCustomerAuth', { ticket });
-  const res = await fetch(ENDPOINTS.AUTH_CUSTOMER_CLAIM, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ticket }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    logErr('claimCustomerAuth', err);
-    throw new Error(err.message || 'Hisobga kirishda xatolik yuz berdi');
-  }
-  const data = await res.json();
-  logOk('claimCustomerAuth', data.response_data);
   return data.response_data;
 }
 

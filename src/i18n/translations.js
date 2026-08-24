@@ -87,6 +87,10 @@ export const translations = {
         title: 'Parol bilan kirish',
         subtitle: "Kod so'ramasdan, to'g'ridan-to'g'ri parol bilan kiring.",
         note: "Parolni faqat siz bilasiz. Boshqa hech kimga bermang.",
+        securityTitle: "Ma'lumotlaringiz himoyalangan",
+        securityText: "Parolingiz shifrlangan holda saqlanadi va faqat sizga tegishli bo'lib qoladi.",
+        altCodeHint: 'Parolni eslay olmayapsizmi?',
+        altCodeLink: 'SMS kod orqali kiring',
       },
       codeStep: {
         title: 'Tasdiqlash kodi',
@@ -96,6 +100,7 @@ export const translations = {
         resendIn: 'Qayta yuborish',
         resendNow: 'Kodni qayta yuborish',
         altLogin: "Boshqa yo'l orqali kirish",
+        altLoginHint: 'Parolingiz bormi? Undan foydalanib tezroq kiring.',
       },
       newPasswordStep: {
         title: 'Yangi parol',
@@ -913,6 +918,10 @@ export const translations = {
         title: 'Вход по паролю',
         subtitle: 'Без кода — войдите сразу по паролю.',
         note: 'Пароль знаете только вы. Никому его не сообщайте.',
+        securityTitle: 'Ваши данные защищены',
+        securityText: 'Пароль хранится в зашифрованном виде и известен только вам.',
+        altCodeHint: 'Не помните пароль?',
+        altCodeLink: 'Войти по SMS-коду',
       },
       codeStep: {
         title: 'Код подтверждения',
@@ -922,6 +931,7 @@ export const translations = {
         resendIn: 'Отправить снова',
         resendNow: 'Отправить код снова',
         altLogin: 'Войти другим способом',
+        altLoginHint: 'Есть пароль? Используйте его для более быстрого входа.',
       },
       newPasswordStep: {
         title: 'Новый пароль',
@@ -1739,6 +1749,10 @@ export const translations = {
         title: 'Log in with password',
         subtitle: 'Skip the code — log in with your password instead.',
         note: 'Only you know your password. Never share it with anyone.',
+        securityTitle: 'Your data is protected',
+        securityText: 'Your password is stored encrypted and stays known only to you.',
+        altCodeHint: "Can't remember your password?",
+        altCodeLink: 'Log in with SMS code',
       },
       codeStep: {
         title: 'Verification code',
@@ -1748,6 +1762,7 @@ export const translations = {
         resendIn: 'Resend in',
         resendNow: 'Resend code',
         altLogin: 'Log in another way',
+        altLoginHint: 'Have a password? Use it to log in faster.',
       },
       newPasswordStep: {
         title: 'New password',

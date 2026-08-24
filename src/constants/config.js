@@ -9,7 +9,6 @@ export const ENDPOINTS = {
   AUTH_CUSTOMER_START: `${API_BASE_URL}/api/v1/auth/customer/start`,
   AUTH_CUSTOMER_VERIFY: `${API_BASE_URL}/api/v1/auth/customer/verify`,
   AUTH_CUSTOMER_COMPLETE: `${API_BASE_URL}/api/v1/auth/customer/complete`,
-  AUTH_CUSTOMER_CLAIM: `${API_BASE_URL}/api/v1/auth/customer/claim`,
   AUTH_ME: `${API_BASE_URL}/api/v1/auth/me`,
   AUTH_SET_PASSWORD: `${API_BASE_URL}/api/v1/auth/set-password`,
   AUTH_CHANGE_PHONE_REQUEST_OTP: `${API_BASE_URL}/api/v1/auth/change-phone/request-otp`,

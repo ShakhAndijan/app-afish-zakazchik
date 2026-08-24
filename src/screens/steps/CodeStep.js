@@ -1,11 +1,14 @@
-import { View, Text, Image, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, Image, StyleSheet, ActivityIndicator, AppState } from 'react-native';
 import { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 
 import { COLORS } from '../../constants/colors';
 import { useLanguage } from '../../context/LanguageContext';
 import BackBtn from '../../components/login/BackBtn';
 import OtpInput from '../../components/login/OtpInput';
 import PrimaryBtn from '../../components/login/PrimaryBtn';
+
+const RESEND_SECONDS = 60;
 
 const formatPhone = (raw = '') => {
   const d = raw.replace(/\D/g, '').slice(0, 9);
@@ -25,24 +28,37 @@ export default function CodeStep({
   devCode,
   onResend,
   resendLoading,
+  resendError,
   confirmLoading,
   error,
   onAltLogin,
 }) {
   const { t } = useLanguage();
   const [code, setCode] = useState('');
-  const [timer, setTimer] = useState(60);
+  const [deadline, setDeadline] = useState(() => Date.now() + RESEND_SECONDS * 1000);
+  const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
-    if (timer === 0) return;
-    const id = setTimeout(() => setTimer(t => t - 1), 1000);
-    return () => clearTimeout(id);
-  }, [timer]);
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    // Ilova fonga ketib qaytganda taymer to'xtab qolgani uchun (setInterval
+    // background'da ishlamaydi) — foregroundga qaytganda haqiqiy vaqtga
+    // qarab darhol qayta hisoblaymiz.
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') setNow(Date.now());
+    });
+    return () => sub.remove();
+  }, []);
+
+  const timer = Math.max(0, Math.ceil((deadline - now) / 1000));
 
   const handleBack = () => { setCode(''); onBack(); };
   const resend = async () => {
     setCode('');
-    setTimer(60);
+    setDeadline(Date.now() + RESEND_SECONDS * 1000);
     if (onResend) await onResend();
   };
 
@@ -70,6 +86,7 @@ export default function CodeStep({
       <OtpInput value={code} onChange={setCode} length={6} />
 
       {!!error && <Text style={styles.errorText}>{error}</Text>}
+      {!!resendError && <Text style={styles.errorText}>{resendError}</Text>}
 
       {!!devCode && (
         <Text style={styles.devCode}>
@@ -95,9 +112,17 @@ export default function CodeStep({
       />
 
       {!!onAltLogin && (
-        <Text style={styles.altLogin} onPress={onAltLogin}>
-          {t('login.codeStep.altLogin')}
-        </Text>
+        <View style={styles.altLoginCard}>
+          <View style={styles.altLoginIcon}>
+            <Ionicons name="key-outline" size={18} color={COLORS.orange} />
+          </View>
+          <View style={styles.altLoginTextWrap}>
+            <Text style={styles.altLogin} onPress={onAltLogin}>
+              {t('login.codeStep.altLogin')}
+            </Text>
+            <Text style={styles.altLoginHint}>{t('login.codeStep.altLoginHint')}</Text>
+          </View>
+        </View>
       )}
     </View>
   );
@@ -163,11 +188,35 @@ const styles = StyleSheet.create({
     color: COLORS.orange,
     fontWeight: '700',
   },
+  altLoginCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: COLORS.card,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginTop: -6,
+  },
+  altLoginIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(232,122,69,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  altLoginTextWrap: { flex: 1, gap: 2 },
   altLogin: {
     color: COLORS.orange,
     fontWeight: '700',
     fontSize: 13.5,
-    textAlign: 'center',
-    marginTop: -6,
+  },
+  altLoginHint: {
+    color: COLORS.muted,
+    fontSize: 12,
+    lineHeight: 16,
   },
 });

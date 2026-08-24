@@ -17,7 +17,6 @@ import Feather from '@expo/vector-icons/Feather';
 import { COLORS } from './src/constants/colors';
 import { ENDPOINTS } from './src/constants/config';
 import LoginScreen from './src/screens/LoginScreen';
-import UstaMainScreen from './src/screens/UstaMainScreen';
 import ZakazchiMainScreen from './src/screens/ZakazchiMainScreen';
 import UstaDetailScreen from './src/screens/UstaDetailScreen';
 import { ThemeProvider } from './src/context/ThemeContext';
@@ -25,7 +24,12 @@ import { UserProvider, clearCachedUser } from './src/context/UserContext';
 import { getCategories } from './src/api/categories';
 import { getWorkers } from './src/api/workers';
 import { getTopComments, getTopOrders } from './src/api/reviews';
-import { unlockToken, hasStoredSession, getActorType, clearTokens } from './src/utils/token';
+import {
+  unlockToken,
+  hasStoredSession,
+  getActorType,
+  clearTokens,
+} from './src/utils/token';
 import AfishLoader from './src/components/AfishLoader';
 import { LanguageProvider, useLanguage } from './src/context/LanguageContext';
 
@@ -201,7 +205,9 @@ function EngZorUstalar({ onSelectUsta }) {
               <Text style={eu.loc}>{worker.location}</Text>
             </View>
             <Text style={eu.price}>
-              {t('app.engZorUstalar.priceFrom', { price: worker.startingPrice })}
+              {t('app.engZorUstalar.priceFrom', {
+                price: worker.startingPrice,
+              })}
             </Text>
           </View>
 
@@ -1065,7 +1071,10 @@ function AppShell() {
     return (
       <SafeAreaProvider>
         <StatusBar style="light" />
-        <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
+        <SafeAreaView
+          style={styles.safeArea}
+          edges={['top', 'left', 'right', 'bottom']}
+        >
           <View
             style={{
               flex: 1,
@@ -1085,12 +1094,30 @@ function AppShell() {
                 justifyContent: 'center',
               }}
             >
-              <MaterialCommunityIcons name="fingerprint" size={44} color={COLORS.orange} />
+              <MaterialCommunityIcons
+                name="fingerprint"
+                size={44}
+                color={COLORS.orange}
+              />
             </View>
-            <Text style={{ color: COLORS.white, fontSize: 17, fontWeight: '800', textAlign: 'center' }}>
+            <Text
+              style={{
+                color: COLORS.white,
+                fontSize: 17,
+                fontWeight: '800',
+                textAlign: 'center',
+              }}
+            >
               {t('app.lock.title')}
             </Text>
-            <Text style={{ color: COLORS.muted, fontSize: 13.5, textAlign: 'center', lineHeight: 19 }}>
+            <Text
+              style={{
+                color: COLORS.muted,
+                fontSize: 13.5,
+                textAlign: 'center',
+                lineHeight: 19,
+              }}
+            >
               {t('app.lock.subtitle')}
             </Text>
             <TouchableOpacity
@@ -1106,12 +1133,24 @@ function AppShell() {
                 opacity: unlocking ? 0.7 : 1,
               }}
             >
-              <Text style={{ color: '#fff', fontSize: 14.5, fontWeight: '700' }}>
+              <Text
+                style={{ color: '#fff', fontSize: 14.5, fontWeight: '700' }}
+              >
                 {unlocking ? t('app.lock.checking') : t('app.lock.retry')}
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleAbandonSession} activeOpacity={0.7} style={{ marginTop: 4 }}>
-              <Text style={{ color: COLORS.faint, fontSize: 12.5, fontWeight: '600' }}>
+            <TouchableOpacity
+              onPress={handleAbandonSession}
+              activeOpacity={0.7}
+              style={{ marginTop: 4 }}
+            >
+              <Text
+                style={{
+                  color: COLORS.faint,
+                  fontSize: 12.5,
+                  fontWeight: '600',
+                }}
+              >
                 {t('app.lock.useOtherAccount')}
               </Text>
             </TouchableOpacity>
@@ -1160,15 +1199,6 @@ function AppShell() {
     await clearCachedUser();
     setScreen('home');
   };
-
-  if (screen === 'usta-dashboard') {
-    return (
-      <SafeAreaProvider>
-        <StatusBar style="light" />
-        <UstaMainScreen onLogout={handleLogout} />
-      </SafeAreaProvider>
-    );
-  }
 
   if (screen === 'zakazchi-dashboard') {
     return (

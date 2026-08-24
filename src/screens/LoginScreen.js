@@ -10,7 +10,6 @@ import {
   startCustomerAuth,
   verifyCustomerAuth,
   completeCustomerAuth,
-  claimCustomerAuth,
   requestResetPasswordOtp,
   verifyResetPasswordOtp,
 } from '../api/auth';
@@ -22,7 +21,6 @@ import ForgotPasswordStep from './steps/ForgotPasswordStep';
 import CodeStep from './steps/CodeStep';
 import NewPasswordStep from './steps/NewPasswordStep';
 import CompleteProfileStep from './steps/CompleteProfileStep';
-import OtherActorStep from './steps/OtherActorStep';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -57,8 +55,6 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
   const [verifyError, setVerifyError] = useState('');
   const [completeLoading, setCompleteLoading] = useState(false);
   const [completeError, setCompleteError] = useState('');
-  const [claimLoading, setClaimLoading] = useState(false);
-  const [claimError, setClaimError] = useState('');
 
   const finishLogin = async (data) => {
     if (data?.access_token) await saveToken(data.access_token);
@@ -72,6 +68,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
       setOtpChannel(channel);
       setOtpLoading(true);
       setOtpError('');
+      setVerifyError('');
       const data = await startCustomerAuth(buildIdentifier(identifier), channel);
       setDevCode(data?.dev_code || '');
       setStep('code');
@@ -90,14 +87,20 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
       console.log('[login] verify status:', data?.status, data);
       if (data?.access_token) {
         await finishLogin(data);
+      } else if (data?.suggested_first_name && data?.suggested_last_name) {
+        // Ism-familiya boshqa hisobdan (masalan usta sifatida avval ro'yxatdan
+        // o'tgan bo'lsa) allaqachon ma'lum — foydalanuvchidan qayta so'ramasdan
+        // avtomatik /complete chaqirib kirgazamiz.
+        const completed = await completeCustomerAuth(
+          data?.ticket || '',
+          data.suggested_first_name,
+          data.suggested_last_name
+        );
+        await finishLogin(completed);
       } else if (data?.status === 'needs_name') {
         setTicket(data?.ticket || '');
         setCompleteError('');
         setStep('completeProfile');
-      } else if (data?.other_actor || data?.status === 'other_actor') {
-        setTicket(data?.ticket || '');
-        setClaimError('');
-        setStep('otherActor');
       } else {
         setVerifyError(t('login.errors.loginFailed'));
       }
@@ -118,19 +121,6 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
       setCompleteError(e.message || t('login.registerStep.errors.finishFailed'));
     } finally {
       setCompleteLoading(false);
-    }
-  };
-
-  const handleClaim = async () => {
-    try {
-      setClaimLoading(true);
-      setClaimError('');
-      const data = await claimCustomerAuth(ticket);
-      await finishLogin(data);
-    } catch (e) {
-      setClaimError(e.message || t('login.errors.loginFailed'));
-    } finally {
-      setClaimLoading(false);
     }
   };
 
@@ -236,6 +226,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
         onConfirm={handleVerifyOtp}
         confirmLoading={verifyLoading}
         error={verifyError}
+        resendError={otpError}
         onResend={() => handleRequestOtp(otpChannel)}
         resendLoading={otpLoading}
         onAltLogin={identifierMode === 'phone' ? () => {
@@ -269,14 +260,6 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
         onSubmit={handleCompleteProfile}
         loading={completeLoading}
         error={completeError}
-      />
-    ),
-    otherActor: (
-      <OtherActorStep
-        onBack={() => setStep('code')}
-        onConfirm={handleClaim}
-        loading={claimLoading}
-        error={claimError}
       />
     ),
     forgot: (
