@@ -21,6 +21,7 @@ import ZakazchiMainScreen from './src/screens/ZakazchiMainScreen';
 import UstaDetailScreen from './src/screens/UstaDetailScreen';
 import { ThemeProvider } from './src/context/ThemeContext';
 import { UserProvider, clearCachedUser } from './src/context/UserContext';
+import { WalletProvider } from './src/context/WalletContext';
 import { getCategories } from './src/api/categories';
 import { getWorkers } from './src/api/workers';
 import { getTopComments, getTopOrders } from './src/api/reviews';
@@ -1204,9 +1205,11 @@ function AppShell() {
     return (
       <ThemeProvider>
         <UserProvider>
-          <SafeAreaProvider>
-            <ZakazchiMainScreen onLogout={handleLogout} />
-          </SafeAreaProvider>
+          <WalletProvider>
+            <SafeAreaProvider>
+              <ZakazchiMainScreen onLogout={handleLogout} />
+            </SafeAreaProvider>
+          </WalletProvider>
         </UserProvider>
       </ThemeProvider>
     );

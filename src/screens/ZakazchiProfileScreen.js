@@ -18,6 +18,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useUser } from '../context/UserContext';
+import { useWallet } from '../context/WalletContext';
 import { getAvatarUploadUrl, confirmAvatar, deleteAvatar } from '../api/user';
 import { uploadImageToPresignedUrl } from '../api/auth';
 import ZakazchiHelpScreen from './ZakazchiHelpScreen';
@@ -26,6 +27,7 @@ import ZakazchiOrdersScreen from './ZakazchiOrdersScreen';
 import ChangePasswordScreen from './ChangePasswordScreen';
 import EditProfileScreen from './EditProfileScreen';
 import PaymentHistoryScreen from './PaymentHistoryScreen';
+import WalletScreen from './WalletScreen';
 import ChangePhoneScreen from './ChangePhoneScreen';
 import TilBottomSheet, { LANGS } from '../components/TilBottomSheet';
 import AvatarPickerSheet from '../components/AvatarPickerSheet';
@@ -46,6 +48,8 @@ const formatPhoneDisplay = (raw = '') => {
 // Android'dagi Image (Fresco/OkHttp) kodlanmagan "+" belgisini URL'da
 // noto'g'ri talqin qilib, rasmni yuklolmasligi mumkin — shu sababli xavfsiz kodlaymiz.
 const encodeImageUri = (uri) => (uri ? uri.replace(/\+/g, '%2B') : uri);
+
+const fmt = (n) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
 function Avatar({ letter = 'J', size = 80, bgColor, uri }) {
   return (
@@ -148,6 +152,7 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
   const { theme: t, toggleTheme } = useTheme();
   const { language: lang, setLanguage: setLang, t: tr } = useLanguage();
   const { user, refreshUser } = useUser();
+  const { balance } = useWallet();
   const [screen, setScreen] = useState('profile');
   const [showTil, setShowTil] = useState(false);
   const [avatarUri, setAvatarUri] = useState(null);
@@ -236,6 +241,10 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
 
   if (screen === 'paymentHistory') {
     return <PaymentHistoryScreen onBack={() => setScreen('profile')} />;
+  }
+
+  if (screen === 'wallet') {
+    return <WalletScreen onBack={() => setScreen('profile')} />;
   }
 
   if (screen === 'changePhone') {
@@ -494,7 +503,11 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
 
         {/* ── Hamyon + sodiqlik darajasi ── */}
         <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
-          <View style={[s.walletCard, { overflow: 'hidden' }]}>
+          <TouchableOpacity
+            style={[s.walletCard, { overflow: 'hidden' }]}
+            activeOpacity={0.9}
+            onPress={() => setScreen('wallet')}
+          >
             <View style={s.walletCircle} />
             <View
               style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}
@@ -516,7 +529,7 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
                     marginTop: 2,
                   }}
                 >
-                  120 000{' '}
+                  {fmt(balance)}{' '}
                   <Text
                     style={{ fontSize: 12, fontWeight: '600', opacity: 0.85 }}
                   >
@@ -524,7 +537,11 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
                   </Text>
                 </Text>
               </View>
-              <TouchableOpacity style={s.topupBtn} activeOpacity={0.8}>
+              <TouchableOpacity
+                style={s.topupBtn}
+                activeOpacity={0.8}
+                onPress={() => setScreen('wallet')}
+              >
                 <Text
                   style={{
                     color: t.orangeD,
@@ -573,7 +590,7 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
                 <View style={[s.progressFill, { width: '70%' }]} />
               </View>
             </View>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* ── Asosiy menyu ── */}

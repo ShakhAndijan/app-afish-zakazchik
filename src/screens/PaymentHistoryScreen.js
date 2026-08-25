@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Feather from '@expo/vector-icons/Feather';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useWallet } from '../context/WalletContext';
 
 const fmt = (n) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
@@ -37,123 +38,6 @@ const getStatusCfg = (tr) => ({
   failed: { ...STATUS_META.failed, label: tr('paymentHistory.status.failed') },
 });
 
-const TRANSACTIONS = [
-  {
-    id: 't1',
-    type: 'master_payment',
-    title: 'Davron M.',
-    subtitle: "Santexnik · Santexnika ta'mirlash",
-    amount: 180000,
-    direction: 'out',
-    day: 5,
-    month: 'Iyun',
-    time: '10:35',
-    method: 'Karta · Humo ··42',
-    status: 'success',
-    letter: 'D',
-    color: '#2fa37a',
-  },
-  {
-    id: 't2',
-    type: 'master_payment',
-    title: 'Alisher U.',
-    subtitle: 'Elektrik · Elektr simlari almashtirish',
-    amount: 250000,
-    direction: 'out',
-    day: 28,
-    month: 'May',
-    time: '14:05',
-    method: 'Naqd pul',
-    status: 'success',
-    letter: 'A',
-    color: '#e87a45',
-  },
-  {
-    id: 't3',
-    type: 'refund',
-    title: 'Bekor qilingan buyurtma uchun qaytarish',
-    subtitle: "Bobur K. · Bo'yoqchi",
-    amount: 320000,
-    direction: 'in',
-    day: 20,
-    month: 'May',
-    time: '09:20',
-    method: 'Karta · Humo ··42',
-    status: 'success',
-  },
-  {
-    id: 't4',
-    type: 'master_payment',
-    title: 'Sardor T.',
-    subtitle: 'Plitachi · Parket yotqizish',
-    amount: 450000,
-    direction: 'out',
-    day: 12,
-    month: 'May',
-    time: '11:10',
-    method: 'Karta · Uzcard ··18',
-    status: 'success',
-    letter: 'S',
-    color: '#9b6cd1',
-  },
-  {
-    id: 't5',
-    type: 'topup',
-    title: "Hamyonni to'ldirish",
-    subtitle: 'AFISH.uz hamyon',
-    amount: 300000,
-    direction: 'in',
-    day: 8,
-    month: 'May',
-    time: '19:40',
-    method: 'Karta · Humo ··42',
-    status: 'success',
-  },
-  {
-    id: 't6',
-    type: 'master_payment',
-    title: 'Jahongir R.',
-    subtitle: "Konditsioner · Konditsioner o'rnatish",
-    amount: 200000,
-    direction: 'out',
-    day: 3,
-    month: 'Aprel',
-    time: '15:45',
-    method: 'Naqd pul',
-    status: 'success',
-    letter: 'J',
-    color: '#f5a623',
-  },
-  {
-    id: 't7',
-    type: 'topup',
-    title: "Hamyonni to'ldirish",
-    subtitle: 'AFISH.uz hamyon',
-    amount: 150000,
-    direction: 'in',
-    day: 26,
-    month: 'Mart',
-    time: '09:05',
-    method: 'Karta · Uzcard ··18',
-    status: 'success',
-  },
-  {
-    id: 't8',
-    type: 'master_payment',
-    title: 'Farrux N.',
-    subtitle: 'Gipschi · Gipsokarton qilish',
-    amount: 380000,
-    direction: 'out',
-    day: 25,
-    month: 'Mart',
-    time: '13:05',
-    method: 'Karta · Humo ··42',
-    status: 'failed',
-    letter: 'F',
-    color: '#26a69a',
-  },
-];
-
 const TABS = (tr) => [
   { key: 'all', label: tr('paymentHistory.tabs.all') },
   { key: 'master', label: tr('paymentHistory.tabs.master') },
@@ -165,20 +49,6 @@ const matchesTab = (tx, tab) => {
   if (tab === 'master') return tx.type === 'master_payment';
   return tx.type === 'topup' || tx.type === 'refund';
 };
-
-const COUNTS = {
-  all: TRANSACTIONS.length,
-  master: TRANSACTIONS.filter((tx) => tx.type === 'master_payment').length,
-  wallet: TRANSACTIONS.filter((tx) => tx.type !== 'master_payment').length,
-};
-
-const TOTAL_TO_MASTERS = TRANSACTIONS.filter(
-  (tx) => tx.type === 'master_payment' && tx.status === 'success'
-).reduce((sum, tx) => sum + tx.amount, 0);
-
-const TOTAL_INCOMING = TRANSACTIONS.filter(
-  (tx) => tx.direction === 'in' && tx.status === 'success'
-).reduce((sum, tx) => sum + tx.amount, 0);
 
 /* ── Compact stat cell (shared look with profile screen) ── */
 function StatCell({ icon, color, value, label, t, border }) {
@@ -262,10 +132,39 @@ function TransactionCard({ tx, t }) {
 export default function PaymentHistoryScreen({ onBack }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
+  const { transactions } = useWallet();
   const [tab, setTab] = useState('all');
 
-  const list = TRANSACTIONS.filter((tx) => matchesTab(tx, tab));
+  const list = useMemo(
+    () => transactions.filter((tx) => matchesTab(tx, tab)),
+    [transactions, tab]
+  );
   const tabs = TABS(tr);
+
+  const counts = useMemo(
+    () => ({
+      all: transactions.length,
+      master: transactions.filter((tx) => tx.type === 'master_payment').length,
+      wallet: transactions.filter((tx) => tx.type !== 'master_payment').length,
+    }),
+    [transactions]
+  );
+
+  const totalToMasters = useMemo(
+    () =>
+      transactions
+        .filter((tx) => tx.type === 'master_payment' && tx.status === 'success')
+        .reduce((sum, tx) => sum + tx.amount, 0),
+    [transactions]
+  );
+
+  const totalIncoming = useMemo(
+    () =>
+      transactions
+        .filter((tx) => tx.direction === 'in' && tx.status === 'success')
+        .reduce((sum, tx) => sum + tx.amount, 0),
+    [transactions]
+  );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }} edges={['top', 'left', 'right']}>
@@ -288,7 +187,7 @@ export default function PaymentHistoryScreen({ onBack }) {
           <StatCell
             icon="receipt-text-outline"
             color={t.orange}
-            value={tr('profile.menu.itemCount', { n: COUNTS.all })}
+            value={tr('profile.menu.itemCount', { n: counts.all })}
             label={tr('paymentHistory.statTotal')}
             t={t}
             border
@@ -296,7 +195,7 @@ export default function PaymentHistoryScreen({ onBack }) {
           <StatCell
             icon="account-hard-hat"
             color="#e87a45"
-            value={`${fmt(TOTAL_TO_MASTERS / 1000)}k`}
+            value={`${fmt(totalToMasters / 1000)}k`}
             label={tr('paymentHistory.statToMasters')}
             t={t}
             border
@@ -304,7 +203,7 @@ export default function PaymentHistoryScreen({ onBack }) {
           <StatCell
             icon="wallet-plus-outline"
             color="#2fa37a"
-            value={`${fmt(TOTAL_INCOMING / 1000)}k`}
+            value={`${fmt(totalIncoming / 1000)}k`}
             label={tr('paymentHistory.statToWallet')}
             t={t}
           />
@@ -336,7 +235,7 @@ export default function PaymentHistoryScreen({ onBack }) {
                   ]}
                 >
                   <Text style={[s.tabBadgeText, { color: active ? '#fff' : t.faint }]}>
-                    {COUNTS[tb.key]}
+                    {counts[tb.key]}
                   </Text>
                 </View>
               </TouchableOpacity>

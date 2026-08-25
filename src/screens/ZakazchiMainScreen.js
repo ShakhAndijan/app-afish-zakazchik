@@ -27,16 +27,20 @@ import UstaDetailScreen from './UstaDetailScreen';
 import XizmatlarScreen from './XizmatlarScreen';
 import WorkDetailScreen from './WorkDetailScreen';
 import NewOrderScreen from './NewOrderScreen';
+import WalletScreen from './WalletScreen';
 import BottomNav from '../components/BottomNav';
 import AfishLoader from '../components/AfishLoader';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useUser } from '../context/UserContext';
+import { useWallet } from '../context/WalletContext';
 import { getCategories } from '../api/categories';
 import { getWorkers, getFavorites } from '../api/workers';
 import { getTopOrders, getTopComments } from '../api/reviews';
 import { getSystemStats } from '../api/stats';
 import { getToken } from '../utils/token';
+
+const fmt = (n) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
 const SVC_GAP = 10;
 const SVC_H_PAD = 20;
@@ -833,9 +837,11 @@ export default function ZakazchiMainScreen({ onLogout }) {
   const [selectedUsta, setSelectedUsta] = useState(null);
   const [selectedWork, setSelectedWork] = useState(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+  const [showWallet, setShowWallet] = useState(false);
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
   const { user } = useUser();
+  const { balance } = useWallet();
   const serviceCarouselRef = useRef(null);
 
   const [categories, setCategories] = useState([]);
@@ -934,6 +940,10 @@ export default function ZakazchiMainScreen({ onLogout }) {
     setRefreshing(true);
     loadHomeData().finally(() => setRefreshing(false));
   }, [loadHomeData]);
+
+  if (showWallet) {
+    return <WalletScreen onBack={() => setShowWallet(false)} />;
+  }
 
   if (selectedUsta) {
     return (
@@ -1055,6 +1065,43 @@ export default function ZakazchiMainScreen({ onLogout }) {
               uri={user?.profile_photo}
             />
           </View>
+        </View>
+
+        {/* ── Hamyon tezkor kirish ── */}
+        <View style={{ paddingHorizontal: 20 }}>
+          <TouchableOpacity
+            style={[s.walletQuickCard, { overflow: 'hidden' }]}
+            activeOpacity={0.9}
+            onPress={() => setShowWallet(true)}
+          >
+            <View style={s.walletQuickCircle} />
+            <View style={s.walletQuickIcon}>
+              <MaterialCommunityIcons name="wallet" size={20} color="#fff" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.9)' }}>
+                {tr('wallet.balanceLabel')}
+              </Text>
+              <Text
+                style={{
+                  fontWeight: '800',
+                  fontSize: 17,
+                  color: '#fff',
+                  marginTop: 2,
+                }}
+              >
+                {fmt(balance)}{' '}
+                <Text style={{ fontSize: 11.5, fontWeight: '600', opacity: 0.85 }}>
+                  {tr('common.currencySom')}
+                </Text>
+              </Text>
+            </View>
+            <View style={s.walletQuickBtn}>
+              <Text style={{ color: t.orangeD, fontWeight: '700', fontSize: 12 }}>
+                {tr('profile.wallet.topup')}
+              </Text>
+            </View>
+          </TouchableOpacity>
         </View>
 
         {/* ── Faol buyurtma banneri (disabled) ── */}
@@ -1431,6 +1478,39 @@ export default function ZakazchiMainScreen({ onLogout }) {
 }
 
 const s = StyleSheet.create({
+  walletQuickCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 18,
+    padding: 14,
+    backgroundColor: '#e87a45',
+    position: 'relative',
+    marginBottom: 16,
+  },
+  walletQuickCircle: {
+    position: 'absolute',
+    right: -24,
+    top: -24,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  walletQuickIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  walletQuickBtn: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+  },
   activeCard: {
     borderWidth: 1,
     borderColor: 'rgba(232,122,69,0.32)',

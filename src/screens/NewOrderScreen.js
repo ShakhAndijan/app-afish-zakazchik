@@ -1155,6 +1155,14 @@ export default function NewOrderScreen({ onTabChange, onOrderCreated, targetWork
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }} edges={['top', 'left', 'right']}>
       <StatusBar style={t.isDark ? 'light' : 'dark'} />
+
+      {/* Xarita "manzil" oynasi ochilishidan oldin shu yerda ko'rinmas holda
+          oldindan yuklanib turadi — aks holda foydalanuvchi "Manzil"ga
+          kirganda WebView noldan ishga tushib, sezilarli kutish bo'lardi. */}
+      <View style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }} pointerEvents="none">
+        <LocationMapPicker height={1} showExpand={false} />
+      </View>
+
       <KeyboardAwareScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: 20, paddingBottom: 110 }}
@@ -1223,6 +1231,25 @@ export default function NewOrderScreen({ onTabChange, onOrderCreated, targetWork
               </Text>
             </TouchableOpacity>
           </View>
+
+          {/* ── Tavsif (xizmat turi tanlangandan keyin chiqadi) ── */}
+          {selectedCategories.length > 0 && (
+            <>
+              <Text style={[s.label, { color: t.text }]}>{tr('newOrder.descriptionLabel')}</Text>
+              <TextInput
+                value={description}
+                onChangeText={setDescription}
+                placeholder={tr('newOrder.descriptionPlaceholder')}
+                placeholderTextColor={t.faint}
+                multiline
+                numberOfLines={4}
+                style={[
+                  s.textarea,
+                  { backgroundColor: t.card, borderColor: t.border, color: t.text },
+                ]}
+              />
+            </>
+          )}
 
           {/* ── Manzil ── */}
           <Text style={[s.label, { color: t.text }]}>{tr('newOrder.locationLabel')}</Text>
@@ -1306,21 +1333,6 @@ export default function NewOrderScreen({ onTabChange, onOrderCreated, targetWork
               onDismiss={() => setShowIosDatePicker(false)}
             />
           )}
-
-          {/* ── Tavsif ── */}
-          <Text style={[s.label, { color: t.text }]}>{tr('newOrder.descriptionLabel')}</Text>
-          <TextInput
-            value={description}
-            onChangeText={setDescription}
-            placeholder={tr('newOrder.descriptionPlaceholder')}
-            placeholderTextColor={t.faint}
-            multiline
-            numberOfLines={4}
-            style={[
-              s.textarea,
-              { backgroundColor: t.card, borderColor: t.border, color: t.text },
-            ]}
-          />
 
           {/* ── Rasmlar ── */}
           <Text style={[s.label, { color: t.text }]}>{tr('newOrder.photosLabel')}</Text>

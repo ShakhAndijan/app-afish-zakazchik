@@ -228,6 +228,7 @@ export default function UstaDetailScreen({
   const [certificates, setCertificates] = useState([]);
   const [loadingCertificates, setLoadingCertificates] = useState(false);
   const [selectedWork, setSelectedWork] = useState(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
 
   useEffect(() => {
     if (!usta?.id) return;
@@ -239,6 +240,7 @@ export default function UstaDetailScreen({
         if (!cancelled) {
           setDetail(data);
           setLiked(!!data.isLiked);
+          setSelectedCategoryId(data.mainCategoryId ?? null);
         }
       })
       .catch(() => {})
@@ -254,7 +256,7 @@ export default function UstaDetailScreen({
     if (!detail?.id) return;
     let cancelled = false;
     setLoadingCertificates(true);
-    getWorkerCertificates(detail.id, detail.mainCategoryId)
+    getWorkerCertificates(detail.id, selectedCategoryId)
       .then((data) => {
         if (!cancelled) setCertificates(data);
       })
@@ -265,7 +267,7 @@ export default function UstaDetailScreen({
     return () => {
       cancelled = true;
     };
-  }, [detail?.id, detail?.mainCategoryId]);
+  }, [detail?.id, selectedCategoryId]);
 
   const d = detail || usta || {};
 
@@ -633,22 +635,27 @@ export default function UstaDetailScreen({
           <Text style={st.secTitle}>{tr('ustaDetail.specializationTitle')}</Text>
           {categories.length > 0 ? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              {categories.map((c) => (
-                <View
-                  key={c.id}
-                  style={[st.chip, c.isPrimary && st.chipActive]}
-                >
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: '700',
-                      color: c.isPrimary ? C.orange : C.txt,
-                    }}
+              {categories.map((c) => {
+                const active = c.id === selectedCategoryId;
+                return (
+                  <TouchableOpacity
+                    key={c.id}
+                    activeOpacity={0.8}
+                    onPress={() => setSelectedCategoryId(c.id)}
+                    style={[st.chip, active && st.chipActive]}
                   >
-                    {c.name}
-                  </Text>
-                </View>
-              ))}
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        fontWeight: '700',
+                        color: active ? C.orange : C.txt,
+                      }}
+                    >
+                      {c.name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           ) : (
             <View style={[st.card, { padding: 16, alignItems: 'center' }]}>
