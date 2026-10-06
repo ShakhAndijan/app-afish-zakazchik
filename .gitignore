@@ -42,3 +42,6 @@ yarn-error.*
 
 # EAS local credentials (contains keystore passwords)
 credentials.json
+
+# Maxfiy kalitlar (.env.example repoda qoladi)
+.env

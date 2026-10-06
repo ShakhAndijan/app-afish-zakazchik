@@ -1,5 +1,6 @@
 import { ENDPOINTS } from '../constants/config';
 import { apiFetch } from '../utils/apiClient';
+import { devLog } from '../utils/log';
 
 export async function getMe() {
   const controller = new AbortController();
@@ -23,7 +24,7 @@ export async function getMe() {
   }
 
   const json = await res.json();
-  console.log('[getMe] /auth/me response:', json.response_data);
+  devLog('[getMe] /auth/me response:', json.response_data);
   return json.response_data;
 }
 
@@ -52,7 +53,7 @@ export async function getCustomerMe() {
   }
 
   const json = await res.json();
-  console.log('[getCustomerMe] /customers/me response:', json.response_data);
+  devLog('[getCustomerMe] /customers/me response:', json.response_data);
   return json.response_data;
 }
 

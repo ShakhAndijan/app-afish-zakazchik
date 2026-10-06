@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getMe } from '../api/user';
+import { devLog } from '../utils/log';
 
 const CACHE_KEY = 'cached_user';
 
@@ -13,7 +14,8 @@ const UserContext = createContext({
   clearUser: () => {},
 });
 
-export function UserProvider({ children }) {
+// `enabled` — faqat kirgan foydalanuvchida ma'lumot yuklanadi; chiqqanda holat tozalanadi.
+export function UserProvider({ children, enabled = true }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -23,12 +25,12 @@ export function UserProvider({ children }) {
     setRefreshing(true);
     try {
       const fresh = await getMe();
-      console.log('[UserContext] refreshUser fresh user:', fresh);
+      devLog('[UserContext] refreshUser fresh user:', fresh);
       setUser(fresh);
       setUnauthorized(false);
       AsyncStorage.setItem(CACHE_KEY, JSON.stringify(fresh)).catch(() => {});
     } catch (err) {
-      console.log('[UserContext] refreshUser error:', err?.status, err?.message ?? err);
+      devLog('[UserContext] refreshUser error:', err?.status, err?.message ?? err);
       if (err.status === 401) setUnauthorized(true);
     } finally {
       setRefreshing(false);
@@ -53,7 +55,7 @@ export function UserProvider({ children }) {
       // 2) Fonda backend'dan haqiqiy ma'lumotni olib, jimgina yangilaymiz.
       await refreshUser();
     })();
-  }, [refreshUser]);
+  }, [refreshUser, enabled]);
 
   return (
     <UserContext.Provider value={{ user, loading, refreshing, unauthorized, refreshUser, clearUser }}>
@@ -64,6 +66,6 @@ export function UserProvider({ children }) {
 
 export const useUser = () => useContext(UserContext);
 
-// App.js'dagi handleLogout kabi UserProvider daraxtidan tashqarida
+// AuthContext.signOut kabi UserProvider daraxtidan tashqarida
 // turgan joylardan ham keshni tozalash uchun.
 export const clearCachedUser = () => AsyncStorage.removeItem(CACHE_KEY).catch(() => {});

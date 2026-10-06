@@ -1,599 +1,54 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   ScrollView,
   TouchableOpacity,
-  StyleSheet,
-  Modal,
-  TouchableWithoutFeedback,
-  FlatList,
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
-import { useUser } from '../context/UserContext';
-import { getGenders, getRegions, getDistricts } from '../api/reference';
-import { getCustomerMe, updateCustomerMe } from '../api/user';
 import SuccessModal from '../components/SuccessModal';
 import AfishLoader from '../components/AfishLoader';
-import LocationMapPicker from '../components/LocationMapPicker';
+import { s } from './edit-profile/styles';
+import { formatDisplayDate } from './edit-profile/utils';
+import useProfileForm from './edit-profile/hooks/useProfileForm';
+import useReferenceLists from './edit-profile/hooks/useReferenceLists';
+import ScreenHeader from './edit-profile/components/ScreenHeader';
+import FormSection from './edit-profile/components/FormSection';
+import TextField from './edit-profile/components/TextField';
+import SelectField from './edit-profile/components/SelectField';
+import GenderToggle from './edit-profile/components/GenderToggle';
+import LocationField from './edit-profile/components/LocationField';
+import OptionSheet from './edit-profile/components/OptionSheet';
+import BirthDateSheet from './edit-profile/components/BirthDateSheet';
 
-// Backend hali javob bermasa ham forma bo'sh qolmasligi uchun mahalliy zaxira
-// ro'yxatlar — real API javob bersa, ular ustidan yoziladi.
-const FALLBACK_GENDERS = [
-  { id: 1, code: 'male', nameKey: 'male' },
-  { id: 2, code: 'female', nameKey: 'female' },
-];
-const FALLBACK_REGIONS = [
-  { id: 1, name: 'Toshkent shahri' },
-  { id: 2, name: 'Toshkent viloyati' },
-  { id: 3, name: 'Samarqand viloyati' },
-  { id: 4, name: "Farg'ona viloyati" },
-  { id: 5, name: 'Buxoro viloyati' },
-];
-const FALLBACK_DISTRICTS = [
-  { id: 1, name: 'Chilonzor' },
-  { id: 2, name: 'Yunusobod' },
-  { id: 3, name: "Mirzo Ulug'bek" },
-  { id: 4, name: 'Sergeli' },
-  { id: 5, name: 'Shayxontohur' },
-];
-const pad2 = (n) => String(n).padStart(2, '0');
-const daysInMonth = (year, month) => new Date(year, month, 0).getDate();
-const parseIsoDate = (str) => {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(str || '');
-  if (!m) return null;
-  const [, yyyy, mm, dd] = m;
-  return { year: Number(yyyy), month: Number(mm), day: Number(dd) };
-};
-const formatDisplayDate = (iso) => {
-  const p = parseIsoDate(iso);
-  if (!p) return '';
-  return `${pad2(p.day)}.${pad2(p.month)}.${p.year}`;
-};
-
-/* ── Text / textarea field ── */
-function TextField({
-  label,
-  value,
-  onChangeText,
-  placeholder,
-  t,
-  keyboardType,
-  multiline,
-  maxLength,
-}) {
-  return (
-    <View style={{ gap: 8 }}>
-      <Text style={[s.fieldLabel, { color: t.muted }]}>{label}</Text>
-      <View
-        style={[
-          s.inputWrap,
-          multiline && s.inputWrapMultiline,
-          { backgroundColor: t.inputBg, borderColor: t.border },
-        ]}
-      >
-        <TextInput
-          style={[s.input, multiline && s.inputMultiline, { color: t.text }]}
-          placeholder={placeholder}
-          placeholderTextColor={t.faint}
-          value={value}
-          onChangeText={onChangeText}
-          keyboardType={keyboardType || 'default'}
-          multiline={multiline}
-          maxLength={maxLength}
-          textAlignVertical={multiline ? 'top' : 'center'}
-        />
-      </View>
-      {maxLength ? (
-        <Text style={[s.counter, { color: t.faint }]}>
-          {(value || '').length}/{maxLength}
-        </Text>
-      ) : null}
-    </View>
-  );
-}
-
-/* ── Ikkita tugmali jins tanlash ── */
-function GenderToggle({ genders, selectedId, onSelect, loading, t }) {
-  const { t: tr } = useLanguage();
-  const iconFor = (code) =>
-    code === 'female' ? 'gender-female' : code === 'male' ? 'gender-male' : 'account';
-
-  return (
-    <View style={{ gap: 8 }}>
-      <Text style={[s.fieldLabel, { color: t.muted }]}>{tr('editProfile.genderLabel')}</Text>
-      {loading ? (
-        <ActivityIndicator
-          size="small"
-          color={t.orange}
-          style={{ alignSelf: 'flex-start' }}
-        />
-      ) : (
-        <View style={s.genderRow}>
-          {genders.map((g) => {
-            const on = g.id === selectedId;
-            return (
-              <TouchableOpacity
-                key={g.id}
-                style={[
-                  s.genderBtn,
-                  {
-                    backgroundColor: on ? t.orange : t.inputBg,
-                    borderColor: on ? t.orange : t.border,
-                  },
-                ]}
-                activeOpacity={0.8}
-                onPress={() => onSelect(g.id)}
-              >
-                <MaterialCommunityIcons
-                  name={iconFor(g.code)}
-                  size={17}
-                  color={on ? '#fff' : t.muted}
-                />
-                <Text
-                  style={[s.genderBtnText, { color: on ? '#fff' : t.text }]}
-                >
-                  {g.nameKey ? tr(`editProfile.genders.${g.nameKey}`) : g.name}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      )}
-    </View>
-  );
-}
-
-/* ── Tappable field that opens a picker sheet ── */
-function SelectField({ label, value, placeholder, onPress, t, disabled }) {
-  return (
-    <View style={{ gap: 8 }}>
-      <Text style={[s.fieldLabel, { color: t.muted }]}>{label}</Text>
-      <TouchableOpacity
-        style={[
-          s.inputWrap,
-          {
-            backgroundColor: t.inputBg,
-            borderColor: t.border,
-            opacity: disabled ? 0.5 : 1,
-          },
-        ]}
-        onPress={disabled ? undefined : onPress}
-        activeOpacity={0.7}
-      >
-        <Text
-          style={[s.input, { color: value ? t.text : t.faint }]}
-          numberOfLines={1}
-        >
-          {value || placeholder}
-        </Text>
-        <MaterialCommunityIcons
-          name="chevron-right"
-          size={18}
-          color={t.faint}
-        />
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-/* ── Generic single-select bottom sheet (gender / region / district) ── */
-function OptionSheet({
-  visible,
-  onClose,
-  title,
-  options,
-  selectedId,
-  onSelect,
-  t,
-  loading,
-}) {
-  const { t: tr } = useLanguage();
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      statusBarTranslucent
-      onRequestClose={onClose}
-    >
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={s.overlay} />
-      </TouchableWithoutFeedback>
-
-      <View
-        style={[s.sheet, { backgroundColor: t.card, borderColor: t.border }]}
-      >
-        <View style={s.grabberRow}>
-          <View style={[s.grabber, { backgroundColor: t.border }]} />
-        </View>
-        <View style={s.sheetHeaderRow}>
-          <Text style={[s.sheetTitle, { color: t.text }]}>{title}</Text>
-          <TouchableOpacity
-            style={[s.sheetCloseBtn, { backgroundColor: t.rowIconBg }]}
-            onPress={onClose}
-            activeOpacity={0.8}
-          >
-            <MaterialCommunityIcons name="close" size={16} color={t.muted} />
-          </TouchableOpacity>
-        </View>
-
-        {loading ? (
-          <ActivityIndicator
-            size="small"
-            color={t.orange}
-            style={{ marginVertical: 30 }}
-          />
-        ) : options.length === 0 ? (
-          <Text style={[s.sheetEmpty, { color: t.muted }]}>
-            {tr('editProfile.emptyOptions')}
-          </Text>
-        ) : (
-          <FlatList
-            data={options}
-            keyExtractor={(item) => String(item.id)}
-            style={{ maxHeight: 380 }}
-            contentContainerStyle={{ paddingBottom: 12 }}
-            ItemSeparatorComponent={() => (
-              <View style={[s.sheetDivider, { backgroundColor: t.border }]} />
-            )}
-            renderItem={({ item }) => {
-              const on = item.id === selectedId;
-              return (
-                <TouchableOpacity
-                  style={s.sheetRow}
-                  activeOpacity={0.7}
-                  onPress={() => {
-                    onSelect(item);
-                    onClose();
-                  }}
-                >
-                  <Text style={[s.sheetRowText, { color: t.text }]}>
-                    {item.name}
-                  </Text>
-                  {on && (
-                    <MaterialCommunityIcons
-                      name="check-circle"
-                      size={19}
-                      color={t.orange}
-                    />
-                  )}
-                </TouchableOpacity>
-              );
-            }}
-          />
-        )}
-      </View>
-    </Modal>
-  );
-}
-
-/* ── Birth date wheel picker ── */
-function DateColumn({ values, value, onChange, format, t }) {
-  const idx = Math.max(0, values.indexOf(value));
-  return (
-    <FlatList
-      data={values}
-      keyExtractor={(v) => String(v)}
-      style={{ flex: 1 }}
-      showsVerticalScrollIndicator={false}
-      initialScrollIndex={idx}
-      getItemLayout={(_, i) => ({ length: 40, offset: 40 * i, index: i })}
-      renderItem={({ item }) => {
-        const selected = item === value;
-        return (
-          <TouchableOpacity
-            style={s.dateCell}
-            onPress={() => onChange(item)}
-            activeOpacity={0.7}
-          >
-            <Text
-              style={[
-                s.dateCellText,
-                {
-                  color: selected ? t.orange : t.muted,
-                  fontWeight: selected ? '700' : '400',
-                },
-              ]}
-            >
-              {format ? format(item) : item}
-            </Text>
-          </TouchableOpacity>
-        );
-      }}
-    />
-  );
-}
-
-function BirthDateSheet({ visible, onClose, value, onChange, t }) {
-  const { t: tr } = useLanguage();
-  const monthNames = tr('login.registerStep.birthDate.months');
-  const currentYear = new Date().getFullYear();
-  const parsed = parseIsoDate(value);
-  const [day, setDay] = useState(parsed?.day ?? 1);
-  const [month, setMonth] = useState(parsed?.month ?? 1);
-  const [year, setYear] = useState(parsed?.year ?? currentYear - 25);
-
-  useEffect(() => {
-    if (visible) {
-      const p = parseIsoDate(value);
-      setDay(p?.day ?? 1);
-      setMonth(p?.month ?? 1);
-      setYear(p?.year ?? currentYear - 25);
-    }
-  }, [visible]);
-
-  const maxDay = daysInMonth(year, month);
-  const days = Array.from({ length: maxDay }, (_, i) => i + 1);
-  const months = Array.from({ length: 12 }, (_, i) => i + 1);
-  const years = Array.from(
-    { length: currentYear - 1940 + 1 },
-    (_, i) => currentYear - i
-  );
-
-  const changeMonth = (m) => {
-    setMonth(m);
-    if (day > daysInMonth(year, m)) setDay(daysInMonth(year, m));
-  };
-  const changeYear = (y) => {
-    setYear(y);
-    if (day > daysInMonth(y, month)) setDay(daysInMonth(y, month));
-  };
-
-  const confirm = () => {
-    onChange(`${year}-${pad2(month)}-${pad2(day)}`);
-    onClose();
-  };
-
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      statusBarTranslucent
-      onRequestClose={onClose}
-    >
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={s.overlay} />
-      </TouchableWithoutFeedback>
-
-      <View
-        style={[s.sheet, { backgroundColor: t.card, borderColor: t.border }]}
-      >
-        <View style={s.grabberRow}>
-          <View style={[s.grabber, { backgroundColor: t.border }]} />
-        </View>
-        <View style={s.sheetHeaderRow}>
-          <Text style={[s.sheetTitle, { color: t.text }]}>{tr('editProfile.birthDateLabel')}</Text>
-          <TouchableOpacity
-            style={[s.sheetCloseBtn, { backgroundColor: t.rowIconBg }]}
-            onPress={onClose}
-            activeOpacity={0.8}
-          >
-            <MaterialCommunityIcons name="close" size={16} color={t.muted} />
-          </TouchableOpacity>
-        </View>
-
-        <View style={s.dateWheelWrap}>
-          <View
-            style={[s.dateHighlight, { backgroundColor: t.rowIconBg }]}
-            pointerEvents="none"
-          />
-          <DateColumn values={days} value={day} onChange={setDay} t={t} />
-          <DateColumn
-            values={months}
-            value={month}
-            onChange={changeMonth}
-            format={(m) => monthNames[m - 1]}
-            t={t}
-          />
-          <DateColumn values={years} value={year} onChange={changeYear} t={t} />
-        </View>
-
-        <View style={{ paddingHorizontal: 20, paddingTop: 6 }}>
-          <TouchableOpacity
-            style={[s.confirmBtn, { backgroundColor: t.orange }]}
-            activeOpacity={0.85}
-            onPress={confirm}
-          >
-            <Text style={s.confirmBtnText}>{tr('common.confirm')}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
-function GroupLabel({ children, t }) {
-  return <Text style={[s.groupLabel, { color: t.faint }]}>{children}</Text>;
-}
-
+// Profilni tahrirlash: shaxsiy ma'lumot, aloqa va manzil. Forma holati `useProfileForm` da,
+// tanlov ro'yxatlari `useReferenceLists` da, har bir maydon/oyna `edit-profile/components/` da.
 export default function EditProfileScreen({ onBack }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
-  const { refreshUser } = useUser();
 
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [genderId, setGenderId] = useState(null);
-  const [birthDate, setBirthDate] = useState('');
-  const [regionId, setRegionId] = useState(null);
-  const [districtId, setDistrictId] = useState(null);
-  const [address, setAddress] = useState('');
-  const [gpsLat, setGpsLat] = useState(null);
-  const [gpsLng, setGpsLng] = useState(null);
-  const [landmark, setLandmark] = useState('');
+  const form = useProfileForm();
+  const { values: v, setField } = form;
+  const lists = useReferenceLists(v.regionId);
 
-  const [genders, setGenders] = useState(FALLBACK_GENDERS);
-  const [regions, setRegions] = useState(FALLBACK_REGIONS);
-  const [districts, setDistricts] = useState([]);
-  const [gendersLoading, setGendersLoading] = useState(true);
-  const [regionsLoading, setRegionsLoading] = useState(true);
-  const [districtsLoading, setDistrictsLoading] = useState(false);
+  // Qaysi tanlov oynasi ochiq: 'region' | 'district' | 'date' | null.
+  const [sheet, setSheet] = useState(null);
+  const closeSheet = () => setSheet(null);
 
-  const [showRegionSheet, setShowRegionSheet] = useState(false);
-  const [showDistrictSheet, setShowDistrictSheet] = useState(false);
-  const [showDateSheet, setShowDateSheet] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const selectedRegion = lists.regions.find((r) => r.id === v.regionId);
+  const selectedDistrict = lists.districts.find((d) => d.id === v.districtId);
 
-  useEffect(() => {
-    let alive = true;
-    getCustomerMe()
-      .then((data) => {
-        if (!alive || !data) return;
-        setFirstName(data.first_name || '');
-        setLastName(data.last_name || '');
-        setEmail(data.email || '');
-        setGenderId(
-          data.gender && typeof data.gender === 'object'
-            ? data.gender.id ?? null
-            : data.gender ?? null
-        );
-        setBirthDate(data.birth_date || '');
-        setRegionId(
-          data.region && typeof data.region === 'object'
-            ? data.region.id ?? null
-            : data.region ?? null
-        );
-        setDistrictId(
-          data.district && typeof data.district === 'object'
-            ? data.district.id ?? null
-            : data.district ?? null
-        );
-        setAddress(data.address || '');
-        setGpsLat(
-          data.default_gps_lat != null ? Number(data.default_gps_lat) : null
-        );
-        setGpsLng(
-          data.default_gps_lng != null ? Number(data.default_gps_lng) : null
-        );
-        setLandmark(data.default_landmark || '');
-      })
-      .catch((e) => {
-        Alert.alert(
-          tr('common.errorTitle'),
-          e.message || tr('editProfile.loadError')
-        );
-      })
-      .finally(() => alive && setInitialLoading(false));
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let alive = true;
-    getGenders()
-      .then((list) => {
-        if (alive && list?.length) setGenders(list);
-      })
-      .catch(() => {})
-      .finally(() => alive && setGendersLoading(false));
-    getRegions()
-      .then((list) => {
-        if (alive && list?.length) setRegions(list);
-      })
-      .catch(() => {})
-      .finally(() => alive && setRegionsLoading(false));
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!regionId) {
-      setDistricts([]);
-      return;
-    }
-    let alive = true;
-    setDistrictsLoading(true);
-    getDistricts(regionId)
-      .then((list) => {
-        if (alive) setDistricts(list?.length ? list : FALLBACK_DISTRICTS);
-      })
-      .catch(() => {
-        if (alive) setDistricts(FALLBACK_DISTRICTS);
-      })
-      .finally(() => alive && setDistrictsLoading(false));
-    return () => {
-      alive = false;
-    };
-  }, [regionId]);
-
-  const selectedRegion = regions.find((r) => r.id === regionId);
-  const selectedDistrict = districts.find((d) => d.id === districtId);
-
-  const isReady =
-    firstName.trim().length > 0 && lastName.trim().length > 0 && !saving;
-
-  const handleSave = async () => {
-    if (!isReady) return;
-    const payload = {
-      first_name: firstName.trim(),
-      last_name: lastName.trim(),
-      email: email.trim(),
-      gender_id: genderId,
-      birth_date: birthDate,
-      region_id: regionId,
-      district_id: districtId,
-      address: address.trim(),
-      default_gps_lat: gpsLat,
-      default_gps_lng: gpsLng,
-      default_landmark: landmark.trim(),
-    };
-    setSaving(true);
-    try {
-      await updateCustomerMe(payload);
-      await refreshUser();
-      setShowSuccess(true);
-    } catch (e) {
-      Alert.alert(
-        tr('common.errorTitle'),
-        e.message || tr('editProfile.saveError')
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  if (initialLoading) {
+  if (form.initialLoading) {
     return (
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: t.bg }}
-        edges={['top', 'left', 'right']}
-      >
+      <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }} edges={['top', 'left', 'right']}>
         <StatusBar style={t.isDark ? 'light' : 'dark'} />
-        <View style={[s.header, { backgroundColor: t.bg }]}>
-          <TouchableOpacity
-            style={[
-              s.backBtn,
-              { backgroundColor: t.card, borderColor: t.border },
-            ]}
-            onPress={onBack}
-            activeOpacity={0.8}
-          >
-            <MaterialCommunityIcons
-              name="chevron-left"
-              size={24}
-              color={t.text}
-            />
-          </TouchableOpacity>
-          <Text style={[s.headerTitle, { color: t.text }]}>
-            {tr('editProfile.headerTitle')}
-          </Text>
-        </View>
+        <ScreenHeader onBack={onBack} />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <AfishLoader size={120} />
         </View>
@@ -602,31 +57,9 @@ export default function EditProfileScreen({ onBack }) {
   }
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: t.bg }}
-      edges={['top', 'left', 'right']}
-    >
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }} edges={['top', 'left', 'right']}>
       <StatusBar style={t.isDark ? 'light' : 'dark'} />
-
-      <View style={[s.header, { backgroundColor: t.bg }]}>
-        <TouchableOpacity
-          style={[
-            s.backBtn,
-            { backgroundColor: t.card, borderColor: t.border },
-          ]}
-          onPress={onBack}
-          activeOpacity={0.8}
-        >
-          <MaterialCommunityIcons
-            name="chevron-left"
-            size={24}
-            color={t.text}
-          />
-        </TouchableOpacity>
-        <Text style={[s.headerTitle, { color: t.text }]}>
-          Profilni tahrirlash
-        </Text>
-      </View>
+      <ScreenHeader onBack={onBack} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -637,120 +70,90 @@ export default function EditProfileScreen({ onBack }) {
           contentContainerStyle={s.scroll}
           keyboardShouldPersistTaps="handled"
         >
-          <GroupLabel t={t}>{tr('editProfile.groups.personal')}</GroupLabel>
-          <View
-            style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}
-          >
+          <FormSection title={tr('editProfile.groups.personal')}>
             <TextField
               label={tr('editProfile.firstNameLabel')}
-              value={firstName}
-              onChangeText={setFirstName}
+              value={v.firstName}
+              onChangeText={(x) => setField('firstName', x)}
               placeholder={tr('editProfile.firstNamePlaceholder')}
-              t={t}
             />
             <TextField
               label={tr('editProfile.lastNameLabel')}
-              value={lastName}
-              onChangeText={setLastName}
+              value={v.lastName}
+              onChangeText={(x) => setField('lastName', x)}
               placeholder={tr('editProfile.lastNamePlaceholder')}
-              t={t}
             />
             <GenderToggle
-              genders={genders}
-              selectedId={genderId}
-              onSelect={setGenderId}
-              loading={gendersLoading}
-              t={t}
+              genders={lists.genders}
+              selectedId={v.genderId}
+              onSelect={(id) => setField('genderId', id)}
+              loading={lists.gendersLoading}
             />
             <SelectField
               label={tr('editProfile.birthDateLabel')}
-              value={formatDisplayDate(birthDate)}
+              value={formatDisplayDate(v.birthDate)}
               placeholder={tr('editProfile.birthDatePlaceholder')}
-              onPress={() => setShowDateSheet(true)}
-              t={t}
+              onPress={() => setSheet('date')}
             />
-          </View>
+          </FormSection>
 
-          <GroupLabel t={t}>{tr('editProfile.groups.contact')}</GroupLabel>
-          <View
-            style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}
-          >
+          <FormSection title={tr('editProfile.groups.contact')}>
             <TextField
               label={tr('editProfile.emailLabel')}
-              value={email}
-              onChangeText={setEmail}
+              value={v.email}
+              onChangeText={(x) => setField('email', x)}
               placeholder={tr('editProfile.emailPlaceholder')}
-              t={t}
               keyboardType="email-address"
             />
-          </View>
+          </FormSection>
 
-          <GroupLabel t={t}>{tr('editProfile.groups.address')}</GroupLabel>
-          <View
-            style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}
-          >
+          <FormSection title={tr('editProfile.groups.address')}>
             <SelectField
               label={tr('editProfile.regionLabel')}
               value={selectedRegion?.name}
               placeholder={tr('editProfile.regionPlaceholder')}
-              onPress={() => setShowRegionSheet(true)}
-              t={t}
+              onPress={() => setSheet('region')}
             />
             <SelectField
               label={tr('editProfile.districtLabel')}
               value={selectedDistrict?.name}
               placeholder={
-                regionId ? tr('editProfile.districtPlaceholder') : tr('editProfile.districtPlaceholderNoRegion')
+                v.regionId
+                  ? tr('editProfile.districtPlaceholder')
+                  : tr('editProfile.districtPlaceholderNoRegion')
               }
-              onPress={() => setShowDistrictSheet(true)}
-              t={t}
-              disabled={!regionId}
+              onPress={() => setSheet('district')}
+              disabled={!v.regionId}
             />
             <TextField
               label={tr('editProfile.addressLabel')}
-              value={address}
-              onChangeText={setAddress}
+              value={v.address}
+              onChangeText={(x) => setField('address', x)}
               placeholder={tr('editProfile.addressPlaceholder')}
-              t={t}
             />
-            <View style={{ gap: 8 }}>
-              <Text style={[s.fieldLabel, { color: t.muted }]}>{tr('editProfile.gpsLabel')}</Text>
-              <View style={s.mapWrap}>
-                <LocationMapPicker
-                  lat={gpsLat}
-                  lng={gpsLng}
-                  onChange={(lat, lng) => {
-                    setGpsLat(Number(lat));
-                    setGpsLng(Number(lng));
-                  }}
-                  height={180}
-                  locatingLabel={tr('editProfile.gpsLocating')}
-                  permissionTitle={tr('editProfile.locationPermissionTitle')}
-                  permissionMessage={tr('editProfile.locationPermissionMsg')}
-                  errorTitle={tr('common.errorTitle')}
-                  errorMessage={tr('editProfile.locationError')}
-                />
-              </View>
-            </View>
+            <LocationField
+              lat={v.gpsLat}
+              lng={v.gpsLng}
+              onChange={(lat, lng) => {
+                setField('gpsLat', lat);
+                setField('gpsLng', lng);
+              }}
+            />
             <TextField
               label={tr('editProfile.landmarkLabel')}
-              value={landmark}
-              onChangeText={setLandmark}
+              value={v.landmark}
+              onChangeText={(x) => setField('landmark', x)}
               placeholder={tr('editProfile.landmarkPlaceholder')}
-              t={t}
             />
-          </View>
+          </FormSection>
 
           <TouchableOpacity
-            style={[
-              s.saveBtn,
-              { backgroundColor: isReady ? t.orange : t.orange + '55' },
-            ]}
+            style={[s.saveBtn, { backgroundColor: form.isReady ? t.orange : t.orange + '55' }]}
             activeOpacity={0.85}
-            onPress={handleSave}
-            disabled={!isReady}
+            onPress={form.save}
+            disabled={!form.isReady}
           >
-            {saving ? (
+            {form.saving ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
               <Text style={s.saveBtnText}>{tr('editProfile.saveBtn')}</Text>
@@ -760,36 +163,33 @@ export default function EditProfileScreen({ onBack }) {
       </KeyboardAvoidingView>
 
       <OptionSheet
-        visible={showRegionSheet}
-        onClose={() => setShowRegionSheet(false)}
+        visible={sheet === 'region'}
+        onClose={closeSheet}
         title={tr('editProfile.pickRegionTitle')}
-        options={regions}
-        selectedId={regionId}
-        onSelect={(item) => setRegionId(item.id)}
-        t={t}
-        loading={regionsLoading}
+        options={lists.regions}
+        selectedId={v.regionId}
+        onSelect={(item) => setField('regionId', item.id)}
+        loading={lists.regionsLoading}
       />
       <OptionSheet
-        visible={showDistrictSheet}
-        onClose={() => setShowDistrictSheet(false)}
+        visible={sheet === 'district'}
+        onClose={closeSheet}
         title={tr('editProfile.pickDistrictTitle')}
-        options={districts}
-        selectedId={districtId}
-        onSelect={(item) => setDistrictId(item.id)}
-        t={t}
-        loading={districtsLoading}
+        options={lists.districts}
+        selectedId={v.districtId}
+        onSelect={(item) => setField('districtId', item.id)}
+        loading={lists.districtsLoading}
       />
       <BirthDateSheet
-        visible={showDateSheet}
-        onClose={() => setShowDateSheet(false)}
-        value={birthDate}
-        onChange={setBirthDate}
-        t={t}
+        visible={sheet === 'date'}
+        onClose={closeSheet}
+        value={v.birthDate}
+        onChange={(x) => setField('birthDate', x)}
       />
       <SuccessModal
-        visible={showSuccess}
+        visible={form.saved}
         onClose={() => {
-          setShowSuccess(false);
+          form.dismissSaved();
           onBack();
         }}
         t={t}
@@ -798,157 +198,3 @@ export default function EditProfileScreen({ onBack }) {
     </SafeAreaView>
   );
 }
-
-const s = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 16,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: { fontWeight: '700', fontSize: 20 },
-
-  scroll: { paddingHorizontal: 20, paddingBottom: 40 },
-
-  groupLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    marginTop: 18,
-    marginBottom: 9,
-    paddingLeft: 4,
-  },
-  card: {
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
-    gap: 16,
-  },
-
-  fieldLabel: { fontSize: 13, fontWeight: '600' },
-  inputWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    height: 52,
-    borderRadius: 13,
-    borderWidth: 1.5,
-    paddingHorizontal: 14,
-  },
-  inputWrapMultiline: {
-    height: 96,
-    alignItems: 'flex-start',
-    paddingVertical: 12,
-  },
-  input: { flex: 1, fontSize: 14.5, fontWeight: '500', padding: 0 },
-  inputMultiline: { height: '100%' },
-  counter: { fontSize: 11, textAlign: 'right' },
-
-  genderRow: { flexDirection: 'row', gap: 10 },
-  genderBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    height: 48,
-    borderRadius: 13,
-    borderWidth: 1.5,
-  },
-  genderBtnText: { fontSize: 14, fontWeight: '700' },
-
-  mapWrap: {
-    borderRadius: 13,
-    overflow: 'hidden',
-  },
-
-  saveBtn: {
-    height: 54,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 26,
-  },
-  saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
-
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(4,8,14,0.55)',
-  },
-  sheet: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderTopLeftRadius: 26,
-    borderTopRightRadius: 26,
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    paddingBottom: 24,
-    maxHeight: '78%',
-  },
-  grabberRow: { alignItems: 'center', paddingTop: 12, paddingBottom: 4 },
-  grabber: { width: 36, height: 4, borderRadius: 2 },
-  sheetHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 10,
-  },
-  sheetTitle: { fontSize: 17, fontWeight: '700' },
-  sheetCloseBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sheetEmpty: { textAlign: 'center', paddingVertical: 30, fontSize: 13 },
-  sheetDivider: { height: 1, marginHorizontal: 20 },
-  sheetRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-  },
-  sheetRowText: { fontSize: 15, fontWeight: '600' },
-
-  dateWheelWrap: {
-    flexDirection: 'row',
-    height: 200,
-    paddingHorizontal: 20,
-    position: 'relative',
-  },
-  dateHighlight: {
-    position: 'absolute',
-    left: 20,
-    right: 20,
-    top: 80,
-    height: 40,
-    borderRadius: 10,
-  },
-  dateCell: { height: 40, alignItems: 'center', justifyContent: 'center' },
-  dateCellText: { fontSize: 15 },
-
-  confirmBtn: {
-    height: 52,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  confirmBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
-});

@@ -1,720 +1,128 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  Image,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
+import { useState } from 'react';
+import { Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import Feather from '@expo/vector-icons/Feather';
-import * as ImagePicker from 'expo-image-picker';
+import { useRouter, useIsFocused } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useUser } from '../context/UserContext';
 import { useWallet } from '../context/WalletContext';
-import { getAvatarUploadUrl, confirmAvatar, deleteAvatar } from '../api/user';
-import { uploadImageToPresignedUrl } from '../api/auth';
-import ZakazchiHelpScreen from './ZakazchiHelpScreen';
-import ZakazchiNotifScreen from './ZakazchiNotifScreen';
-import ZakazchiOrdersScreen from './ZakazchiOrdersScreen';
-import ChangePasswordScreen from './ChangePasswordScreen';
-import EditProfileScreen from './EditProfileScreen';
-import PaymentHistoryScreen from './PaymentHistoryScreen';
-import WalletScreen from './WalletScreen';
-import ChangePhoneScreen from './ChangePhoneScreen';
+import { useAuth } from '../context/AuthContext';
 import TilBottomSheet, { LANGS } from '../components/TilBottomSheet';
 import AvatarPickerSheet from '../components/AvatarPickerSheet';
-import BottomNav from '../components/BottomNav';
+import useProfileStats from './profile/hooks/useProfileStats';
+import useAvatarActions from './profile/hooks/useAvatarActions';
+import { formatPhoneDisplay } from './profile/utils';
+import ProfileCover from './profile/components/ProfileCover';
+import IncompleteProfileBanner from './profile/components/IncompleteProfileBanner';
+import WalletCard from './profile/components/WalletCard';
+import MenuCard from './profile/components/MenuCard';
 
-const formatPhoneDisplay = (raw = '') => {
-  let d = raw.replace(/\D/g, '');
-  if (d.startsWith('998') && d.length > 9) d = d.slice(3); // to'liq raqamdan (+998...) mamlakat kodini olib tashlaymiz
-  d = d.slice(0, 9);
-  let s = '';
-  if (d.length > 0) s += d.slice(0, 2);
-  if (d.length > 2) s += ' ' + d.slice(2, 5);
-  if (d.length > 5) s += ' ' + d.slice(5, 7);
-  if (d.length > 7) s += ' ' + d.slice(7, 9);
-  return `+998 ${s}`.trim();
-};
-
-// Android'dagi Image (Fresco/OkHttp) kodlanmagan "+" belgisini URL'da
-// noto'g'ri talqin qilib, rasmni yuklolmasligi mumkin — shu sababli xavfsiz kodlaymiz.
-const encodeImageUri = (uri) => (uri ? uri.replace(/\+/g, '%2B') : uri);
-
-const fmt = (n) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-
-function Avatar({ letter = 'J', size = 80, bgColor, uri }) {
-  return (
-    <View
-      style={{
-        width: size,
-        height: size,
-        borderRadius: size * 0.3,
-        backgroundColor: uri ? 'transparent' : bgColor,
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden',
-      }}
-    >
-      {uri ? (
-        <Image
-          source={{ uri: encodeImageUri(uri) }}
-          style={{ width: '100%', height: '100%' }}
-          resizeMode="cover"
-        />
-      ) : (
-        <Text
-          style={{ color: '#fff', fontSize: size * 0.4, fontWeight: '700' }}
-        >
-          {letter}
-        </Text>
-      )}
-    </View>
-  );
-}
-
-async function pickFromGallery(onPicked, tr) {
-  const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!perm.granted) {
-    Alert.alert(tr('profile.errors.permissionTitle'), tr('profile.errors.galleryPermission'));
-    return;
-  }
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ['images'],
-    quality: 0.8,
-    allowsEditing: true,
-    aspect: [1, 1],
-  });
-  if (!result.canceled) {
-    const asset = result.assets[0];
-    onPicked(asset.uri, asset.mimeType || 'image/jpeg');
-  }
-}
-
-async function pickFromCamera(onPicked, tr) {
-  const perm = await ImagePicker.requestCameraPermissionsAsync();
-  if (!perm.granted) {
-    Alert.alert(tr('profile.errors.permissionTitle'), tr('profile.errors.cameraPermission'));
-    return;
-  }
-  const result = await ImagePicker.launchCameraAsync({
-    quality: 0.8,
-    allowsEditing: true,
-    aspect: [1, 1],
-  });
-  if (!result.canceled) {
-    const asset = result.assets[0];
-    onPicked(asset.uri, asset.mimeType || 'image/jpeg');
-  }
-}
-
-function SettingsRow({ icon, label, value, danger, color, onPress, t }) {
-  return (
-    <TouchableOpacity style={s.row} activeOpacity={0.7} onPress={onPress}>
-      <View
-        style={[
-          s.rowIcon,
-          { backgroundColor: danger ? 'rgba(224,71,58,0.13)' : t.rowIconBg },
-        ]}
-      >
-        <MaterialCommunityIcons
-          name={icon}
-          size={19}
-          color={danger ? t.red : color || t.muted}
-        />
-      </View>
-      <Text style={[s.rowLabel, { color: danger ? t.red : t.text }]}>
-        {label}
-      </Text>
-      {value ? (
-        <Text style={[s.rowValue, { color: t.muted }]}>{value}</Text>
-      ) : null}
-      {!danger && (
-        <MaterialCommunityIcons
-          name="chevron-right"
-          size={18}
-          color={t.faint}
-        />
-      )}
-    </TouchableOpacity>
-  );
-}
-
-export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
-  const { theme: t, toggleTheme } = useTheme();
+// Mijoz profili (pastki menyudagi "profile" tabi): tepada rasm/ma'lumot/statistika, so'ng hamyon va
+// menyular. Menyudagi sahifalar alohida marshrutlar (src/app/): router.push bilan ochiladi.
+export default function ZakazchiProfileScreen() {
+  const router = useRouter();
+  const { signOut } = useAuth();
+  const { theme: t } = useTheme();
   const { language: lang, setLanguage: setLang, t: tr } = useLanguage();
-  const { user, refreshUser } = useUser();
+  const { user } = useUser();
   const { balance } = useWallet();
-  const [screen, setScreen] = useState('profile');
+
   const [showTil, setShowTil] = useState(false);
-  const [avatarUri, setAvatarUri] = useState(null);
-  const [avatarUploading, setAvatarUploading] = useState(false);
-  const [showAvatarSheet, setShowAvatarSheet] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState(null);
 
-  const displayName =
-    [user?.first_name, user?.last_name].filter(Boolean).join(' ').trim() ||
-    'Jasur Rahimov';
-  const displayLetter = (user?.first_name || 'J')[0].toUpperCase();
-  const displayPhone =
-    phoneNumber ||
-    (user?.phone ? formatPhoneDisplay(user.phone) : '+998 90 123 45 67');
-  const displayAvatarUri = avatarUri || user?.profile_photo || null;
-  const displayLocation = [user?.district, user?.region]
-    .filter(Boolean)
-    .join(', ');
+  // Profil sahifalaridan qaytilganda statistika qayta yuklanadi.
+  const stats = useProfileStats(useIsFocused());
+  const avatar = useAvatarActions();
 
-  const commitAvatar = async (uri, contentType = 'image/jpeg') => {
-    setAvatarUri(uri);
-    setAvatarUploading(true);
-    try {
-      const { upload_url, temp_key } = await getAvatarUploadUrl(contentType);
-      await uploadImageToPresignedUrl(upload_url, uri, contentType);
-      await confirmAvatar(temp_key);
-      await refreshUser();
-      setAvatarUri(null);
-    } catch (e) {
-      setAvatarUri(null);
-      Alert.alert(
-        tr('common.errorTitle'),
-        e.message || tr('profile.errors.avatarUploadFailed')
-      );
-    } finally {
-      setAvatarUploading(false);
-    }
-  };
+  // Ism yoki telefon kelmasa, bo'sh qoldiriladi (zaxira matn yo'q).
+  const displayName = [user?.first_name, user?.last_name].filter(Boolean).join(' ').trim();
+  const displayLetter = (displayName[0] || '?').toUpperCase();
+  const displayPhone = user?.phone ? formatPhoneDisplay(user.phone) : '';
+  const displayAvatarUri = avatar.previewUri || user?.profile_photo || null;
+  const displayLocation = [user?.district, user?.region].filter(Boolean).join(', ');
 
-  const handlePickCamera = () => {
-    setShowAvatarSheet(false);
-    pickFromCamera(commitAvatar, tr);
-  };
-
-  const handlePickGallery = () => {
-    setShowAvatarSheet(false);
-    pickFromGallery(commitAvatar, tr);
-  };
-
-  const handleRemoveAvatar = async () => {
-    setShowAvatarSheet(false);
-    setAvatarUri(null);
-    setAvatarUploading(true);
-    try {
-      await deleteAvatar();
-      await refreshUser();
-    } catch (e) {
-      Alert.alert(
-        tr('common.errorTitle'),
-        e.message || tr('profile.errors.avatarDeleteFailed')
-      );
-    } finally {
-      setAvatarUploading(false);
-    }
-  };
-
-  if (screen === 'help') {
-    return <ZakazchiHelpScreen onBack={() => setScreen('profile')} />;
-  }
-
-  if (screen === 'notif') {
-    return <ZakazchiNotifScreen onBack={() => setScreen('profile')} />;
-  }
-
-  if (screen === 'orders') {
-    return <ZakazchiOrdersScreen onBack={() => setScreen('profile')} />;
-  }
-
-  if (screen === 'password') {
-    return <ChangePasswordScreen onBack={() => setScreen('profile')} />;
-  }
-
-  if (screen === 'editProfile') {
-    return <EditProfileScreen onBack={() => setScreen('profile')} />;
-  }
-
-  if (screen === 'paymentHistory') {
-    return <PaymentHistoryScreen onBack={() => setScreen('profile')} />;
-  }
-
-  if (screen === 'wallet') {
-    return <WalletScreen onBack={() => setScreen('profile')} />;
-  }
-
-  if (screen === 'changePhone') {
-    return (
-      <ChangePhoneScreen
-        currentPhone={displayPhone}
-        onBack={() => setScreen('profile')}
-        onChanged={(digits) => {
-          setPhoneNumber(formatPhoneDisplay(digits));
-          setScreen('profile');
-        }}
-      />
-    );
-  }
+  const go = (path) => () => router.push(path);
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: t.bg }}
-      edges={['top', 'left', 'right']}
-    >
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }} edges={['top', 'left', 'right']}>
       <StatusBar style={t.isDark ? 'light' : 'dark'} />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 90 }}
-      >
-        {/* ── Cover Header ── */}
-        <View style={[s.cover, { backgroundColor: t.cover }]}>
-          <View
-            style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 14 }}
-          >
-            <TouchableOpacity
-              style={s.avatarWrap}
-              activeOpacity={0.85}
-              onPress={() => setShowAvatarSheet(true)}
-              disabled={avatarUploading}
-            >
-              <Avatar
-                letter={displayLetter}
-                size={72}
-                bgColor={t.orange}
-                uri={displayAvatarUri}
-              />
-              {avatarUploading && (
-                <View style={[s.avatarOverlay, { borderRadius: 72 * 0.3 }]}>
-                  <ActivityIndicator size="small" color="#fff" />
-                </View>
-              )}
-              <View
-                style={[
-                  s.avatarBadge,
-                  { backgroundColor: t.orange, borderColor: t.cover },
-                ]}
-              >
-                <MaterialCommunityIcons name="camera" size={12} color="#fff" />
-              </View>
-            </TouchableOpacity>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 90 }}>
+        <ProfileCover
+          letter={displayLetter}
+          avatarUri={displayAvatarUri}
+          avatarUploading={avatar.uploading}
+          onAvatarPress={avatar.openSheet}
+          name={displayName}
+          phone={displayPhone}
+          location={displayLocation}
+          stats={stats}
+          onEdit={go('/edit-profile')}
+        />
 
-            <View style={{ flex: 1, paddingTop: 2 }}>
-              <View
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}
-              >
-                <Text
-                  style={{ fontWeight: '700', fontSize: 18, color: t.text }}
-                  numberOfLines={1}
-                >
-                  {displayName}
-                </Text>
-                <MaterialCommunityIcons
-                  name="shield-check"
-                  size={15}
-                  color={t.green}
-                />
-              </View>
-              <Text style={{ fontSize: 12.5, color: t.muted, marginTop: 3 }}>
-                {displayPhone}
-              </Text>
-              {!!displayLocation && (
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 4,
-                    marginTop: 3,
-                  }}
-                >
-                  <MaterialCommunityIcons
-                    name="map-marker-outline"
-                    size={12}
-                    color={t.faint}
-                  />
-                  <Text
-                    style={{ fontSize: 11.5, color: t.faint }}
-                    numberOfLines={1}
-                  >
-                    {displayLocation}
-                  </Text>
-                </View>
-              )}
-              <TouchableOpacity
-                style={[
-                  s.editBtn,
-                  { borderColor: t.border, backgroundColor: t.card },
-                ]}
-                activeOpacity={0.8}
-                onPress={() => setScreen('editProfile')}
-              >
-                <MaterialCommunityIcons
-                  name="pencil-outline"
-                  size={13}
-                  color={t.text}
-                />
-                <Text
-                  style={{
-                    color: t.text,
-                    fontWeight: '700',
-                    fontSize: 12,
-                    marginLeft: 6,
-                  }}
-                >
-                  {tr('common.edit')}
-                </Text>
-              </TouchableOpacity>
-            </View>
+        {!displayLocation && <IncompleteProfileBanner onPress={go('/edit-profile')} />}
 
-            <TouchableOpacity
-              style={[
-                s.themeBtn,
-                {
-                  backgroundColor: t.isDark
-                    ? 'rgba(245,196,81,0.14)'
-                    : 'rgba(63,127,212,0.12)',
-                  borderColor: t.isDark
-                    ? 'rgba(245,196,81,0.28)'
-                    : 'rgba(63,127,212,0.24)',
-                },
-              ]}
-              activeOpacity={0.8}
-              onPress={toggleTheme}
-            >
-              <Feather
-                name={t.isDark ? 'sun' : 'moon'}
-                size={19}
-                color={t.isDark ? t.gold : t.blue}
-              />
-            </TouchableOpacity>
-          </View>
+        <WalletCard balance={balance} onPress={go('/wallet')} />
 
-          {/* Activity stats */}
-          <View style={s.statsRow}>
-            {[
-              {
-                value: '18',
-                label: tr('profile.stats.orders'),
-                icon: 'archive-outline',
-                color: t.orange,
-              },
-              {
-                value: '12',
-                label: tr('profile.stats.favoriteMasters'),
-                icon: 'heart-outline',
-                color: t.red,
-              },
-              {
-                value: '4.8',
-                label: tr('profile.stats.yourRating'),
-                icon: 'star-outline',
-                color: t.gold,
-              },
-            ].map((st, i) => (
-              <View
-                key={i}
-                style={[
-                  s.statPill,
-                  { backgroundColor: t.card, borderColor: t.border },
-                ]}
-              >
-                <View
-                  style={[s.statIcon, { backgroundColor: st.color + '1c' }]}
-                >
-                  <MaterialCommunityIcons
-                    name={st.icon}
-                    size={13}
-                    color={st.color}
-                  />
-                </View>
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text
-                    style={[s.statVal, { color: t.text }]}
-                    numberOfLines={1}
-                  >
-                    {st.value}
-                  </Text>
-                  <Text
-                    style={[s.statLbl, { color: t.muted }]}
-                    numberOfLines={1}
-                  >
-                    {st.label}
-                  </Text>
-                </View>
-                <View style={[s.statAccent, { backgroundColor: st.color }]} />
-              </View>
-            ))}
-          </View>
-        </View>
+        <MenuCard
+          style={{ paddingTop: 22 }}
+          rows={[
+            {
+              icon: 'format-list-bulleted',
+              label: tr('profile.menu.orderHistory'),
+              value: stats.orders != null ? tr('profile.menu.itemCount', { n: stats.orders }) : undefined,
+              color: t.blue,
+              onPress: go('/orders'),
+            },
+            {
+              icon: 'map-marker-outline',
+              label: tr('profile.menu.myAddresses'),
+              color: t.green,
+              onPress: go('/addresses'),
+            },
+            {
+              icon: 'receipt-text-outline',
+              label: tr('profile.menu.paymentHistory'),
+              color: t.blue,
+              onPress: go('/payment-history'),
+            },
+          ]}
+        />
 
-        {/* ── Profilni to'ldirish taklifi ── */}
-        {!displayLocation && (
-          <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
-            <TouchableOpacity
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor: t.card,
-                borderWidth: 1,
-                borderColor: t.border,
-                borderRadius: 16,
-                padding: 14,
-                gap: 12,
-              }}
-              activeOpacity={0.8}
-              onPress={() => setScreen('editProfile')}
-            >
-              <View
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 12,
-                  backgroundColor: t.orange + '1c',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <MaterialCommunityIcons
-                  name="map-marker-alert-outline"
-                  size={20}
-                  color={t.orange}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontWeight: '700', fontSize: 13.5, color: t.text }}>
-                  {tr('profile.incompleteBanner.title')}
-                </Text>
-                <Text style={{ fontSize: 12, color: t.muted, marginTop: 2 }}>
-                  {tr('profile.incompleteBanner.subtitle')}
-                </Text>
-              </View>
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={20}
-                color={t.faint}
-              />
-            </TouchableOpacity>
-          </View>
-        )}
+        <MenuCard
+          style={{ paddingTop: 16 }}
+          title={tr('profile.settings.title')}
+          rows={[
+            { icon: 'bell-outline', label: tr('profile.settings.notifications'), onPress: go('/notifications') },
+            {
+              icon: 'earth',
+              label: tr('profile.settings.language'),
+              value: LANGS.find((l) => l.code === lang)?.name,
+              onPress: () => setShowTil(true),
+            },
+            { icon: 'phone-outline', label: tr('profile.settings.changePhone'), onPress: go('/change-phone') },
+            { icon: 'lock-outline', label: tr('profile.settings.changePassword'), onPress: go('/change-password') },
+            { icon: 'help-circle-outline', label: tr('profile.settings.helpCenter'), onPress: go('/help') },
+          ]}
+        />
 
-        {/* ── Hamyon + sodiqlik darajasi ── */}
-        <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
-          <TouchableOpacity
-            style={[s.walletCard, { overflow: 'hidden' }]}
-            activeOpacity={0.9}
-            onPress={() => setScreen('wallet')}
-          >
-            <View style={s.walletCircle} />
-            <View
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}
-            >
-              <View style={s.walletIcon}>
-                <MaterialCommunityIcons name="wallet" size={22} color="#fff" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.9)' }}
-                >
-                  {tr('profile.wallet.title')}
-                </Text>
-                <Text
-                  style={{
-                    fontWeight: '800',
-                    fontSize: 20,
-                    color: '#fff',
-                    marginTop: 2,
-                  }}
-                >
-                  {fmt(balance)}{' '}
-                  <Text
-                    style={{ fontSize: 12, fontWeight: '600', opacity: 0.85 }}
-                  >
-                    {tr('common.currencySom')}
-                  </Text>
-                </Text>
-              </View>
-              <TouchableOpacity
-                style={s.topupBtn}
-                activeOpacity={0.8}
-                onPress={() => setScreen('wallet')}
-              >
-                <Text
-                  style={{
-                    color: t.orangeD,
-                    fontWeight: '700',
-                    fontSize: 12.5,
-                  }}
-                >
-                  {tr('profile.wallet.topup')}
-                </Text>
-              </TouchableOpacity>
-            </View>
-            {/* Sodiqlik progress */}
-            <View
-              style={{
-                marginTop: 15,
-                paddingTop: 14,
-                borderTopWidth: 1,
-                borderTopColor: 'rgba(255,255,255,0.2)',
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: 8,
-                }}
-              >
-                <View
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
-                >
-                  <Ionicons name="star" size={14} color="#fff" />
-                  <Text
-                    style={{ fontSize: 12.5, fontWeight: '700', color: '#fff' }}
-                  >
-                    {tr('profile.loyalty.silverCustomer')}
-                  </Text>
-                </View>
-                <Text
-                  style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.9)' }}
-                >
-                  {tr('profile.loyalty.toNextLevel')}
-                </Text>
-              </View>
-              <View style={s.progressTrack}>
-                <View style={[s.progressFill, { width: '70%' }]} />
-              </View>
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* ── Asosiy menyu ── */}
-        <View style={{ paddingHorizontal: 20, paddingTop: 22 }}>
-          <View
-            style={[
-              s.menuCard,
-              { backgroundColor: t.card, borderColor: t.border },
-            ]}
-          >
-            <SettingsRow
-              icon="format-list-bulleted"
-              label={tr('profile.menu.orderHistory')}
-              value={tr('profile.menu.itemCount', { n: 18 })}
-              color={t.blue}
-              t={t}
-              onPress={() => setScreen('orders')}
-            />
-            <View style={[s.divider, { backgroundColor: t.border }]} />
-            <SettingsRow
-              icon="map-marker-outline"
-              label={tr('profile.menu.myAddresses')}
-              value={tr('profile.menu.itemCount', { n: 3 })}
-              color={t.green}
-              t={t}
-            />
-            <View style={[s.divider, { backgroundColor: t.border }]} />
-            <SettingsRow
-              icon="receipt-text-outline"
-              label={tr('profile.menu.paymentHistory')}
-              color={t.blue}
-              t={t}
-              onPress={() => setScreen('paymentHistory')}
-            />
-          </View>
-        </View>
-
-        {/* ── Sozlamalar ── */}
-        <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
-          <Text style={[s.groupLabel, { color: t.faint }]}>{tr('profile.settings.title')}</Text>
-          <View
-            style={[
-              s.menuCard,
-              { backgroundColor: t.card, borderColor: t.border },
-            ]}
-          >
-            <SettingsRow
-              icon="bell-outline"
-              label={tr('profile.settings.notifications')}
-              t={t}
-              onPress={() => setScreen('notif')}
-            />
-            <View style={[s.divider, { backgroundColor: t.border }]} />
-            <SettingsRow
-              icon="earth"
-              label={tr('profile.settings.language')}
-              value={LANGS.find((l) => l.code === lang)?.name}
-              t={t}
-              onPress={() => setShowTil(true)}
-            />
-            <View style={[s.divider, { backgroundColor: t.border }]} />
-            <SettingsRow
-              icon="phone-outline"
-              label={tr('profile.settings.changePhone')}
-              t={t}
-              onPress={() => setScreen('changePhone')}
-            />
-            <View style={[s.divider, { backgroundColor: t.border }]} />
-            <SettingsRow
-              icon="lock-outline"
-              label={tr('profile.settings.changePassword')}
-              t={t}
-              onPress={() => setScreen('password')}
-            />
-            <View style={[s.divider, { backgroundColor: t.border }]} />
-            <SettingsRow
-              icon="help-circle-outline"
-              label={tr('profile.settings.helpCenter')}
-              t={t}
-              onPress={() => setScreen('help')}
-            />
-          </View>
-        </View>
-
-        {/* ── Chiqish ── */}
-        <View
-          style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24 }}
+        <MenuCard
+          style={{ paddingTop: 16 }}
+          rows={[{ icon: 'logout', label: tr('profile.logout'), danger: true, onPress: signOut }]}
+        />
+        <Text
+          style={{
+            textAlign: 'center',
+            fontSize: 11.5,
+            color: t.faint,
+            marginTop: 16,
+            marginBottom: 24,
+          }}
         >
-          <View
-            style={[
-              s.menuCard,
-              { backgroundColor: t.card, borderColor: t.border },
-            ]}
-          >
-            <SettingsRow
-              icon="logout"
-              label={tr('profile.logout')}
-              danger
-              t={t}
-              onPress={onLogout}
-            />
-          </View>
-          <Text
-            style={{
-              textAlign: 'center',
-              fontSize: 11.5,
-              color: t.faint,
-              marginTop: 16,
-            }}
-          >
-            {tr('profile.footer')}
-          </Text>
-        </View>
+          {tr('profile.footer')}
+        </Text>
       </ScrollView>
 
-      {/* ── Bottom Nav ── */}
-      <BottomNav
-        activeTab="profile"
-        onTabChange={onTabChange}
-        accent={t.orange}
-        background={t.navBg}
-        border={t.border}
-        muted={t.faint}
-      />
       <TilBottomSheet
         visible={showTil}
         currentLang={lang}
@@ -722,11 +130,11 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
         onClose={() => setShowTil(false)}
       />
       <AvatarPickerSheet
-        visible={showAvatarSheet}
-        onClose={() => setShowAvatarSheet(false)}
-        onPickCamera={handlePickCamera}
-        onPickGallery={handlePickGallery}
-        onRemove={handleRemoveAvatar}
+        visible={avatar.sheetOpen}
+        onClose={avatar.closeSheet}
+        onPickCamera={avatar.pickCamera}
+        onPickGallery={avatar.pickGallery}
+        onRemove={avatar.remove}
         hasPhoto={!!displayAvatarUri}
         previewUri={displayAvatarUri}
         previewLetter={displayLetter}
@@ -736,170 +144,3 @@ export default function ZakazchiProfileScreen({ onTabChange, onLogout }) {
     </SafeAreaView>
   );
 }
-
-const s = StyleSheet.create({
-  cover: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 22,
-  },
-  themeBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  avatarWrap: { position: 'relative' },
-  avatarOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(10,19,34,0.5)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarBadge: {
-    position: 'absolute',
-    bottom: -3,
-    right: -3,
-    width: 27,
-    height: 27,
-    borderRadius: 14,
-    borderWidth: 2.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  editBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
-    borderWidth: 1.5,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 10,
-    alignSelf: 'flex-start',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 9,
-    marginTop: 18,
-  },
-  statPill: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    borderWidth: 1,
-    borderRadius: 15,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    paddingBottom: 12,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  statIcon: {
-    width: 26,
-    height: 26,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  statVal: { fontWeight: '800', fontSize: 14 },
-  statLbl: { fontSize: 9.5, marginTop: 1 },
-  statAccent: {
-    position: 'absolute',
-    left: 10,
-    right: 10,
-    bottom: 0,
-    height: 2.5,
-    borderRadius: 2,
-  },
-
-  walletCard: {
-    borderRadius: 18,
-    padding: 16,
-    backgroundColor: '#e87a45',
-    position: 'relative',
-  },
-  walletCircle: {
-    position: 'absolute',
-    right: -24,
-    top: -24,
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-  },
-  walletIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 13,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  topupBtn: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-  },
-  progressTrack: {
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    overflow: 'hidden',
-  },
-  progressFill: { height: '100%', borderRadius: 4, backgroundColor: '#fff' },
-
-  miniCard: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 15,
-  },
-  miniIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 11,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  groupLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    marginBottom: 8,
-    paddingLeft: 4,
-  },
-  menuCard: {
-    borderWidth: 1,
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    paddingVertical: 2,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 13,
-    paddingVertical: 14,
-  },
-  rowIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 11,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  rowLabel: { flex: 1, fontWeight: '600', fontSize: 14 },
-  rowValue: { fontSize: 12.5 },
-  divider: { height: 1 },
-});

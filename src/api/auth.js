@@ -2,10 +2,11 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import * as FileSystem from 'expo-file-system/legacy';
 import { ENDPOINTS } from '../constants/config';
+import { devLog } from '../utils/log';
 
-const logReq = (name, payload) => console.log(`[auth] → ${name}`, payload);
-const logOk = (name, data) => console.log(`[auth] ✓ ${name}`, data);
-const logErr = (name, err) => console.log(`[auth] ✗ ${name}`, err?.message || err);
+const logReq = (name) => devLog(`[auth] → ${name}`);
+const logOk = (name) => devLog(`[auth] ✓ ${name}`);
+const logErr = (name, err) => devLog(`[auth] ✗ ${name}`, err?.message || err);
 
 export async function uploadImageToPresignedUrl(
   uploadUrl,
@@ -43,7 +44,7 @@ export async function uploadImageToPresignedUrl(
 }
 
 export async function loginCustomer(phone, password) {
-  logReq('loginCustomer', { phone });
+  logReq('loginCustomer');
   const res = await fetch(ENDPOINTS.CUSTOMER_LOGIN, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -66,7 +67,7 @@ export async function loginCustomer(phone, password) {
  * @returns {Promise<{ sent: boolean, dev_code?: string }>}
  */
 export async function startCustomerAuth(identifier, channel = 'sms') {
-  logReq('startCustomerAuth', { identifier, channel });
+  logReq('startCustomerAuth');
   const res = await fetch(ENDPOINTS.AUTH_CUSTOMER_START, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -95,7 +96,7 @@ export async function startCustomerAuth(identifier, channel = 'sms') {
  * @returns {Promise<{ access_token: string|null, refresh_token: string|null, status?: string, ticket?: string, suggested_first_name?: string, suggested_last_name?: string }>}
  */
 export async function verifyCustomerAuth(identifier, code) {
-  logReq('verifyCustomerAuth', { identifier, code });
+  logReq('verifyCustomerAuth');
   const res = await fetch(ENDPOINTS.AUTH_CUSTOMER_VERIFY, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -118,7 +119,7 @@ export async function verifyCustomerAuth(identifier, code) {
  * @returns {Promise<{ access_token: string, refresh_token: string }>}
  */
 export async function completeCustomerAuth(ticket, firstName, lastName) {
-  logReq('completeCustomerAuth', { ticket, first_name: firstName, last_name: lastName });
+  logReq('completeCustomerAuth');
   const res = await fetch(ENDPOINTS.AUTH_CUSTOMER_COMPLETE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -139,7 +140,7 @@ export async function completeCustomerAuth(ticket, firstName, lastName) {
 }
 
 export async function requestResetPasswordOtp(phone) {
-  logReq('requestResetPasswordOtp', { phone });
+  logReq('requestResetPasswordOtp');
   const res = await fetch(ENDPOINTS.RESET_PASSWORD_REQUEST_OTP, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -156,7 +157,7 @@ export async function requestResetPasswordOtp(phone) {
 }
 
 export async function verifyResetPasswordOtp(phone, code, newPassword) {
-  logReq('verifyResetPasswordOtp', { phone, code });
+  logReq('verifyResetPasswordOtp');
   const res = await fetch(ENDPOINTS.RESET_PASSWORD_VERIFY_OTP, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -183,7 +184,7 @@ export async function googleLogin(actorType = 'customer') {
     `${ENDPOINTS.AUTH_GOOGLE_LOGIN}?actor_type=${actorType}` +
     `&redirect_uri=${encodeURIComponent(redirectUri)}`;
 
-  logReq('googleLogin', { actorType, loginUrl });
+  logReq('googleLogin');
   const result = await WebBrowser.openAuthSessionAsync(loginUrl, redirectUri);
 
   if (result.type !== 'success') {

@@ -43,7 +43,8 @@
           "faceIDPermission": "Ilova hisobingizga xavfsiz kirish uchun Face ID dan foydalanadi."
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-router"
     ],
     "extra": {
       "eas": {

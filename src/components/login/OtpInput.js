@@ -1,66 +1,95 @@
-import { useRef } from 'react';
-import { View, TextInput, StyleSheet } from 'react-native';
+import { useRef, useState } from 'react';
+import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
 import { COLORS } from '../../constants/colors';
+import { otpAutofillProps } from '../../utils/otp';
 
-export default function OtpInput({ value = '', onChange, length = 5 }) {
-  const refs = useRef([]);
+const DEFAULT_COLORS = {
+  bg: COLORS.inputBg,
+  border: COLORS.border,
+  text: COLORS.white,
+  accent: COLORS.orange,
+  filledBg: 'rgba(232,122,69,0.12)',
+};
 
-  const handleChange = (text, index) => {
-    const digit = text.replace(/\D/g, '').slice(-1);
-    const chars = Array.from({ length }, (_, i) => value[i] || '');
-    chars[index] = digit;
-    onChange(chars.join(''));
-    if (digit && index < length - 1) refs.current[index + 1]?.focus();
-  };
+// OTP kiritish: kataklar faqat ko'rsatish uchun, haqiqiy kiritish bitta TextInput'da.
+// Shu sababli SMS avto-to'ldirish, klaviatura tavsiyasi va paste butun kodni bir yo'la yozadi.
+export default function OtpInput({
+  value = '',
+  onChange,
+  length = 5,
+  colors,
+  cellHeight = 62,
+  fontSize = 24,
+  gap = 10,
+}) {
+  const inputRef = useRef(null);
+  const [focused, setFocused] = useState(false);
+  const c = { ...DEFAULT_COLORS, ...colors };
 
-  const handleKeyPress = (e, index) => {
-    if (e.nativeEvent.key === 'Backspace' && !value[index] && index > 0) {
-      refs.current[index - 1]?.focus();
-    }
-  };
+  const handleChange = (text) => onChange(text.replace(/\D/g, '').slice(0, length));
+
+  const activeIndex = Math.min(value.length, length - 1);
 
   return (
-    <View style={styles.row}>
+    <Pressable onPress={() => inputRef.current?.focus()} style={[styles.row, { gap }]}>
       {Array.from({ length }).map((_, i) => {
         const filled = !!value[i];
+        const active = focused && i === activeIndex;
         return (
-          <TextInput
+          <View
             key={i}
-            ref={el => (refs.current[i] = el)}
-            style={[styles.cell, filled && styles.cellFilled]}
-            value={value[i] || ''}
-            onChangeText={text => handleChange(text, i)}
-            onKeyPress={e => handleKeyPress(e, i)}
-            keyboardType="numeric"
-            maxLength={1}
-            selectTextOnFocus
-          />
+            style={[
+              styles.cell,
+              {
+                height: cellHeight,
+                backgroundColor: filled ? c.filledBg : c.bg,
+                borderColor: filled || active ? c.accent : c.border,
+              },
+            ]}
+          >
+            <Text style={[styles.digit, { color: c.text, fontSize }]}>{value[i] || ''}</Text>
+          </View>
         );
       })}
-    </View>
+
+      <TextInput
+        ref={inputRef}
+        value={value}
+        onChangeText={handleChange}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        keyboardType="number-pad"
+        maxLength={length}
+        autoFocus
+        caretHidden
+        style={styles.hiddenInput}
+        {...otpAutofillProps}
+      />
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    gap: 10,
     justifyContent: 'space-between',
   },
   cell: {
     flex: 1,
-    height: 62,
+    minWidth: 0,
     borderRadius: 16,
-    backgroundColor: COLORS.inputBg,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
-    color: COLORS.white,
-    fontSize: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  digit: {
     fontWeight: '700',
     textAlign: 'center',
   },
-  cellFilled: {
-    backgroundColor: 'rgba(232,122,69,0.12)',
-    borderColor: COLORS.orange,
+  // Kataklar ustini to'liq qoplaydi, ko'rinmaydi, lekin fokus va avto-to'ldirish oladi.
+  hiddenInput: {
+    ...StyleSheet.absoluteFill,
+    opacity: 0.015,
+    color: 'transparent',
   },
 });

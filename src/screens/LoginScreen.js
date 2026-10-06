@@ -13,7 +13,7 @@ import {
   requestResetPasswordOtp,
   verifyResetPasswordOtp,
 } from '../api/auth';
-import { saveToken, saveRefreshToken, saveActorType } from '../utils/token';
+import { saveSession, saveActorType } from '../utils/token';
 import { detectIdentifierMode, buildIdentifier } from '../utils/identifier';
 import PhoneStep from './steps/PhoneStep';
 import PasswordStep from './steps/PasswordStep';
@@ -21,6 +21,7 @@ import ForgotPasswordStep from './steps/ForgotPasswordStep';
 import CodeStep from './steps/CodeStep';
 import NewPasswordStep from './steps/NewPasswordStep';
 import CompleteProfileStep from './steps/CompleteProfileStep';
+import { devLog } from '../utils/log';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -57,8 +58,9 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
   const [completeError, setCompleteError] = useState('');
 
   const finishLogin = async (data) => {
-    if (data?.access_token) await saveToken(data.access_token);
-    if (data?.refresh_token) await saveRefreshToken(data.refresh_token);
+    if (data?.access_token) {
+      await saveSession({ accessToken: data.access_token, refreshToken: data.refresh_token });
+    }
     await saveActorType(actorType);
     (onLoginSuccess ?? onBack)(actorType);
   };
@@ -84,7 +86,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
       setVerifyLoading(true);
       setVerifyError('');
       const data = await verifyCustomerAuth(buildIdentifier(identifier), code);
-      console.log('[login] verify status:', data?.status, data);
+      devLog('[login] verify status:', data?.status);
       if (data?.access_token) {
         await finishLogin(data);
       } else if (data?.suggested_first_name && data?.suggested_last_name) {

@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  TextInput,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
@@ -17,6 +16,7 @@ import { useLanguage } from '../context/LanguageContext';
 import PhoneInput from '../components/login/PhoneInput';
 import { requestChangePhoneOtp, verifyChangePhoneOtp } from '../api/user';
 import SuccessModal from '../components/SuccessModal';
+import OtpInput from '../components/login/OtpInput';
 
 const formatPhone = (raw = '') => {
   const d = raw.replace(/\D/g, '').slice(0, 9);
@@ -27,55 +27,6 @@ const formatPhone = (raw = '') => {
   if (d.length > 7) s += ' ' + d.slice(7, 9);
   return s;
 };
-
-/* ── Themed 6-cell OTP input (same idea as login's OtpInput, adapted to
-   light/dark via `t` since this screen lives inside the themed profile area) ── */
-function OtpCells({ value, onChange, t, length = 6 }) {
-  const refs = useRef([]);
-
-  const handleChange = (text, index) => {
-    const digit = text.replace(/\D/g, '').slice(-1);
-    const chars = Array.from({ length }, (_, i) => value[i] || '');
-    chars[index] = digit;
-    onChange(chars.join(''));
-    if (digit && index < length - 1) refs.current[index + 1]?.focus();
-  };
-
-  const handleKeyPress = (e, index) => {
-    if (e.nativeEvent.key === 'Backspace' && !value[index] && index > 0) {
-      refs.current[index - 1]?.focus();
-    }
-  };
-
-  return (
-    <View style={s.otpRow}>
-      {Array.from({ length }).map((_, i) => {
-        const filled = !!value[i];
-        return (
-          <TextInput
-            key={i}
-            ref={(el) => (refs.current[i] = el)}
-            style={[
-              s.otpCell,
-              {
-                backgroundColor: t.inputBg,
-                borderColor: filled ? t.orange : t.border,
-                color: t.text,
-              },
-              filled && { backgroundColor: t.orange + '18' },
-            ]}
-            value={value[i] || ''}
-            onChangeText={(text) => handleChange(text, i)}
-            onKeyPress={(e) => handleKeyPress(e, i)}
-            keyboardType="numeric"
-            maxLength={1}
-            selectTextOnFocus
-          />
-        );
-      })}
-    </View>
-  );
-}
 
 export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
   const { theme: t } = useTheme();
@@ -218,7 +169,23 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
               </Text>
             </View>
 
-            <OtpCells value={code} onChange={setCode} t={t} />
+            <View style={s.otpWrap}>
+              <OtpInput
+                value={code}
+                onChange={setCode}
+                length={6}
+                cellHeight={54}
+                fontSize={20}
+                gap={8}
+                colors={{
+                  bg: t.inputBg,
+                  border: t.border,
+                  text: t.text,
+                  accent: t.orange,
+                  filledBg: t.orange + '18',
+                }}
+              />
+            </View>
 
             {!!confirmError && (
               <Text style={[s.errorText, { textAlign: 'center', marginTop: 10, color: t.red }]}>
@@ -344,16 +311,7 @@ const s = StyleSheet.create({
   otpTitle: { fontSize: 17, fontWeight: '800' },
   otpSubtitle: { fontSize: 13, lineHeight: 19, textAlign: 'center', maxWidth: 300 },
 
-  otpRow: { flexDirection: 'row', gap: 8, justifyContent: 'space-between', marginTop: 22 },
-  otpCell: {
-    flex: 1,
-    height: 54,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    fontSize: 20,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
+  otpWrap: { marginTop: 22 },
 
   timerText: { fontSize: 13, textAlign: 'center', marginTop: 16 },
   devCode: { fontSize: 13, textAlign: 'center', marginTop: 10 },

@@ -1,5 +1,6 @@
 import { ENDPOINTS } from '../constants/config';
 import { apiFetch } from '../utils/apiClient';
+import { devLog } from '../utils/log';
 
 const AVATAR_COLORS = ['#2fa37a', '#e87a45', '#3f7fd4', '#ec4899', '#8b5cf6', '#f5c451', '#06b6d4'];
 
@@ -18,7 +19,6 @@ export function mapWorker(w) {
     bio: w.bio ?? '',
     rating: parseFloat(w.overall_rating ?? '0'),
     location: [w.district, w.region].filter(Boolean).join(', '),
-    experience: `${w.experience_years} yil`,
     experienceYears: w.experience_years ?? 0,
     startingPrice: formatPrice(w.min_price ?? '0'),
     minPrice: parseFloat(w.min_price ?? '0'),
@@ -30,15 +30,38 @@ export function mapWorker(w) {
 }
 
 /**
- * @param {{ page?: number, size?: number, categoryId?: number|string|null, sort?: string }} params
+ * @param {{ page?: number, size?: number, categoryId?: number|string|null, sort?: string,
+ *   regionId?: number|null, districtId?: number|null, minRating?: number|null,
+ *   verifiedOnly?: boolean, q?: string }} params
  * @returns {Promise<ReturnType<mapWorker>[]>}
  */
-export async function getWorkers({ page = 1, size = 5, categoryId, sort = 'rating' } = {}) {
-  const params = `sort=${sort}&page=${page}&size=${size}`;
-  const url = categoryId
-    ? `${ENDPOINTS.WORKERS}?category_id=${categoryId}&${params}`
-    : `${ENDPOINTS.WORKERS}?${params}`;
-  const res = await apiFetch(url);
+export async function getWorkers(params) {
+  return (await getWorkersPage(params)).items;
+}
+
+/**
+ * Xuddi getWorkers, lekin sahifalashdagi umumiy sonni (`pagination.total`) ham qaytaradi.
+ * @returns {Promise<{ items: ReturnType<mapWorker>[], total: number|null }>}
+ */
+export async function getWorkersPage({
+  page = 1,
+  size = 5,
+  categoryId,
+  sort = 'rating',
+  regionId,
+  districtId,
+  minRating,
+  verifiedOnly,
+  q,
+} = {}) {
+  const params = [`sort=${sort}`, `page=${page}`, `size=${size}`];
+  if (q?.trim()) params.push(`q=${encodeURIComponent(q.trim().slice(0, 100))}`);
+  if (categoryId) params.push(`category_id=${categoryId}`);
+  if (regionId) params.push(`region_id=${regionId}`);
+  if (districtId) params.push(`district_id=${districtId}`);
+  if (minRating) params.push(`min_rating=${minRating}`);
+  if (verifiedOnly) params.push('is_verified=true');
+  const res = await apiFetch(`${ENDPOINTS.WORKERS}?${params.join('&')}`);
 
   if (!res.ok) {
     throw new Error(`Workers fetch failed: ${res.status}`);
@@ -46,7 +69,10 @@ export async function getWorkers({ page = 1, size = 5, categoryId, sort = 'ratin
 
   const json = await res.json();
   const items = json.response_data?.items ?? json.response_data ?? [];
-  return items.map(mapWorker);
+  return {
+    items: items.map(mapWorker),
+    total: json.response_data?.pagination?.total ?? null,
+  };
 }
 
 /**
@@ -61,8 +87,20 @@ export async function getFavorites({ page = 1, size = 10 } = {}) {
   }
 
   const json = await res.json();
-  console.log('[getFavorites] /customers/me/favorites response:', json.response_data);
+  devLog('[getFavorites] /customers/me/favorites response:', json.response_data);
   return (json.response_data?.items ?? []).map(mapWorker);
+}
+
+/** Sevimli ustalar soni (sahifalashdagi `total`, faqat 1 ta element so'raladi). */
+export async function getFavoritesCount() {
+  const res = await apiFetch(ENDPOINTS.CUSTOMER_FAVORITES(1, 1));
+
+  if (!res.ok) {
+    throw new Error(`Favorites count fetch failed: ${res.status}`);
+  }
+
+  const json = await res.json();
+  return json.response_data?.pagination?.total ?? 0;
 }
 
 function mapWorkerCategory(c) {
@@ -145,7 +183,7 @@ export function mapWorkerDetail(w) {
     reliability_badge: w.reliability_badge ?? 'none',
     is_online: w.is_online ?? false,
     isIdentityVerified: !!w.is_identity_verified,
-    experience: `${w.experience_years ?? 0} yil`,
+    experienceYears: w.experience_years ?? 0,
     vip_status: w.vip_status ?? 'none',
     acceptanceRate: w.acceptance_rate != null ? parseFloat(w.acceptance_rate) : null,
     repeatClientRate: w.repeat_client_rate != null ? parseFloat(w.repeat_client_rate) : null,
@@ -183,7 +221,7 @@ export async function getWorkerById(workerId) {
   }
 
   const json = await res.json();
-  console.log('[getWorkerById] /workers/{id} response:', json.response_data);
+  devLog('[getWorkerById] /workers/{id} response:', json.response_data);
   return mapWorkerDetail(json.response_data);
 }
 
@@ -222,6 +260,6 @@ export async function getWorkerCertificates(workerId, categoryId) {
   }
 
   const json = await res.json();
-  console.log('[getWorkerCertificates] /workers/{id}/certificates response:', json.response_data);
+  devLog('[getWorkerCertificates] /workers/{id}/certificates response:', json.response_data);
   return (json.response_data ?? []).map(mapCertificate);
 }

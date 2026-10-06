@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { COLORS } from '../constants/colors';
 import { YANDEX_MAPS_API_KEY, YANDEX_GEOCODER_API_KEY } from '../constants/config';
+import { devLog } from '../utils/log';
 
 // Yandex API kaliti "afish.uz" domeniga bog'lab yaratilgan, lekin WebView xarita
 // HTML'ni to'g'ridan-to'g'ri matn sifatida (haqiqiy domensiz) yuklaydi —
@@ -211,7 +212,7 @@ export default function LocationMapPicker({
     try {
       const data = JSON.parse(e.nativeEvent.data);
       if (data.debug) {
-        console.log('[LocationMapPicker]', data.debug, data);
+        devLog('[LocationMapPicker]', data.debug, data);
         return;
       }
       onChange?.(data.lat, data.lng);

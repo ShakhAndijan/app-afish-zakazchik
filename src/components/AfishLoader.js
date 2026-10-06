@@ -2,8 +2,8 @@ import React from 'react';
 import { View } from 'react-native';
 import { Image } from 'expo-image';
 
-const SOURCE = require('../../assets/afish-loader.png');
-const ASPECT_RATIO = 483 / 269;
+const SOURCE = require('../../assets/afish-loader.webp');
+const ASPECT_RATIO = 360 / 200;
 
 export default function AfishLoader({ size = 120, style }) {
   return (
