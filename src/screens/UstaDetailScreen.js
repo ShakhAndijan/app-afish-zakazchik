@@ -30,7 +30,14 @@ export default function UstaDetailScreen(props) {
   );
 }
 
-function UstaDetailContent({ usta, onBack, onGoToLogin, onOrderWorker, onSelectWork, isLoggedIn = false }) {
+function UstaDetailContent({
+  usta,
+  onBack,
+  onGoToLogin,
+  onOrderWorker,
+  onSelectWork,
+  isLoggedIn = false,
+}) {
   const insets = useSafeAreaInsets();
   const { t: tr } = useLanguage();
   const { C, st } = useUstaStyles();
@@ -49,7 +56,8 @@ function UstaDetailContent({ usta, onBack, onGoToLogin, onOrderWorker, onSelectW
   } = useUstaDetail(usta);
 
   const profile = pickProfile({ detail, usta, C, tr });
-  const { d, initial, name, trade, rating, rawRating, bgColor, location, experience, bio } = profile;
+  const { d, initial, name, trade, rating, rawRating, bgColor, location, experience, bio } =
+    profile;
 
   const categories = detail?.categories || [];
   const portfolio = detail?.portfolio || [];
@@ -65,7 +73,7 @@ function UstaDetailContent({ usta, onBack, onGoToLogin, onOrderWorker, onSelectW
       trade,
       bgColor,
       initial,
-      categoryId: detail?.mainCategoryId ?? null,
+      categoryId: selectedCategoryId ?? detail?.mainCategoryId ?? null,
     });
   };
 
@@ -75,6 +83,7 @@ function UstaDetailContent({ usta, onBack, onGoToLogin, onOrderWorker, onSelectW
 
       <DetailHeader
         onBack={onBack}
+        workerId={usta?.id ?? detail?.id}
         shareInfo={{ name, trade, rating }}
         isLoggedIn={isLoggedIn}
         liked={liked}
@@ -109,14 +118,22 @@ function UstaDetailContent({ usta, onBack, onGoToLogin, onOrderWorker, onSelectW
             onSelect={setSelectedCategoryId}
             loading={loadingDetail}
           />
-          <ServicePricesSection categories={categories} loading={loadingDetail} />
+          <ServicePricesSection
+            categories={categories}
+            selectedId={selectedCategoryId}
+            loading={loadingDetail}
+          />
           {isLoggedIn && (
             <ScheduleSection weekDays={weekDays} workHours={workHours} offDates={offDates} />
           )}
           <CertificatesSection certificates={certificates} loading={loadingCertificates} />
         </View>
 
-        <WorksSection portfolio={portfolio} loading={loadingDetail} onSelectWork={(work) => onSelectWork?.({ ...work, worker: name })} />
+        <WorksSection
+          portfolio={portfolio}
+          loading={loadingDetail}
+          onSelectWork={(work) => onSelectWork?.({ ...work, worker: name })}
+        />
 
         <View style={st.pad}>
           <RatingSection

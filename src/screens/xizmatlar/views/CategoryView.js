@@ -8,6 +8,7 @@ import CategoryHero from '../components/CategoryHero';
 import CategoryStatsCard from '../components/CategoryStatsCard';
 import WorkerList from '../components/WorkerList';
 import EmptyBox from '../components/EmptyBox';
+import useTabBarSpace from '../../../navigation/useTabBarSpace';
 
 // Yo'nalish ko'rinishi: hero, statistika va shu yo'nalishdagi ustalar ro'yxati.
 export default function CategoryView({
@@ -21,6 +22,7 @@ export default function CategoryView({
   onSelectWorker,
   onBack,
 }) {
+  const bottomSpace = useTabBarSpace(90);
   const { t: tr } = useLanguage();
   const { styles } = useXizmatlarStyles();
   const { sort, minExp } = filters;
@@ -36,7 +38,7 @@ export default function CategoryView({
   const mastersCount = !minExp && total != null ? total : results.length;
 
   return (
-    <ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: 90 }} showsVerticalScrollIndicator={false}>
+    <ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: bottomSpace }} showsVerticalScrollIndicator={false}>
       <View>
         <CategoryHero category={category} mastersCount={mastersCount} searchRow={searchRow} />
 

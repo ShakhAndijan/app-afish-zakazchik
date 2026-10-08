@@ -4,14 +4,22 @@ import { useTheme } from '../../../context/ThemeContext';
 import { useLanguage } from '../../../context/LanguageContext';
 import { common } from '../styles';
 
-export default function AddressSection({ hasAddress, setAddressModalOpen, addressTitle, addressSubtitle }) {
+export default function AddressSection({
+  hasAddress,
+  setAddressModalOpen,
+  addressTitle,
+  addressSubtitle,
+}) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
 
   return (
     <>
       {/* ── Manzil ── */}
-      <Text style={[common.label, { color: t.text }]}>{tr('newOrder.locationLabel')}</Text>
+      <Text style={[common.label, { color: t.text }]}>
+        {tr('newOrder.locationLabel')}
+        <Text style={{ color: t.red }}> *</Text>
+      </Text>
       {hasAddress ? (
         <TouchableOpacity
           onPress={() => setAddressModalOpen(true)}

@@ -28,6 +28,12 @@ export const orderRoute = (order) => ({
   params: { id: String(order?.id ?? 'buyurtma'), data: encodeParam(order) },
 });
 
+// Usta profilidan "Chaqirish": ustaga buyurtma berish oynasi (profil ustida ochiladi).
+export const orderWorkerRoute = (worker) => ({
+  pathname: '/order-worker',
+  params: { worker: encodeParam(worker) },
+});
+
 export const newOrderRoute = (worker) => ({
   pathname: '/new-order',
   params: { worker: encodeParam(worker) },

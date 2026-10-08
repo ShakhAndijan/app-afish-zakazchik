@@ -6,7 +6,6 @@ import { useRouter, useIsFocused } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useUser } from '../context/UserContext';
-import { useWallet } from '../context/WalletContext';
 import { useAuth } from '../context/AuthContext';
 import TilBottomSheet, { LANGS } from '../components/TilBottomSheet';
 import AvatarPickerSheet from '../components/AvatarPickerSheet';
@@ -15,18 +14,18 @@ import useAvatarActions from './profile/hooks/useAvatarActions';
 import { formatPhoneDisplay } from './profile/utils';
 import ProfileCover from './profile/components/ProfileCover';
 import IncompleteProfileBanner from './profile/components/IncompleteProfileBanner';
-import WalletCard from './profile/components/WalletCard';
 import MenuCard from './profile/components/MenuCard';
+import useTabBarSpace from '../navigation/useTabBarSpace';
 
 // Mijoz profili (pastki menyudagi "profile" tabi): tepada rasm/ma'lumot/statistika, so'ng hamyon va
 // menyular. Menyudagi sahifalar alohida marshrutlar (src/app/): router.push bilan ochiladi.
 export default function ZakazchiProfileScreen() {
+  const bottomSpace = useTabBarSpace(90);
   const router = useRouter();
   const { signOut } = useAuth();
   const { theme: t } = useTheme();
   const { language: lang, setLanguage: setLang, t: tr } = useLanguage();
   const { user } = useUser();
-  const { balance } = useWallet();
 
   const [showTil, setShowTil] = useState(false);
 
@@ -47,7 +46,7 @@ export default function ZakazchiProfileScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }} edges={['top', 'left', 'right']}>
       <StatusBar style={t.isDark ? 'light' : 'dark'} />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 90 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomSpace }}>
         <ProfileCover
           letter={displayLetter}
           avatarUri={displayAvatarUri}
@@ -58,11 +57,10 @@ export default function ZakazchiProfileScreen() {
           location={displayLocation}
           stats={stats}
           onEdit={go('/edit-profile')}
+          onOrdersPress={go('/orders')}
         />
 
         {!displayLocation && <IncompleteProfileBanner onPress={go('/edit-profile')} />}
-
-        <WalletCard balance={balance} onPress={go('/wallet')} />
 
         <MenuCard
           style={{ paddingTop: 22 }}
@@ -79,12 +77,6 @@ export default function ZakazchiProfileScreen() {
               label: tr('profile.menu.myAddresses'),
               color: t.green,
               onPress: go('/addresses'),
-            },
-            {
-              icon: 'receipt-text-outline',
-              label: tr('profile.menu.paymentHistory'),
-              color: t.blue,
-              onPress: go('/payment-history'),
             },
           ]}
         />

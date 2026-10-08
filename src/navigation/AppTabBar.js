@@ -1,4 +1,5 @@
 import { View, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BottomNav from '../components/BottomNav';
 import { useTheme } from '../context/ThemeContext';
 
@@ -16,6 +17,7 @@ const KEY_TO_ROUTE = Object.fromEntries(Object.entries(ROUTE_TO_KEY).map(([r, k]
 export default function AppTabBar({ state, navigation }) {
   const { theme: t } = useTheme();
   const activeRoute = state.routes[state.index];
+  const bottomInset = useSafeAreaInsets().bottom;
 
   const onTabChange = (key) => {
     const route = state.routes.find((r) => r.name === KEY_TO_ROUTE[key]);
@@ -27,7 +29,7 @@ export default function AppTabBar({ state, navigation }) {
   };
 
   return (
-    <View pointerEvents="box-none" style={s.wrap}>
+    <View pointerEvents="box-none" style={[s.wrap, { height: 130 + bottomInset }]}>
       <BottomNav
         activeTab={ROUTE_TO_KEY[activeRoute.name]}
         onTabChange={onTabChange}

@@ -2,7 +2,7 @@ import { formatNumber } from '../../utils/format';
 
 export const toMs = (value) => (typeof value === 'number' ? value : new Date(value).getTime());
 
-// Zakazning ko'rinish holati (backend holati va kelishuv bosqichidan):
+// Buyurtmaning ko'rinish holati (backend holati va kelishuv bosqichidan):
 // pending | negotiating | offer (usta narx aytgan, javobingiz kutilyapti) | active | done | cancelled
 export function orderState(order) {
   switch (order.rawStatus) {
@@ -77,6 +77,17 @@ export function describeOrder(order, tr) {
         short: tr('requests.cardCancelled'),
       };
     default:
+      // Mijoz aniq ustani tanlagan bo'lsa — "usta qidirilmoqda" emas, shu ustaning javobi kutiladi.
+      if (name) {
+        return {
+          state,
+          tone: 'gold',
+          icon: 'account-clock-outline',
+          title: tr('requests.statusPendingWorkerTitle', { name }),
+          sub: tr('requests.statusPendingWorkerSub'),
+          short: tr('requests.cardPendingWorker', { name }),
+        };
+      }
       return {
         state,
         tone: 'gold',

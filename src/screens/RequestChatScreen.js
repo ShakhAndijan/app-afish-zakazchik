@@ -25,7 +25,7 @@ import { clockLabel, formatPrice } from './requests/utils';
 
 const CHAT_POLL_MS = 5000;
 
-// Zakaz chati (backenddan): usta bilan suhbat, narx takliflari chatda alohida qator bo'lib
+// Buyurtma chati (backenddan): usta bilan suhbat, narx takliflari chatda alohida qator bo'lib
 // ko'rinadi. Tepada joriy taklif va "Qabul qilish" / "Narx taklif qilish" tugmalari turadi.
 export default function RequestChatScreen({ orderId, onBack }) {
   const { theme: t } = useTheme();

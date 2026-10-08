@@ -160,6 +160,9 @@ export default function LocationMapPicker({
   onChange,
   height = 220,
   fill = false,
+  // Pastdagi tugmalar (joylashuv) xarita pastidan qancha yuqorida turishi; xarita ustida
+  // panel bo'lsa, tugma panel ostida qolib ketmasligi uchun.
+  controlsBottom = 10,
   showExpand = true,
   borderRadius = 18,
   geocodeQuery,
@@ -283,12 +286,12 @@ export default function LocationMapPicker({
         />
 
         {showTapHint && !lat && (
-          <View style={styles.hintWrap} pointerEvents="none">
+          <View style={[styles.hintWrap, { bottom: controlsBottom + 42 }]} pointerEvents="none">
             <Text style={styles.tapHint}>{tapHint}</Text>
           </View>
         )}
 
-        <View style={styles.btnRow}>
+        <View style={[styles.btnRow, { bottom: controlsBottom }]}>
           {showExpand && (
             <TouchableOpacity
               style={styles.iconBtn}

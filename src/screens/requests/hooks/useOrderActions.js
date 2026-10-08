@@ -4,8 +4,8 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { agreeOrder, offerOrderPrice, cancelOrderByCustomer } from '../../../api/orders';
 import { formatNumber } from '../../../utils/format';
 
-// Zakaz ustidagi amallar: ustaning taklifini qabul qilish, narx taklif qilish, bekor qilish.
-// Har biri tugagach `onDone` (odatda zakazni qayta yuklash) chaqiriladi, xato bo'lsa ogohlantirish.
+// Buyurtma ustidagi amallar: ustaning taklifini qabul qilish, narx taklif qilish, bekor qilish.
+// Har biri tugagach `onDone` (odatda buyurtmani qayta yuklash) chaqiriladi, xato bo'lsa ogohlantirish.
 export default function useOrderActions(orderId, onDone) {
   const { t: tr } = useLanguage();
   const [busy, setBusy] = useState(false);

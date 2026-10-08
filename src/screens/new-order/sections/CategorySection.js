@@ -4,14 +4,21 @@ import { useTheme } from '../../../context/ThemeContext';
 import { useLanguage } from '../../../context/LanguageContext';
 import { common } from '../styles';
 
-export default function CategorySection({ selectedCategories, toggleCategory, setCategoryPickerOpen }) {
+export default function CategorySection({
+  selectedCategories,
+  toggleCategory,
+  setCategoryPickerOpen,
+}) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
 
   return (
     <>
       {/* ── Xizmat turi (ko'p tanlovli) ── */}
-      <Text style={[common.label, { color: t.text }]}>{tr('newOrder.categoryLabel')}</Text>
+      <Text style={[common.label, { color: t.text }]}>
+        {tr('newOrder.categoryLabel')}
+        <Text style={{ color: t.red }}> *</Text>
+      </Text>
       <View style={common.chipRow}>
         {selectedCategories.map((c) => (
           <View key={c.id} style={[s.selectedChip, { backgroundColor: t.orange }]}>

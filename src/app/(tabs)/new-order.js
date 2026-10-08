@@ -25,7 +25,7 @@ export default function NewOrderRoute() {
     <NewOrderScreen
       key={`${formKey}:${worker ?? ''}`}
       targetWorker={decodeParam(worker)}
-      // Zakaz berilgach bosh sahifaga qaytiladi — u yerda "Faol zakazlar" ro'yxatida ko'rinadi.
+      // Buyurtma berilgach bosh sahifaga qaytiladi — u yerda "Faol buyurtmalar" ro'yxatida ko'rinadi.
       onOrderCreated={() => router.navigate('/home')}
     />
   );

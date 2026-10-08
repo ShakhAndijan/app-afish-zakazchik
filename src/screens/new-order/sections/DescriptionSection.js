@@ -12,7 +12,10 @@ export default function DescriptionSection({ selectedCategories, description, se
       {/* ── Tavsif (xizmat turi tanlangandan keyin chiqadi) ── */}
       {selectedCategories.length > 0 && (
         <>
-          <Text style={[common.label, { color: t.text }]}>{tr('newOrder.descriptionLabel')}</Text>
+          <Text style={[common.label, { color: t.text }]}>
+            {tr('newOrder.descriptionLabel')}
+            <Text style={{ color: t.red }}> *</Text>
+          </Text>
           <TextInput
             value={description}
             onChangeText={setDescription}
@@ -20,10 +23,7 @@ export default function DescriptionSection({ selectedCategories, description, se
             placeholderTextColor={t.faint}
             multiline
             numberOfLines={4}
-            style={[
-              s.textarea,
-              { backgroundColor: t.card, borderColor: t.border, color: t.text },
-            ]}
+            style={[s.textarea, { backgroundColor: t.card, borderColor: t.border, color: t.text }]}
           />
         </>
       )}

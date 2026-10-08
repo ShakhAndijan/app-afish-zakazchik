@@ -6,10 +6,9 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { common } from '../styles';
 import PhoneField from '../components/PhoneField';
 
-export default function ContactSection({ phone, setPhone, backupPhone, setBackupPhone }) {
+export default function ContactSection({ phone, setPhone }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
-  const [showBackupPhone, setShowBackupPhone] = useState(false);
 
   return (
     <>
@@ -17,16 +16,22 @@ export default function ContactSection({ phone, setPhone, backupPhone, setBackup
       <Text style={[common.label, { color: t.text }]}>
         {tr('newOrder.phoneLabel')} <Text style={{ color: '#E1523D' }}>*</Text>
       </Text>
-      <PhoneField
-        value={phone}
-        onChangeText={setPhone}
-        placeholder="90 123 45 67"
-        t={t}
-      />
+      <PhoneField value={phone} onChangeText={setPhone} placeholder="90 123 45 67" t={t} />
       <Text style={[common.hint, { color: t.muted, marginTop: 6 }]}>
         {tr('newOrder.phoneHint')}
       </Text>
+    </>
+  );
+}
 
+// Zaxira telefon raqami (ixtiyoriy): "Qo'shimcha ma'lumotlar" ichida turadi.
+export function BackupPhoneSection({ backupPhone, setBackupPhone }) {
+  const { theme: t } = useTheme();
+  const { t: tr } = useLanguage();
+  const [showBackupPhone, setShowBackupPhone] = useState(!!backupPhone);
+
+  return (
+    <>
       {showBackupPhone ? (
         <>
           <View style={s.backupPhoneHeader}>
@@ -54,7 +59,10 @@ export default function ContactSection({ phone, setPhone, backupPhone, setBackup
         <TouchableOpacity
           onPress={() => setShowBackupPhone(true)}
           activeOpacity={0.8}
-          style={[common.addChip, { borderColor: t.orange, alignSelf: 'flex-start', marginTop: 12 }]}
+          style={[
+            common.addChip,
+            { borderColor: t.orange, alignSelf: 'flex-start', marginTop: 12 },
+          ]}
         >
           <MaterialCommunityIcons name="phone-plus-outline" size={16} color={t.orange} />
           <Text style={[common.addChipTxt, { color: t.orange }]}>

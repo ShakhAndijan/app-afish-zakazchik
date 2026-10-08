@@ -2,6 +2,7 @@ import { View, Text } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useUstaStyles } from '../styles';
+import SectionTitle from './SectionTitle';
 
 // Usta biladigan tillar.
 export default function LanguagesSection({ languages }) {
@@ -11,7 +12,7 @@ export default function LanguagesSection({ languages }) {
 
   return (
     <>
-      <Text style={st.secTitle}>{tr('ustaDetail.languagesTitle')}</Text>
+      <SectionTitle icon="translate" title={tr('ustaDetail.languagesTitle')} />
       <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
         {languages.map((lang, i) => (
           <View key={i} style={st.langChip}>

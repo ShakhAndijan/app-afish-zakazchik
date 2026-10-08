@@ -2,6 +2,7 @@ import { View, Text } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useUstaStyles } from '../styles';
+import SectionTitle from './SectionTitle';
 import { formatDate } from '../utils';
 import EmptyState from './EmptyState';
 
@@ -12,7 +13,7 @@ export default function CertificatesSection({ certificates, loading }) {
 
   return (
     <>
-      <Text style={st.secTitle}>{tr('ustaDetail.certificatesTitle')}</Text>
+      <SectionTitle icon="certificate-outline" title={tr('ustaDetail.certificatesTitle')} />
       {certificates.length > 0 ? (
         <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
           {certificates.map((c) => (

@@ -1,14 +1,13 @@
 // Login maydoni telefon raqami yoki email sifatida ishlashi mumkin.
-// Qaysi turi ekanligi kiritilgan qiymatning birinchi belgisiga qarab aniqlanadi:
-// raqam bilan boshlansa — telefon, harf/belgi bilan boshlansa — email.
+// Faqat raqamlardan iborat qiymat — telefon, harf yoki '@' bor bo'lsa — email.
 export function detectIdentifierMode(raw = '') {
-  const first = (raw || '').trim()[0];
-  if (!first) return 'empty';
-  return /[0-9]/.test(first) ? 'phone' : 'email';
+  const v = (raw || '').trim();
+  if (!v) return 'empty';
+  return /^[0-9\s]+$/.test(v) ? 'phone' : 'email';
 }
 
-export function buildIdentifier(raw = '') {
-  return detectIdentifierMode(raw) === 'phone'
-    ? '+998' + raw.replace(/\D/g, '')
-    : raw.trim();
+// `mode` ('phone' | 'email') aniq berilsa shu bo'yicha, bo'lmasa qiymatdan aniqlanadi.
+export function buildIdentifier(raw = '', mode) {
+  const m = mode ?? detectIdentifierMode(raw);
+  return m === 'phone' ? '+998' + raw.replace(/\D/g, '') : raw.trim();
 }

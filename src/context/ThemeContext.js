@@ -55,10 +55,21 @@ const ThemeContext = createContext({ theme: dark, toggleTheme: () => {} });
 export function ThemeProvider({ children }) {
   const [isDark, setIsDark] = useState(true);
   return (
-    <ThemeContext.Provider value={{ theme: isDark ? dark : light, toggleTheme: () => setIsDark(v => !v) }}>
+    <ThemeContext.Provider
+      value={{ theme: isDark ? dark : light, toggleTheme: () => setIsDark((v) => !v) }}
+    >
       {children}
     </ThemeContext.Provider>
   );
 }
 
 export const useTheme = () => useContext(ThemeContext);
+
+// Ichidagi hamma narsani doim qorong'i mavzuda chizadi (masalan, rangi qat'iy qorong'i
+// bo'lgan mehmon sahifasi uchun): umumiy komponentlar matn rangini shu mavzudan oladi.
+export function DarkScope({ children }) {
+  const parent = useContext(ThemeContext);
+  return (
+    <ThemeContext.Provider value={{ ...parent, theme: dark }}>{children}</ThemeContext.Provider>
+  );
+}

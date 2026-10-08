@@ -1,22 +1,33 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../../../context/ThemeContext';
 import { useLanguage } from '../../../context/LanguageContext';
 
-// Uchta faollik ko'rsatkichi: buyurtmalar, sevimli ustalar, mijoz reytingi. Olinmagan qiymat — "—".
-export default function ActivityStats({ stats }) {
+// Faollik ko'rsatkichlari: buyurtmalar, sevimli ustalar, mijoz reytingi. Olinmagan qiymat — "—".
+// Bitta ixcham karta, ustunlar ingichka chiziq bilan ajratilgan; profil tepa blokining pastki
+// chetiga suzib turadi. `onOrdersPress` berilsa "Buyurtma" ustuni buyurtmalar tarixini ochadi.
+export default function ActivityStats({ stats, onOrdersPress }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
 
   const items = [
-    { value: stats.orders ?? '—', label: tr('profile.stats.orders'), icon: 'archive-outline', color: t.orange },
     {
+      key: 'orders',
+      value: stats.orders ?? '—',
+      label: tr('profile.stats.orders'),
+      icon: 'clipboard-text-outline',
+      color: t.orange,
+      onPress: onOrdersPress,
+    },
+    {
+      key: 'favorites',
       value: stats.favorites ?? '—',
       label: tr('profile.stats.favoriteMasters'),
       icon: 'heart-outline',
       color: t.red,
     },
     {
+      key: 'rating',
       value: stats.rating != null ? stats.rating.toFixed(1) : '—',
       label: tr('profile.stats.yourRating'),
       icon: 'star-outline',
@@ -25,58 +36,59 @@ export default function ActivityStats({ stats }) {
   ];
 
   return (
-    <View style={styles.row}>
-      {items.map((item) => (
-        <View key={item.label} style={[styles.pill, { backgroundColor: t.card, borderColor: t.border }]}>
-          <View style={[styles.icon, { backgroundColor: item.color + '1c' }]}>
-            <MaterialCommunityIcons name={item.icon} size={13} color={item.color} />
-          </View>
-          <View style={{ flex: 1, minWidth: 0 }}>
+    <View style={[styles.card, { backgroundColor: t.card, borderColor: t.border }]}>
+      {items.map((item, i) => (
+        <TouchableOpacity
+          key={item.key}
+          activeOpacity={item.onPress ? 0.7 : 1}
+          disabled={!item.onPress}
+          onPress={item.onPress}
+          accessibilityRole={item.onPress ? 'button' : undefined}
+          style={[styles.col, i > 0 && { borderLeftWidth: 1, borderLeftColor: t.border }]}
+        >
+          <View style={styles.valueRow}>
+            <MaterialCommunityIcons name={item.icon} size={18} color={item.color} />
             <Text style={[styles.value, { color: t.text }]} numberOfLines={1}>
               {item.value}
             </Text>
-            <Text style={[styles.label, { color: t.muted }]} numberOfLines={1}>
-              {item.label}
-            </Text>
           </View>
-          <View style={[styles.accent, { backgroundColor: item.color }]} />
-        </View>
+          <Text
+            style={[styles.label, { color: t.muted }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+          >
+            {item.label}
+          </Text>
+        </TouchableOpacity>
       ))}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', gap: 9, marginTop: 18 },
-  pill: {
-    flex: 1,
+  card: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    alignItems: 'stretch',
+    marginHorizontal: 20,
+    marginTop: -26,
+    paddingVertical: 14,
     borderWidth: 1,
-    borderRadius: 15,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    paddingBottom: 12,
-    overflow: 'hidden',
-    position: 'relative',
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.14,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
   },
-  icon: {
-    width: 26,
-    height: 26,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  value: { fontWeight: '800', fontSize: 14 },
-  label: { fontSize: 9.5, marginTop: 1 },
-  accent: {
-    position: 'absolute',
-    left: 10,
-    right: 10,
-    bottom: 0,
-    height: 2.5,
-    borderRadius: 2,
+  col: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
+  valueRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  value: { fontWeight: '800', fontSize: 20, letterSpacing: -0.3 },
+  label: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    marginTop: 3,
+    alignSelf: 'stretch',
+    textAlign: 'center',
   },
 });

@@ -3,14 +3,18 @@ import { View, Text, FlatList } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { COLORS } from '../../../constants/colors';
 import { getTopComments } from '../../../api/reviews';
+import { useLanguage } from '../../../context/LanguageContext';
 import useAutoScroll from '../hooks/useAutoScroll';
+import SectionHead from './SectionHead';
 
 const CARD_W = 240;
 const GAP = 12;
 const SLOT = CARD_W + GAP;
 
-// "Mijozlar fikri": eng yaxshi sharhlar karuseli (o'zi aylanadi). Ma'lumot bo'lmasa — chizilmaydi.
+// "Mijozlar fikri": sarlavha va eng yaxshi sharhlar karuseli (o'zi aylanadi). Sharhlar bo'lmasa
+// sarlavhasi bilan birga butunlay chizilmaydi.
 export default function ReviewsCarousel() {
+  const { t } = useLanguage();
   const [reviews, setReviews] = useState([]);
   const listRef = useAutoScroll(reviews.length, SLOT, 2500);
 
@@ -23,18 +27,21 @@ export default function ReviewsCarousel() {
   if (reviews.length === 0) return null;
 
   return (
-    <FlatList
-      ref={listRef}
-      data={reviews}
-      keyExtractor={(_, i) => String(i)}
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      snapToInterval={SLOT}
-      decelerationRate="fast"
-      contentContainerStyle={{ paddingHorizontal: 16, gap: GAP, paddingBottom: 4 }}
-      style={{ marginBottom: 32 }}
-      renderItem={({ item }) => <ReviewCard review={item} />}
-    />
+    <>
+      <SectionHead title={t('app.sectionHead.reviews')} />
+      <FlatList
+        ref={listRef}
+        data={reviews}
+        keyExtractor={(_, i) => String(i)}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        snapToInterval={SLOT}
+        decelerationRate="fast"
+        contentContainerStyle={{ paddingHorizontal: 16, gap: GAP, paddingBottom: 4 }}
+        style={{ marginBottom: 32 }}
+        renderItem={({ item }) => <ReviewCard review={item} />}
+      />
+    </>
   );
 }
 
@@ -55,7 +62,9 @@ function ReviewCard({ review: r }) {
           <Ionicons key={j} name="star" size={14} color={j < r.stars ? '#f5b81f' : '#2a3a4a'} />
         ))}
       </View>
-      <Text style={{ color: '#c4cdd8', fontSize: 13.5, lineHeight: 20, marginBottom: 14 }}>{r.text}</Text>
+      <Text style={{ color: '#c4cdd8', fontSize: 13.5, lineHeight: 20, marginBottom: 14 }}>
+        {r.text}
+      </Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <View
           style={{

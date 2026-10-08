@@ -5,7 +5,7 @@ import { isOpenOrder } from '../utils';
 
 const POLL_MS = 8000;
 
-// Zakazning joriy holati backenddan: yuklanadi va u yakunlanmaguncha ekran ochiq turganda
+// Buyurtmaning joriy holati backenddan: yuklanadi va u yakunlanmaguncha ekran ochiq turganda
 // vaqti-vaqti bilan yangilanadi (usta qabul qilsa yoki narx aytsa shu yerda ko'rinadi).
 export default function useLiveOrder(orderId) {
   const [order, setOrder] = useState(null);
@@ -26,7 +26,7 @@ export default function useLiveOrder(orderId) {
       setOrder(fresh);
       setError(false);
     } catch {
-      // Yangilash muvaffaqiyatsiz bo'lsa, avval yuklangan zakaz saqlanadi.
+      // Yangilash muvaffaqiyatsiz bo'lsa, avval yuklangan buyurtma saqlanadi.
       if (mounted.current) setError(true);
     }
   }, [orderId]);

@@ -12,25 +12,17 @@ import {
 import { Feather, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
-import IdentifierInput from '../../components/login/IdentifierInput';
-import { detectIdentifierMode } from '../../utils/identifier';
+import PhoneInput from '../../components/login/PhoneInput';
+import ThemeSwitch from '../../components/ThemeSwitch';
+import EmailInput from '../../components/login/EmailInput';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-const SERVICES = [
-  { key: 'plumber', color: '#22b8cf', icon: 'wrench',          lib: 'MaterialCommunityIcons' },
-  { key: 'electrician',  color: '#ffd43b', icon: 'lightning-bolt',  lib: 'MaterialCommunityIcons' },
-  { key: 'painter', color: '#ff7ab8', icon: 'brush',           lib: 'MaterialCommunityIcons' },
-  { key: 'carpenter',  color: '#9775fa', icon: 'hammer',          lib: 'MaterialCommunityIcons' },
-];
-
-function ServiceIcon({ icon, color }) {
-  return <MaterialCommunityIcons name={icon} size={15} color={color} />;
-}
 
 export default function PhoneStep({
   identifier,
   onIdentifierChange,
+  mode = 'phone',
+  onModeChange,
   onRequestOtp,
   loginLoading,
   telegramLoading,
@@ -40,24 +32,17 @@ export default function PhoneStep({
   onBack,
   actorType = 'customer',
 }) {
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const { t } = useLanguage();
   const isDark = theme.isDark !== false;
   const isUsta = actorType === 'worker';
-  const identifierMode = detectIdentifierMode(identifier);
-  const isIdentifierReady = identifierMode === 'phone'
-    ? identifier.length === 9
-    : identifierMode === 'email'
-      ? EMAIL_REGEX.test(identifier.trim())
-      : false;
+  const isEmail = mode === 'email';
+  const isIdentifierReady = isEmail ? EMAIL_REGEX.test(identifier.trim()) : identifier.length === 9;
+  // Telegram orqali kod faqat telefon raqamga yuboriladi.
+  const telegramReady = !isEmail && isIdentifierReady;
   const anyOtpLoading = loginLoading || telegramLoading;
   const isReady = isIdentifierReady && !anyOtpLoading;
   const handleCta = () => onRequestOtp('sms');
-  const identifierLabel = identifierMode === 'phone'
-    ? t('login.phoneStep.phoneLabel')
-    : identifierMode === 'email'
-      ? t('login.phoneStep.emailLabel')
-      : t('login.phoneStep.identifierLabel');
 
   return (
     <KeyboardAvoidingView
@@ -79,28 +64,22 @@ export default function PhoneStep({
             <Feather name="arrow-left" size={20} color={theme.text} />
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[s.iconBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
-            onPress={toggleTheme}
-            activeOpacity={0.75}
-          >
-            <MaterialCommunityIcons
-              name="cog-outline"
-              size={20}
-              color={isDark ? theme.muted : theme.orange}
-            />
-          </TouchableOpacity>
+          <ThemeSwitch />
         </View>
 
         <View style={s.body}>
           {/* ── Hero ── */}
           <View style={s.hero}>
-            <View style={[s.orb, isUsta
-              ? { backgroundColor: isDark ? 'rgba(63,127,212,0.16)' : 'rgba(63,127,212,0.10)' }
-              : isDark
-                ? { backgroundColor: 'rgba(240,122,48,0.13)' }
-                : { backgroundColor: 'rgba(240,122,48,0.08)' }
-            ]} />
+            <View
+              style={[
+                s.orb,
+                isUsta
+                  ? { backgroundColor: isDark ? 'rgba(63,127,212,0.16)' : 'rgba(63,127,212,0.10)' }
+                  : isDark
+                    ? { backgroundColor: 'rgba(240,122,48,0.13)' }
+                    : { backgroundColor: 'rgba(240,122,48,0.08)' },
+              ]}
+            />
             <Image
               source={require('../../../assets/afish-logo-vertical.png')}
               style={s.logo}
@@ -125,30 +104,44 @@ export default function PhoneStep({
               <View style={[s.statBox, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 <MaterialCommunityIcons name="lightning-bolt" size={18} color={theme.gold} />
                 <Text style={[s.statVal, { color: theme.text }]}>5 000+</Text>
-                <Text style={[s.statLbl, { color: theme.muted }]}>{t('login.phoneStep.statMonthlyJobs')}</Text>
+                <Text style={[s.statLbl, { color: theme.muted }]}>
+                  {t('login.phoneStep.statMonthlyJobs')}
+                </Text>
               </View>
               <View style={[s.statBox, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 <MaterialCommunityIcons name="wallet-outline" size={18} color={theme.green} />
-                <Text style={[s.statVal, { color: theme.text }]}>{t('login.phoneStep.statPayoutValue')}</Text>
-                <Text style={[s.statLbl, { color: theme.muted }]}>{t('login.phoneStep.statPayout')}</Text>
+                <Text style={[s.statVal, { color: theme.text }]}>
+                  {t('login.phoneStep.statPayoutValue')}
+                </Text>
+                <Text style={[s.statLbl, { color: theme.muted }]}>
+                  {t('login.phoneStep.statPayout')}
+                </Text>
               </View>
               <View style={[s.statBox, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 <Ionicons name="star" size={18} color={theme.gold} />
                 <Text style={[s.statVal, { color: theme.text }]}>4.8</Text>
-                <Text style={[s.statLbl, { color: theme.muted }]}>{t('login.phoneStep.statRating')}</Text>
+                <Text style={[s.statLbl, { color: theme.muted }]}>
+                  {t('login.phoneStep.statRating')}
+                </Text>
               </View>
             </View>
           )}
 
-          {/* ── Telefon/email maydoni ── */}
+          {/* ── Telefon yoki email maydoni ── */}
           <View style={s.fieldWrap}>
-            <Text style={[s.fieldLabel, { color: theme.muted }]}>{identifierLabel}</Text>
-            <IdentifierInput
-              value={identifier}
-              onChangeText={onIdentifierChange}
-              theme={theme}
-              placeholder={t('login.phoneStep.identifierPlaceholder')}
-            />
+            <Text style={[s.fieldLabel, { color: theme.muted }]}>
+              {t(isEmail ? 'login.phoneStep.emailLabel' : 'login.phoneStep.phoneLabel')}
+            </Text>
+            {isEmail ? (
+              <EmailInput
+                value={identifier}
+                onChangeText={onIdentifierChange}
+                theme={theme}
+                placeholder={t('login.phoneStep.emailPlaceholder')}
+              />
+            ) : (
+              <PhoneInput value={identifier} onChangeText={onIdentifierChange} theme={theme} />
+            )}
           </View>
 
           {/* ── Error ── */}
@@ -185,22 +178,23 @@ export default function PhoneStep({
             )}
           </TouchableOpacity>
 
-          {/* ── Xizmat chips (zakazchi) ── */}
-          {!isUsta && (
-            <View style={s.chipRow}>
-              {SERVICES.map((sv) => (
-                <View
-                  key={sv.key}
-                  style={[s.chip, { backgroundColor: theme.card, borderColor: theme.border }]}
-                >
-                  <ServiceIcon icon={sv.icon} color={sv.color} />
-                  <Text style={[s.chipTxt, { color: theme.muted }]}>
-                    {t(`login.phoneStep.services.${sv.key}`)}
-                  </Text>
-                </View>
-              ))}
+          {/* ── Kirish usulini almashtirish: email <-> telefon ── */}
+          <TouchableOpacity
+            style={s.switchRow}
+            onPress={() => onModeChange?.(isEmail ? 'phone' : 'email')}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+          >
+            <View style={[s.switchIcon, { backgroundColor: `${theme.orange}22` }]}>
+              <Feather name={isEmail ? 'smartphone' : 'mail'} size={15} color={theme.orange} />
             </View>
-          )}
+            <Text style={[s.switchTxt, { color: theme.muted }]}>
+              {t(isEmail ? 'login.phoneStep.usePhonePrompt' : 'login.phoneStep.useEmailPrompt')}{' '}
+              <Text style={[s.switchLink, { color: theme.orange }]}>
+                {t(isEmail ? 'login.phoneStep.usePhone' : 'login.phoneStep.useEmail')}
+              </Text>
+            </Text>
+          </TouchableOpacity>
 
           {/* ── Social ── */}
           <View style={s.orWrap}>
@@ -211,14 +205,18 @@ export default function PhoneStep({
 
           <View style={s.socialRow}>
             <TouchableOpacity
-              style={[s.socBtn, { borderColor: theme.border, backgroundColor: isDark ? theme.card : '#fff' }]}
+              style={[
+                s.socBtn,
+                { borderColor: theme.border, backgroundColor: isDark ? theme.card : '#fff' },
+              ]}
               onPress={googleLoading ? undefined : onGoogle}
               activeOpacity={0.85}
             >
-              {googleLoading
-                ? <ActivityIndicator size="small" color="#4285F4" />
-                : <MaterialCommunityIcons name="google" size={20} color="#4285F4" />
-              }
+              {googleLoading ? (
+                <ActivityIndicator size="small" color="#4285F4" />
+              ) : (
+                <MaterialCommunityIcons name="google" size={20} color="#4285F4" />
+              )}
               <Text style={[s.socTxt, { color: isDark ? theme.text : '#1f2937' }]}>Google</Text>
             </TouchableOpacity>
 
@@ -226,15 +224,16 @@ export default function PhoneStep({
               style={[
                 s.socBtn,
                 { borderColor: theme.border, backgroundColor: theme.card },
-                !isIdentifierReady && s.socBtnDisabled,
+                !telegramReady && s.socBtnDisabled,
               ]}
-              onPress={anyOtpLoading || !isIdentifierReady ? undefined : () => onRequestOtp('telegram')}
+              onPress={anyOtpLoading || !telegramReady ? undefined : () => onRequestOtp('telegram')}
               activeOpacity={0.85}
             >
-              {telegramLoading
-                ? <ActivityIndicator size="small" color="#229ED9" />
-                : <Ionicons name="paper-plane" size={20} color="#229ED9" />
-              }
+              {telegramLoading ? (
+                <ActivityIndicator size="small" color="#229ED9" />
+              ) : (
+                <Ionicons name="paper-plane" size={20} color="#229ED9" />
+              )}
               <Text style={[s.socTxt, { color: theme.text }]}>Telegram</Text>
             </TouchableOpacity>
           </View>
@@ -243,9 +242,13 @@ export default function PhoneStep({
           <View style={s.footer}>
             <Text style={[s.terms, { color: theme.muted }]}>
               {t('login.phoneStep.termsPrefix')}{' '}
-              <Text style={{ color: theme.text, fontWeight: '700' }}>{t('login.phoneStep.termsLink')}</Text>
+              <Text style={{ color: theme.text, fontWeight: '700' }}>
+                {t('login.phoneStep.termsLink')}
+              </Text>
               {' ' + t('login.phoneStep.termsAnd') + ' '}
-              <Text style={{ color: theme.text, fontWeight: '700' }}>{t('login.phoneStep.privacyLink')}</Text>
+              <Text style={{ color: theme.text, fontWeight: '700' }}>
+                {t('login.phoneStep.privacyLink')}
+              </Text>
               {t('login.phoneStep.termsSuffix')}
             </Text>
           </View>
@@ -319,23 +322,6 @@ const s = StyleSheet.create({
     maxWidth: 300,
   },
 
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  chipTxt: { fontSize: 12.5, fontWeight: '600' },
-
   statsRow: {
     flexDirection: 'row',
     gap: 10,
@@ -404,6 +390,22 @@ const s = StyleSheet.create({
   },
   socTxt: { fontSize: 14, fontWeight: '700' },
   socBtnDisabled: { opacity: 0.45 },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: 4,
+  },
+  switchIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  switchTxt: { fontSize: 13.5, fontWeight: '500', flexShrink: 1 },
+  switchLink: { fontWeight: '800', textDecorationLine: 'underline' },
 
   footer: { gap: 12, alignItems: 'center' },
   terms: { fontSize: 12, textAlign: 'center', lineHeight: 18 },

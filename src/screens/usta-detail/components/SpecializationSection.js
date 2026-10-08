@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useUstaStyles } from '../styles';
+import SectionTitle from './SectionTitle';
 
 // Mutaxassislik yo'nalishlari; tanlangan yo'nalish sertifikatlarni filtrlaydi.
 export default function SpecializationSection({ categories, selectedId, onSelect, loading }) {
@@ -9,7 +10,7 @@ export default function SpecializationSection({ categories, selectedId, onSelect
 
   return (
     <>
-      <Text style={st.secTitle}>{tr('ustaDetail.specializationTitle')}</Text>
+      <SectionTitle icon="briefcase-outline" title={tr('ustaDetail.specializationTitle')} />
       {categories.length > 0 ? (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {categories.map((c) => {

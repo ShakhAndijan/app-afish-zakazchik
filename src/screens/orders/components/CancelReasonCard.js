@@ -15,6 +15,6 @@ export default function CancelReasonCard({ meta, reason }) {
 }
 
 const s = StyleSheet.create({
-  card: { flexDirection: 'row', gap: 9, borderWidth: 1, borderRadius: 16, padding: 14 },
+  card: { flexDirection: 'row', gap: 9, borderWidth: 1, borderRadius: 20, padding: 16 },
   text: { flex: 1, fontSize: 13, lineHeight: 19, fontWeight: '500' },
 });

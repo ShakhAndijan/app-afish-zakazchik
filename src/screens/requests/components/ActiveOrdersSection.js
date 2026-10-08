@@ -5,10 +5,12 @@ import { orderRoute } from '../../../navigation/params';
 import SectionHeader from '../../zakazchi-main/components/SectionHeader';
 import RequestCard from './RequestCard';
 
-// Bosh sahifada hamyon kartasi ostida: backenddagi faol zakazlar (kutilmoqda, kelishilmoqda
-// yoki jarayonda). Kartani bossangiz zakaz tafsiloti ochiladi; faol zakaz bo'lmasa blok
-// ko'rinmaydi. Ro'yxat javobida faqat `category_id` bor, shuning uchun xizmat nomi
-// kategoriyalardan olinadi.
+const MAX_SHOWN = 3;
+
+// Bosh sahifada: mijozning o'z faol buyurtmalari (kutilmoqda, kelishilmoqda yoki jarayonda).
+// Ro'yxat `/orders/me/customer` dan keladi — faqat shu mijozniki. Eng ko'pi bilan MAX_SHOWN ta
+// karta ko'rsatiladi, qolganlari "Barchasi" orqali. Faol buyurtma bo'lmasa blok ko'rinmaydi.
+// Ro'yxat javobida faqat `category_id` bor, shuning uchun xizmat nomi kategoriyalardan olinadi.
 export default function ActiveOrdersSection({ orders = [], categories = [], style }) {
   const router = useRouter();
   const { t: tr } = useLanguage();
@@ -21,9 +23,13 @@ export default function ActiveOrdersSection({ orders = [], categories = [], styl
 
   return (
     <View style={style}>
-      <SectionHeader title={tr('requests.sectionTitle')} actionLabel={String(orders.length)} />
+      <SectionHeader
+        title={`${tr('requests.sectionTitle')} · ${orders.length}`}
+        actionLabel={tr('common.seeAll')}
+        onActionPress={() => router.push('/orders')}
+      />
       <View style={s.list}>
-        {orders.map((order) => (
+        {orders.slice(0, MAX_SHOWN).map((order) => (
           <RequestCard
             key={order.id}
             order={order}
@@ -37,5 +43,5 @@ export default function ActiveOrdersSection({ orders = [], categories = [], styl
 }
 
 const s = StyleSheet.create({
-  list: { gap: 10 },
+  list: { gap: 12 },
 });

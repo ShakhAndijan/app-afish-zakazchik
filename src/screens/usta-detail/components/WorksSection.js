@@ -1,18 +1,21 @@
 import { Text } from 'react-native';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useUstaStyles } from '../styles';
+import SectionTitle from './SectionTitle';
 import WorksCarousel from './WorksCarousel';
 
 // "Ishlari" bo'limi: butun ekran kengligidagi karusel yoki bo'sh holat matni.
 export default function WorksSection({ portfolio, loading, onSelectWork }) {
   const { t: tr } = useLanguage();
-  const { C, st } = useUstaStyles();
+  const { C } = useUstaStyles();
 
   return (
     <>
-      <Text style={[st.secTitle, { paddingHorizontal: 20, marginTop: 22, marginBottom: 14 }]}>
-        {tr('ustaDetail.worksTitle')}
-      </Text>
+      <SectionTitle
+        icon="image-multiple-outline"
+        title={tr('ustaDetail.worksTitle')}
+        style={{ paddingHorizontal: 20 }}
+      />
       {portfolio.length > 0 ? (
         <WorksCarousel works={portfolio} onSelectWork={onSelectWork} />
       ) : (

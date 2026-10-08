@@ -14,7 +14,7 @@ import {
   verifyResetPasswordOtp,
 } from '../api/auth';
 import { saveSession, saveActorType } from '../utils/token';
-import { detectIdentifierMode, buildIdentifier } from '../utils/identifier';
+import { buildIdentifier } from '../utils/identifier';
 import PhoneStep from './steps/PhoneStep';
 import PasswordStep from './steps/PasswordStep';
 import ForgotPasswordStep from './steps/ForgotPasswordStep';
@@ -44,9 +44,10 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
 
-  // ── Telefon/email + OTP (login va register birlashgan oqimi: start → verify → complete) ──
+  // ── Telefon + OTP (login va register birlashgan oqimi: start → verify → complete) ──
   const [identifier, setIdentifier] = useState('');
-  const identifierMode = detectIdentifierMode(identifier);
+  // Kirish usuli: telefon yoki qo'lda yoziladigan email.
+  const [identifierMode, setIdentifierMode] = useState('phone');
   const [ticket, setTicket] = useState('');
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpChannel, setOtpChannel] = useState('sms');
@@ -71,7 +72,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
       setOtpLoading(true);
       setOtpError('');
       setVerifyError('');
-      const data = await startCustomerAuth(buildIdentifier(identifier), channel);
+      const data = await startCustomerAuth(buildIdentifier(identifier, identifierMode), channel);
       setDevCode(data?.dev_code || '');
       setStep('code');
     } catch (e) {
@@ -85,7 +86,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
     try {
       setVerifyLoading(true);
       setVerifyError('');
-      const data = await verifyCustomerAuth(buildIdentifier(identifier), code);
+      const data = await verifyCustomerAuth(buildIdentifier(identifier, identifierMode), code);
       devLog('[login] verify status:', data?.status);
       if (data?.access_token) {
         await finishLogin(data);
@@ -173,11 +174,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
       setResetLoading(true);
       setResetError('');
       const fullPhone = '+998' + forgotPhone.replace(/\D/g, '');
-      const data = await verifyResetPasswordOtp(
-        fullPhone,
-        forgotCode,
-        newPassword
-      );
+      const data = await verifyResetPasswordOtp(fullPhone, forgotCode, newPassword);
       setStep('phone');
       return data;
     } catch (e) {
@@ -205,6 +202,12 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
     phone: (
       <PhoneStep
         identifier={identifier}
+        mode={identifierMode}
+        onModeChange={(m) => {
+          setIdentifierMode(m);
+          setIdentifier('');
+          setOtpError('');
+        }}
         onIdentifierChange={(v) => {
           setIdentifier(v);
           setOtpError('');
@@ -231,10 +234,14 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
         resendError={otpError}
         onResend={() => handleRequestOtp(otpChannel)}
         resendLoading={otpLoading}
-        onAltLogin={identifierMode === 'phone' ? () => {
-          setPhone(identifier);
-          setStep('password');
-        } : undefined}
+        onAltLogin={
+          identifierMode === 'phone'
+            ? () => {
+                setPhone(identifier);
+                setStep('password');
+              }
+            : undefined
+        }
       />
     ),
     password: (

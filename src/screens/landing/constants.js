@@ -1,9 +1,9 @@
 // Mehmon (kirmagan) bosh sahifasi uchun doimiy ma'lumotlar. Matnlar `app.*` tarjimalarida.
 
 export const STEPS = [
-  { num: 1, key: 'step1' },
-  { num: 2, key: 'step2' },
-  { num: 3, key: 'step3' },
+  { num: 1, key: 'step1', icon: 'magnify' },
+  { num: 2, key: 'step2', icon: 'clipboard-check-outline' },
+  { num: 3, key: 'step3', icon: 'star-outline' },
 ];
 
 export const BENEFITS = [

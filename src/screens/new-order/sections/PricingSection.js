@@ -1,106 +1,147 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, LayoutAnimation } from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../../../context/ThemeContext';
 import { useLanguage } from '../../../context/LanguageContext';
 import { common } from '../styles';
 import MoneyInput from '../components/MoneyInput';
+import PaymentOption from '../components/PaymentOption';
 
-export default function PricingSection({ pricingType, setPricingType, hourlyRate, setHourlyRate, estimatedHours, setEstimatedHours, fixedPrice, setFixedPrice }) {
+const TYPES = ['fixed', 'hourly'];
+const ICON = { fixed: 'briefcase-check-outline', hourly: 'clock-time-four-outline' };
+
+// To'lov shakli: tanlangan variant ("Ish uchun") ixcham kartada ko'rinadi, "O'zgartirish"
+// bosilgandagina ikkala variant ("Ish uchun" / "Soatbay") ochiladi va tanlangach yana yig'iladi.
+export default function PricingSection({
+  pricingType,
+  setPricingType,
+  hourlyRate,
+  setHourlyRate,
+  estimatedHours,
+  setEstimatedHours,
+  fixedPrice,
+  setFixedPrice,
+}) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
+  const [changing, setChanging] = useState(false);
+
+  const animate = () => LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  const choose = (type) => {
+    animate();
+    setPricingType(type);
+    setChanging(false);
+  };
+
+  const option = (type) => ({
+    icon: ICON[type],
+    iconBg: t.orange + '1f',
+    iconColor: t.orange,
+    title: tr(`newOrder.pricing.${type}`),
+    subtitle: tr(`newOrder.pricing.${type}Hint`),
+  });
+  const current = option(pricingType);
 
   return (
     <>
-      {/* ── Narx ── */}
-      <Text style={[common.label, { color: t.text }]}>{tr('newOrder.pricingLabel')}</Text>
-      <View style={s.pricingToggleRow}>
-        <TouchableOpacity
-          onPress={() => setPricingType('hourly')}
-          activeOpacity={0.85}
-          style={[
-            s.pricingPill,
-            {
-              backgroundColor: pricingType === 'hourly' ? t.orange : t.card,
-              borderColor: pricingType === 'hourly' ? t.orange : t.border,
-            },
-          ]}
-        >
-          <Text
-            style={[
-              s.pricingPillTxt,
-              { color: pricingType === 'hourly' ? '#fff' : t.text },
-            ]}
-          >
-            {tr('newOrder.pricing.hourly')}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => setPricingType('fixed')}
-          activeOpacity={0.85}
-          style={[
-            s.pricingPill,
-            {
-              backgroundColor: pricingType === 'fixed' ? t.orange : t.card,
-              borderColor: pricingType === 'fixed' ? t.orange : t.border,
-            },
-          ]}
-        >
-          <Text
-            style={[
-              s.pricingPillTxt,
-              { color: pricingType === 'fixed' ? '#fff' : t.text },
-            ]}
-          >
-            {tr('newOrder.pricing.fixed')}
-          </Text>
-        </TouchableOpacity>
-      </View>
-      <Text style={[common.hint, { color: t.muted, marginTop: 6 }]}>
-        {pricingType === 'hourly'
-          ? tr('newOrder.pricing.hourlyHint')
-          : tr('newOrder.pricing.fixedHint')}
+      {/* ── To'lov shakli ── */}
+      <Text style={[common.label, { color: t.text }]}>
+        {tr('newOrder.pricingLabel')}
+        <Text style={{ color: t.red }}> *</Text>
       </Text>
-      {pricingType === 'hourly' ? (
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-          <MoneyInput
-            value={hourlyRate}
-            onChangeText={setHourlyRate}
-            placeholder={tr('newOrder.pricing.ratePlaceholder')}
-            suffix={tr('common.currencySom')}
-            style={{ flex: 1 }}
-            t={t}
-          />
-          <TextInput
-            value={estimatedHours}
-            onChangeText={setEstimatedHours}
-            keyboardType="number-pad"
-            placeholder={tr('newOrder.pricing.hoursPlaceholder')}
-            placeholderTextColor={t.faint}
-            style={[
-              common.input,
-              { flex: 1, backgroundColor: t.card, borderColor: t.border, color: t.text },
-            ]}
-          />
+
+      {changing ? (
+        <View style={s.options}>
+          {TYPES.map((type) => (
+            <PaymentOption
+              key={type}
+              {...option(type)}
+              active={pricingType === type}
+              onPress={() => choose(type)}
+              t={t}
+            />
+          ))}
         </View>
       ) : (
-        <MoneyInput
-          value={fixedPrice}
-          onChangeText={setFixedPrice}
-          placeholder={tr('newOrder.pricing.fixedPricePlaceholder')}
-          suffix={tr('common.currencySom')}
-          t={t}
-        />
+        <View style={[s.card, { backgroundColor: t.card, borderColor: t.orange }]}>
+          <View style={[s.icon, { backgroundColor: current.iconBg }]}>
+            <MaterialCommunityIcons name={current.icon} size={21} color={t.orange} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[s.title, { color: t.text }]} numberOfLines={1}>
+              {current.title}
+            </Text>
+            <Text style={[s.sub, { color: t.muted }]} numberOfLines={2}>
+              {current.subtitle}
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => {
+              animate();
+              setChanging(true);
+            }}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={[s.change, { backgroundColor: t.orange + '1f' }]}
+          >
+            <Text style={[s.changeTxt, { color: t.orange }]}>{tr('newOrder.pricing.change')}</Text>
+          </TouchableOpacity>
+        </View>
       )}
+
+      <View style={s.inputs}>
+        {pricingType === 'hourly' ? (
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <MoneyInput
+              value={hourlyRate}
+              onChangeText={setHourlyRate}
+              placeholder={tr('newOrder.pricing.ratePlaceholder')}
+              suffix={tr('common.currencySom')}
+              style={{ flex: 1 }}
+              t={t}
+            />
+            <TextInput
+              value={estimatedHours}
+              onChangeText={setEstimatedHours}
+              keyboardType="number-pad"
+              placeholder={tr('newOrder.pricing.hoursPlaceholder')}
+              placeholderTextColor={t.faint}
+              style={[
+                common.input,
+                { flex: 1, backgroundColor: t.card, borderColor: t.border, color: t.text },
+              ]}
+            />
+          </View>
+        ) : (
+          <MoneyInput
+            value={fixedPrice}
+            onChangeText={setFixedPrice}
+            placeholder={tr('newOrder.pricing.fixedPricePlaceholder')}
+            suffix={tr('common.currencySom')}
+            t={t}
+          />
+        )}
+      </View>
     </>
   );
 }
 
 const s = StyleSheet.create({
-  pricingToggleRow: { flexDirection: 'row', gap: 8, marginBottom: 4 },
-  pricingPill: {
+  options: { gap: 10 },
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     borderWidth: 1.5,
-    borderRadius: 20,
-    paddingHorizontal: 18,
-    paddingVertical: 9,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
   },
-  pricingPillTxt: { fontSize: 13, fontWeight: '700' },
+  icon: { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  title: { fontSize: 15, fontWeight: '800' },
+  sub: { fontSize: 12, marginTop: 2, lineHeight: 16 },
+  change: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999 },
+  changeTxt: { fontSize: 12.5, fontWeight: '800' },
+  inputs: { marginTop: 12 },
 });

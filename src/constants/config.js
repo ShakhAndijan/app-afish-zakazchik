@@ -1,8 +1,18 @@
-export const API_BASE_URL = 'https://dev-back.afish.uz';
+// Backend manzili .env dagi EXPO_PUBLIC_API_BASE_URL dan olinadi; berilmasa dev server ishlatiladi.
+export const API_BASE_URL = (
+  process.env.EXPO_PUBLIC_API_BASE_URL || 'https://dev-back.afish.uz'
+).replace(/\/+$/, '');
 
 // Kalitlar .env faylidan olinadi (.env.example ga qarang). Backend tayyor bo'lgach geocoder serverga o'tadi.
 export const YANDEX_MAPS_API_KEY = process.env.EXPO_PUBLIC_YANDEX_MAPS_API_KEY ?? '';
 export const YANDEX_GEOCODER_API_KEY = process.env.EXPO_PUBLIC_YANDEX_GEOCODER_API_KEY ?? '';
+
+// Imkoniyat bayroqlari. Onlayn to'lov (ikkinchi versiya) qo'shilguncha hamyon balansi yashirin.
+export const FEATURES = {
+  walletBalance: false,
+  // "Barcha xizmatlar" tepasidagi umumiy statistika: ma'lumotlar yetarli bo'lgach yoqiladi.
+  overallStats: false,
+};
 
 export const ENDPOINTS = {
   AUTH_GOOGLE_LOGIN: `${API_BASE_URL}/api/v1/auth/google/login`,
@@ -20,8 +30,7 @@ export const ENDPOINTS = {
 
   GENDERS: `${API_BASE_URL}/api/v1/genders`,
   REGIONS: `${API_BASE_URL}/api/v1/regions`,
-  DISTRICTS: (regionId) =>
-    `${API_BASE_URL}/api/v1/regions/${regionId}/districts`,
+  DISTRICTS: (regionId) => `${API_BASE_URL}/api/v1/regions/${regionId}/districts`,
   WORKERS: `${API_BASE_URL}/api/v1/workers`,
   WORKER_DETAIL: (workerId) => `${API_BASE_URL}/api/v1/workers/${workerId}`,
   WORKER_LIKE: (workerId) => `${API_BASE_URL}/api/v1/workers/${workerId}/like`,
@@ -30,10 +39,8 @@ export const ENDPOINTS = {
       ? `${API_BASE_URL}/api/v1/workers/${workerId}/certificates?category_id=${categoryId}`
       : `${API_BASE_URL}/api/v1/workers/${workerId}/certificates`,
   SYSTEM_STATS: `${API_BASE_URL}/api/v1/system/stats`,
-  TOP_COMMENTS: (limit = 10) =>
-    `${API_BASE_URL}/api/v1/reviews/top-comments?limit=${limit}`,
-  TOP_ORDERS: (limit = 10) =>
-    `${API_BASE_URL}/api/v1/reviews/top-orders?limit=${limit}`,
+  TOP_COMMENTS: (limit = 10) => `${API_BASE_URL}/api/v1/reviews/top-comments?limit=${limit}`,
+  TOP_ORDERS: (limit = 10) => `${API_BASE_URL}/api/v1/reviews/top-orders?limit=${limit}`,
   CUSTOMER_ME: `${API_BASE_URL}/api/v1/customers/me`,
   CUSTOMER_FAVORITES: (page = 1, size = 10) =>
     `${API_BASE_URL}/api/v1/customers/me/favorites?page=${page}&size=${size}`,
@@ -44,8 +51,7 @@ export const ENDPOINTS = {
   ORDER_UPLOAD_URL: `${API_BASE_URL}/api/v1/orders/upload-url`,
   MY_ORDERS: (limit = 100, offset = 0) =>
     `${API_BASE_URL}/api/v1/orders/me/customer?limit=${limit}&offset=${offset}`,
-  PUBLIC_ORDER: (token) =>
-    `${API_BASE_URL}/api/v1/orders/public/${encodeURIComponent(token)}`,
+  PUBLIC_ORDER: (token) => `${API_BASE_URL}/api/v1/orders/public/${encodeURIComponent(token)}`,
   ORDER_DETAIL: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}`,
   ORDER_PAYMENT: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/payment`,
   ORDER_CHAT: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/chat`,

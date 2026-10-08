@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Stack, useRouter, useRootNavigationState } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { COLORS } from '../constants/colors';
 import AfishLoader from '../components/AfishLoader';
@@ -21,9 +22,11 @@ export default function RootLayout() {
     <LanguageProvider>
       <ThemeProvider>
         <SafeAreaProvider>
-          <AuthProvider>
-            <RootNavigator />
-          </AuthProvider>
+          <KeyboardProvider>
+            <AuthProvider>
+              <RootNavigator />
+            </AuthProvider>
+          </KeyboardProvider>
         </SafeAreaProvider>
       </ThemeProvider>
     </LanguageProvider>
@@ -65,6 +68,7 @@ function RootNavigator() {
             <Stack.Screen name="wallet" />
             <Stack.Screen name="orders" />
             <Stack.Screen name="order/[id]" />
+            <Stack.Screen name="order-worker" />
             <Stack.Screen name="addresses" />
             <Stack.Screen name="payment-history" />
             <Stack.Screen name="notifications" />

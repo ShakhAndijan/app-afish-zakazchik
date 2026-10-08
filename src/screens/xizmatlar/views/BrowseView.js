@@ -8,6 +8,9 @@ import VerifiedSection from '../components/VerifiedSection';
 import PopularCategories from '../components/PopularCategories';
 import CategoryTile from '../components/CategoryTile';
 import EmptyBox from '../components/EmptyBox';
+import useTabBarSpace from '../../../navigation/useTabBarSpace';
+import { seasonOf, seasonalCategories } from '../season';
+import { FEATURES } from '../../../constants/config';
 
 // Bosh ko'rinish (yo'nalish tanlanmagan): statistika, tasdiqlangan ustalar,
 // ommabop va barcha yo'nalishlar. Qidiruv bo'lsa — faqat mos yo'nalishlar.
@@ -18,15 +21,19 @@ export default function BrowseView({
   certifiedOnly,
   verified,
   onClearVerified,
-  popular,
   categories,
   categoriesLoading,
   onOpenCategory,
   onSelectWorker,
 }) {
+  const bottomSpace = useTabBarSpace(90);
   const { t: tr } = useLanguage();
   const { styles } = useXizmatlarStyles();
   const searching = !!query.trim();
+
+  // Joriy mavsumga mos yo'nalishlar (mos kategoriya bo'lmasa bo'lim ko'rsatilmaydi).
+  const season = seasonOf();
+  const seasonal = useMemo(() => seasonalCategories(categories, season), [categories, season]);
 
   const visibleCategories = useMemo(() => {
     if (!searching) return categories;
@@ -38,24 +45,26 @@ export default function BrowseView({
     <>
       {searchRow}
 
-      <ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: 90 }} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: bottomSpace }} showsVerticalScrollIndicator={false}>
         <View>
           <Text style={styles.sectionTitle}>{tr('xizmatlar.browse.title')}</Text>
           <Text style={styles.sectionSubtitle}>{tr('xizmatlar.browse.subtitle')}</Text>
 
           {!searching && (
             <>
-              <OverallStats stats={overallStats} />
+              {FEATURES.overallStats && <OverallStats stats={overallStats} />}
 
               {certifiedOnly && (
                 <VerifiedSection verified={verified} onClear={onClearVerified} onSelectWorker={onSelectWorker} />
               )}
 
-              {popular.length > 0 && (
+              {seasonal.length > 0 && (
                 <>
-                  <Text style={styles.groupLabel}>{tr('xizmatlar.browse.popularDirections')}</Text>
+                  <Text style={styles.groupLabel}>
+                    {`${tr('xizmatlar.browse.seasonalJobs')} · ${tr(`xizmatlar.browse.seasons.${season}`)}`}
+                  </Text>
                   <View style={{ marginBottom: 22 }}>
-                    <PopularCategories categories={popular} onSelect={onOpenCategory} />
+                    <PopularCategories categories={seasonal} onSelect={onOpenCategory} />
                   </View>
                 </>
               )}

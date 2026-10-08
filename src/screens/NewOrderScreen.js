@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { StatusBar } from 'expo-status-bar';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import * as Crypto from 'expo-crypto';
 import LocationMapPicker from '../components/LocationMapPicker';
 import { useTheme } from '../context/ThemeContext';
@@ -26,13 +27,19 @@ import ToolsSection from './new-order/sections/ToolsSection';
 import WorkerCountSection from './new-order/sections/WorkerCountSection';
 import RequirementsSection from './new-order/sections/RequirementsSection';
 import PricingSection from './new-order/sections/PricingSection';
-import PaymentSection from './new-order/sections/PaymentSection';
-import ContactSection from './new-order/sections/ContactSection';
+import ContactSection, { BackupPhoneSection } from './new-order/sections/ContactSection';
+import ExtraSection from './new-order/sections/ExtraSection';
 import SubmitButton from './new-order/sections/SubmitButton';
 import useOrderPhotos from './new-order/hooks/useOrderPhotos';
 import useOrderLocation from './new-order/hooks/useOrderLocation';
+import useTabBarSpace from '../navigation/useTabBarSpace';
 
-export default function NewOrderScreen({ onOrderCreated, targetWorker }) {
+// `onBack` berilsa (masalan usta profilidan ochilganda) tepada orqaga tugmasi chiqadi va
+// pastki menyu uchun joy qoldirilmaydi.
+export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack }) {
+  const tabSpace = useTabBarSpace(110);
+  const insets = useSafeAreaInsets();
+  const bottomSpace = onBack ? 32 + insets.bottom : tabSpace;
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
   const { user } = useUser();
@@ -59,11 +66,12 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker }) {
   const [minRating, setMinRating] = useState(0);
   const [ageFrom, setAgeFrom] = useState('');
   const [ageTo, setAgeTo] = useState('');
-  const [pricingType, setPricingType] = useState('hourly');
+  const [pricingType, setPricingType] = useState('fixed');
   const [hourlyRate, setHourlyRate] = useState('');
   const [estimatedHours, setEstimatedHours] = useState('');
   const [fixedPrice, setFixedPrice] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('cash');
+  // To'lov usuli formada tanlanmaydi: standart naqd pul.
+  const paymentMethod = 'cash';
   const [phone, setPhone] = useState(stripCountryCode(user?.phone));
   const [backupPhone, setBackupPhone] = useState('');
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -85,13 +93,13 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker }) {
   } = useOrderLocation();
 
   useEffect(() => {
-    getCategories().then(setCategories).catch(() => {});
+    getCategories()
+      .then(setCategories)
+      .catch(() => {});
   }, []);
 
   const toggleCategory = (id) => {
-    setCategoryIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+    setCategoryIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
   const selectedCategories = categories.filter((c) => categoryIds.includes(c.id));
@@ -104,8 +112,26 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker }) {
     tr('newOrder.addressModalTitle');
   const addressSubtitle = selectedDistrict?.name || selectedRegion?.name ? street.trim() : '';
 
-  const ready =
-    categoryIds.length > 0 && description.trim().length > 0 && phone.trim().length > 0;
+  // Majburiy maydonlar: xizmat, tavsif, manzil, qachon (sana tanlangan bo'lsa — sana ham), narx
+  // ("Ish uchun" — ish narxi, "Soatbay" — soat narxi), telefon.
+  const addressReady = !!districtId || (gpsLat != null && gpsLng != null);
+  const whenReady = !!when && (when !== 'date' || !!whenDate);
+  const priceReady = pricingType === 'hourly' ? !!hourlyRate.trim() : !!fixedPrice.trim();
+  const missing = [
+    categoryIds.length === 0 && 'newOrder.categoryLabel',
+    description.trim().length === 0 && 'newOrder.descriptionLabel',
+    !addressReady && 'newOrder.locationLabel',
+    !whenReady && 'newOrder.whenLabel',
+    !priceReady && 'newOrder.pricingLabel',
+    phone.trim().length === 0 && 'newOrder.phoneLabel',
+  ].filter(Boolean);
+  const ready = missing.length === 0;
+  const extraFilled = [
+    !!toolsOption,
+    workerCount > 1,
+    requirePhoto || minRating > 0 || !!ageFrom.trim() || !!ageTo.trim(),
+    !!backupPhone.trim(),
+  ].filter(Boolean).length;
 
   // Payload va tasdiqlash oynasi uchun umumiy forma qiymatlari.
   const form = {
@@ -178,10 +204,7 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker }) {
         raw: created,
       });
     } catch (err) {
-      Alert.alert(
-        tr('newOrder.submitErrorTitle'),
-        err?.message || tr('common.error')
-      );
+      Alert.alert(tr('newOrder.submitErrorTitle'), err?.message || tr('common.error'));
     } finally {
       setSubmitting(false);
     }
@@ -200,13 +223,21 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker }) {
 
       <KeyboardAwareScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 20, paddingBottom: 110 }}
+        contentContainerStyle={{ padding: 20, paddingBottom: bottomSpace }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        enableOnAndroid
-        extraScrollHeight={20}
-        keyboardOpeningTime={0}
+        bottomOffset={20}
       >
+        {!!onBack && (
+          <TouchableOpacity
+            onPress={onBack}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            style={[s.back, { backgroundColor: t.card, borderColor: t.border }]}
+          >
+            <MaterialCommunityIcons name="arrow-left" size={20} color={t.text} />
+          </TouchableOpacity>
+        )}
         <Text style={[s.title, { color: t.text }]}>{tr('newOrder.headerTitle')}</Text>
         <Text style={[s.subtitle, { color: t.muted }]}>{tr('newOrder.headerSubtitle')}</Text>
 
@@ -221,6 +252,12 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker }) {
           description={description}
           setDescription={setDescription}
         />
+        <PhotosSection
+          photos={photos}
+          pickPhotos={pickPhotos}
+          removePhoto={removePhoto}
+          setPreviewIndex={setPreviewIndex}
+        />
         <AddressSection
           hasAddress={hasAddress}
           setAddressModalOpen={setAddressModalOpen}
@@ -228,24 +265,6 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker }) {
           addressSubtitle={addressSubtitle}
         />
         <WhenSection when={when} setWhen={setWhen} whenDate={whenDate} setWhenDate={setWhenDate} />
-        <PhotosSection
-          photos={photos}
-          pickPhotos={pickPhotos}
-          removePhoto={removePhoto}
-          setPreviewIndex={setPreviewIndex}
-        />
-        <ToolsSection toolsOption={toolsOption} setToolsOption={setToolsOption} />
-        <WorkerCountSection workerCount={workerCount} setWorkerCount={setWorkerCount} />
-        <RequirementsSection
-          requirePhoto={requirePhoto}
-          setRequirePhoto={setRequirePhoto}
-          minRating={minRating}
-          setMinRating={setMinRating}
-          ageFrom={ageFrom}
-          setAgeFrom={setAgeFrom}
-          ageTo={ageTo}
-          setAgeTo={setAgeTo}
-        />
         <PricingSection
           pricingType={pricingType}
           setPricingType={setPricingType}
@@ -256,14 +275,27 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker }) {
           fixedPrice={fixedPrice}
           setFixedPrice={setFixedPrice}
         />
-        <PaymentSection paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} />
-        <ContactSection
-          phone={phone}
-          setPhone={setPhone}
-          backupPhone={backupPhone}
-          setBackupPhone={setBackupPhone}
-        />
-        <SubmitButton ready={ready} onPress={openReview} />
+
+        {/* Ixtiyoriy maydonlar yig'ilgan holda turadi */}
+        <ExtraSection filled={extraFilled}>
+          <ToolsSection toolsOption={toolsOption} setToolsOption={setToolsOption} />
+          <WorkerCountSection workerCount={workerCount} setWorkerCount={setWorkerCount} />
+          <RequirementsSection
+            requirePhoto={requirePhoto}
+            setRequirePhoto={setRequirePhoto}
+            minRating={minRating}
+            setMinRating={setMinRating}
+            ageFrom={ageFrom}
+            setAgeFrom={setAgeFrom}
+            ageTo={ageTo}
+            setAgeTo={setAgeTo}
+          />
+          <BackupPhoneSection backupPhone={backupPhone} setBackupPhone={setBackupPhone} />
+        </ExtraSection>
+
+        <ContactSection phone={phone} setPhone={setPhone} />
+
+        <SubmitButton ready={ready} missing={missing} onPress={openReview} />
       </KeyboardAwareScrollView>
 
       <CategoryPickerModal
@@ -317,12 +349,20 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker }) {
         previewIndex={previewIndex}
         setPreviewIndex={setPreviewIndex}
       />
-
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
+  back: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
   title: { fontWeight: '800', fontSize: 22, marginTop: 6 },
   subtitle: { fontSize: 13.5, lineHeight: 19, marginTop: 6, marginBottom: 20 },
 });

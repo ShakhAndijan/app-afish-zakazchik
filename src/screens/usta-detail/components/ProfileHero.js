@@ -1,4 +1,5 @@
 import { View, Text } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -6,7 +7,10 @@ import AfishLoader from '../../../components/AfishLoader';
 import { useUstaStyles } from '../styles';
 import UstaAvatar from './UstaAvatar';
 
-// Profilning yuqori qismi: surat, ism, kasb/hudud, reyting, o'rtacha javob vaqti va bio.
+const HERO_GRADIENT = ['#f28d56', '#e87a45', '#c9552a'];
+
+// Profilning yuqori qismi: gradient karta ichida surat, ism, kasb/hudud, reyting, onlayn holat va bio.
+// Statistika kartasi (StatCards) shu kartaning pastki chetiga suzib turadi.
 export default function ProfileHero({
   initial,
   name,
@@ -22,50 +26,73 @@ export default function ProfileHero({
   showLoader,
 }) {
   const { t: tr } = useLanguage();
-  const { C, st } = useUstaStyles();
+  const { st } = useUstaStyles();
 
   return (
     <>
-      <View style={{ flexDirection: 'row', gap: 14, marginTop: 14, alignItems: 'center' }}>
-        <UstaAvatar initial={initial} size={68} bgColor={bgColor} uri={photo} />
-        <View style={{ flex: 1 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-            {isOnline && (
-              <View style={st.onlinePill}>
-                <View style={st.onlineDot} />
-                <Text style={st.onlinePillTxt}>{tr('ustaDetail.online')}</Text>
-              </View>
-            )}
-            <Text style={{ fontSize: 19, fontWeight: '800', color: C.txt }}>{name}</Text>
-            {isIdentityVerified && (
-              <MaterialCommunityIcons name="shield-check" size={18} color={C.green} />
-            )}
+      <LinearGradient
+        colors={HERO_GRADIENT}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={st.hero}
+      >
+        <View style={st.heroDecoA} pointerEvents="none" />
+        <View style={st.heroDecoB} pointerEvents="none" />
+
+        <View style={st.heroRow}>
+          <View style={st.heroAvatarRing}>
+            <UstaAvatar initial={initial} size={74} bgColor={bgColor} uri={photo} />
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
-            <Ionicons name="location-outline" size={13} color={C.dim} />
-            <Text style={{ fontSize: 13, color: C.dim }} numberOfLines={1}>
-              {[trade, location].filter(Boolean).join(' · ')}
-            </Text>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 7 }}>
-            <View style={st.ratingBadge}>
-              <Ionicons name="star" size={13} color={C.gold} />
-              <Text style={{ color: C.gold, fontSize: 12, fontWeight: '800' }}>{rating}</Text>
-            </View>
-            {avgResponseMin != null && (
-              <Text style={{ fontSize: 12.5, color: C.dim }}>
-                {tr('ustaDetail.avgResponse', { min: avgResponseMin })}
+          <View style={{ flex: 1 }}>
+            <View style={st.heroNameRow}>
+              <Text style={st.heroName} numberOfLines={2}>
+                {name}
               </Text>
+              {isIdentityVerified && (
+                <MaterialCommunityIcons name="check-decagram" size={19} color="#fff" />
+              )}
+            </View>
+            {!!trade && (
+              <Text style={st.heroTrade} numberOfLines={1}>
+                {trade}
+              </Text>
+            )}
+            {!!location && (
+              <View style={st.heroLocRow}>
+                <Ionicons name="location-outline" size={13} color="rgba(255,255,255,0.85)" />
+                <Text style={st.heroLoc} numberOfLines={1}>
+                  {location}
+                </Text>
+              </View>
             )}
           </View>
         </View>
-      </View>
 
-      {!!bio && (
-        <Text style={{ fontSize: 13.5, color: '#c4cdd8', marginTop: 12, lineHeight: 19 }}>{bio}</Text>
-      )}
+        <View style={st.heroPills}>
+          <View style={st.heroPill}>
+            <Ionicons name="star" size={13} color="#ffd25e" />
+            <Text style={st.heroPillTxt}>{rating}</Text>
+          </View>
+          {isOnline && (
+            <View style={st.heroPill}>
+              <View style={st.onlineDot} />
+              <Text style={st.heroPillTxt}>{tr('ustaDetail.online')}</Text>
+            </View>
+          )}
+          {avgResponseMin != null && (
+            <View style={st.heroPill}>
+              <Ionicons name="flash-outline" size={13} color="#fff" />
+              <Text style={st.heroPillTxt}>
+                {tr('ustaDetail.avgResponse', { min: avgResponseMin }).replace(/^·\s*/, '')}
+              </Text>
+            </View>
+          )}
+        </View>
 
-      {showLoader && <AfishLoader size={64} style={{ alignItems: 'center', marginTop: 14 }} />}
+        {!!bio && <Text style={st.heroBio}>{bio}</Text>}
+
+        {showLoader && <AfishLoader size={56} style={{ alignItems: 'center', marginTop: 12 }} />}
+      </LinearGradient>
     </>
   );
 }

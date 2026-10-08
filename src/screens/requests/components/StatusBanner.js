@@ -3,7 +3,7 @@ import { Animated, View, Text, StyleSheet } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../../../context/ThemeContext';
 
-// Zakaz holati banneri. Javob kutilayotganda (`pulsing`) belgi sekin miltillab turadi.
+// Buyurtma holati banneri. Javob kutilayotganda (`pulsing`) belgi sekin miltillab turadi.
 export default function StatusBanner({ info, pulsing }) {
   const { theme: t } = useTheme();
   const color = t[info.tone] ?? t.orange;

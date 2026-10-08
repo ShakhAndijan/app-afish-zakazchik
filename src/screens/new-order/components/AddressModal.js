@@ -7,11 +7,14 @@ import {
   ScrollView,
   Modal,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
   useWindowDimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  KeyboardProvider,
+  KeyboardStickyView,
+  useKeyboardState,
+} from 'react-native-keyboard-controller';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import LocationMapPicker from '../../../components/LocationMapPicker';
 import { common } from '../styles';
@@ -19,7 +22,7 @@ import SelectField from './SelectField';
 import OptionSheet from './OptionSheet';
 import useAddressMapSync from '../hooks/useAddressMapSync';
 
-export default function AddressModal({
+function AddressModalContent({
   visible,
   onClose,
   regions,
@@ -49,6 +52,16 @@ export default function AddressModal({
   const [regionSheetOpen, setRegionSheetOpen] = useState(false);
   const [districtSheetOpen, setDistrictSheetOpen] = useState(false);
   const [sheetCollapsed, setSheetCollapsed] = useState(false);
+  const [sheetH, setSheetH] = useState(0);
+  // Telefonning pastki tizim tugmalari (orqaga / uy) paneldagi tugmani yopib qo'ymasligi uchun.
+  const bottomInset = useSafeAreaInsets().bottom;
+  const kbVisible = useKeyboardState((st) => st.isVisible);
+  const kbHeight = useKeyboardState((st) => st.height);
+  // Klaviatura ochiq bo'lganda panel ko'tarilgani uchun maydonlar ro'yxati qisqartiriladi.
+  const sheetMaxH = kbVisible ? Math.max(120, screenH - kbHeight - 250) : screenH * 0.46;
+  // "Hozirgi joylashuv" tugmasi panel (va klaviatura) tepasida turadi.
+  const controlsBottom =
+    (sheetCollapsed ? 100 + bottomInset : sheetH + 12) + (kbVisible ? kbHeight : 0);
 
   // Xarita hali ko'rinib tursin deb panel va uning ichidagi maydonlar
   // to'liq xira emas, biroz shaffof — "bilinar-bilinmas" fon.
@@ -69,7 +82,7 @@ export default function AddressModal({
     });
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+    <>
       <View style={{ flex: 1, backgroundColor: t.bg }}>
         {/* ── Butun ekranni egallagan xarita ── */}
         <LocationMapPicker
@@ -77,6 +90,7 @@ export default function AddressModal({
           lng={gpsLng}
           onChange={onMapChange}
           fill
+          controlsBottom={controlsBottom}
           showExpand={false}
           borderRadius={0}
           geocodeQuery={geocodeQuery}
@@ -117,115 +131,138 @@ export default function AddressModal({
           <TouchableOpacity
             onPress={() => setSheetCollapsed(false)}
             activeOpacity={0.85}
-            style={[s.reopenFab, { backgroundColor: t.orange }]}
+            style={[s.reopenFab, { backgroundColor: t.orange, bottom: 54 + bottomInset }]}
           >
             <MaterialCommunityIcons name="chevron-up" size={15} color="#fff" />
             <Text style={s.reopenFabTxt}>{tr('newOrder.reopenLabel')}</Text>
           </TouchableOpacity>
         ) : (
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'position' : 'height'}
-            style={s.bottomSheetWrap}
-          >
-          <View style={[s.bottomSheet, { backgroundColor: sheetBg, borderColor: t.border }]}>
-            <View style={s.sheetHandleWrap}>
-              <View style={[common.sheetHandle, { backgroundColor: t.border }]} />
-            </View>
-
-            <ScrollView
-              style={{ maxHeight: screenH * 0.46 }}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
+          <KeyboardStickyView style={s.bottomSheetWrap}>
+            <View
+              onLayout={(e) => setSheetH(e.nativeEvent.layout.height)}
+              style={[
+                s.bottomSheet,
+                {
+                  backgroundColor: sheetBg,
+                  borderColor: t.border,
+                  // Klaviatura ochiq bo'lsa tizim tugmalari ostida emas, qo'shimcha bo'sh joy shart emas
+                  paddingBottom: kbVisible ? 16 : Math.max(bottomInset, 12) + 16,
+                },
+              ]}
             >
-              <Text style={[s.mapHint, { color: t.faint }]}>{tr('newOrder.mapHint')}</Text>
-
-              <View style={{ gap: 14, marginTop: 10 }}>
-                {header}
-                <View style={{ flexDirection: 'row', gap: 10 }}>
-                  <View style={{ flex: 1 }}>
-                    <SelectField
-                      label={tr('newOrder.regionLabel')}
-                      value={selectedRegionName}
-                      placeholder={tr('newOrder.regionPlaceholder')}
-                      onPress={() => setRegionSheetOpen(true)}
-                      t={t}
-                      bg={fieldBg}
-                    />
-                  </View>
-
-                  <View style={{ flex: 1 }}>
-                    <SelectField
-                      label={tr('newOrder.districtLabel')}
-                      value={selectedDistrictName}
-                      placeholder={
-                        regionId ? tr('newOrder.districtPlaceholder') : tr('newOrder.regionPlaceholder')
-                      }
-                      onPress={() => setDistrictSheetOpen(true)}
-                      t={t}
-                      bg={fieldBg}
-                      disabled={!regionId}
-                    />
-                  </View>
-                </View>
-
-                <TextInput
-                  value={street}
-                  onChangeText={onStreetChange}
-                  placeholder={tr('newOrder.streetPlaceholder')}
-                  placeholderTextColor={t.faint}
-                  style={[common.input, { backgroundColor: fieldBg, borderColor: t.border, color: t.text }]}
-                />
-                {!hideUnitFields && (
-                <View style={{ flexDirection: 'row', gap: 10 }}>
-                  <TextInput
-                    value={entrance}
-                    onChangeText={onEntranceChange}
-                    placeholder={tr('newOrder.entrancePlaceholder')}
-                    placeholderTextColor={t.faint}
-                    style={[
-                      common.input,
-                      { flex: 1, backgroundColor: fieldBg, borderColor: t.border, color: t.text },
-                    ]}
-                  />
-                  <TextInput
-                    value={floor}
-                    onChangeText={onFloorChange}
-                    placeholder={tr('newOrder.floorPlaceholder')}
-                    placeholderTextColor={t.faint}
-                    style={[
-                      common.input,
-                      { flex: 1, backgroundColor: fieldBg, borderColor: t.border, color: t.text },
-                    ]}
-                  />
-                </View>
-                )}
-
-                <View style={[s.noteBox, { backgroundColor: fieldBg, borderColor: t.border }]}>
-                  <MaterialCommunityIcons name="shield-check-outline" size={16} color={t.muted} />
-                  <Text style={[s.noteTxt, { color: t.muted }]}>
-                    {tr('newOrder.addressAccuracyNote')}
-                  </Text>
-                </View>
+              <View style={s.sheetHandleWrap}>
+                <View style={[common.sheetHandle, { backgroundColor: t.border }]} />
               </View>
-            </ScrollView>
 
-            <TouchableOpacity
-              onPress={onSave || onClose}
-              activeOpacity={0.85}
-              style={[common.modalDoneBtn, { backgroundColor: t.orange, marginTop: 14 }]}
-            >
-              <Text style={common.modalDoneTxt}>{tr('newOrder.addressSaveBtn')}</Text>
-            </TouchableOpacity>
+              <ScrollView
+                style={{ maxHeight: sheetMaxH }}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+              >
+                <Text style={[s.mapHint, { color: t.faint }]}>{tr('newOrder.mapHint')}</Text>
 
-            <TouchableOpacity
-              onPress={() => setSheetCollapsed(true)}
-              activeOpacity={0.8}
-              style={[s.collapseBtn, { backgroundColor: t.card, borderColor: t.border }]}
-            >
-              <MaterialCommunityIcons name="chevron-down" size={20} color={t.text} />
-            </TouchableOpacity>
-          </View>
-          </KeyboardAvoidingView>
+                <View style={{ gap: 14, marginTop: 10 }}>
+                  {header}
+                  <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <View style={{ flex: 1 }}>
+                      <SelectField
+                        label={tr('newOrder.regionLabel')}
+                        value={selectedRegionName}
+                        placeholder={tr('newOrder.regionPlaceholder')}
+                        onPress={() => setRegionSheetOpen(true)}
+                        t={t}
+                        bg={fieldBg}
+                      />
+                    </View>
+
+                    <View style={{ flex: 1 }}>
+                      <SelectField
+                        label={tr('newOrder.districtLabel')}
+                        value={selectedDistrictName}
+                        placeholder={
+                          regionId
+                            ? tr('newOrder.districtPlaceholder')
+                            : tr('newOrder.regionPlaceholder')
+                        }
+                        onPress={() => setDistrictSheetOpen(true)}
+                        t={t}
+                        bg={fieldBg}
+                        disabled={!regionId}
+                      />
+                    </View>
+                  </View>
+
+                  <TextInput
+                    value={street}
+                    onChangeText={onStreetChange}
+                    placeholder={tr('newOrder.streetPlaceholder')}
+                    placeholderTextColor={t.faint}
+                    style={[
+                      common.input,
+                      { backgroundColor: fieldBg, borderColor: t.border, color: t.text },
+                    ]}
+                  />
+                  {!hideUnitFields && (
+                    <View style={{ flexDirection: 'row', gap: 10 }}>
+                      <TextInput
+                        value={entrance}
+                        onChangeText={onEntranceChange}
+                        placeholder={tr('newOrder.entrancePlaceholder')}
+                        placeholderTextColor={t.faint}
+                        style={[
+                          common.input,
+                          {
+                            flex: 1,
+                            backgroundColor: fieldBg,
+                            borderColor: t.border,
+                            color: t.text,
+                          },
+                        ]}
+                      />
+                      <TextInput
+                        value={floor}
+                        onChangeText={onFloorChange}
+                        placeholder={tr('newOrder.floorPlaceholder')}
+                        placeholderTextColor={t.faint}
+                        style={[
+                          common.input,
+                          {
+                            flex: 1,
+                            backgroundColor: fieldBg,
+                            borderColor: t.border,
+                            color: t.text,
+                          },
+                        ]}
+                      />
+                    </View>
+                  )}
+
+                  <View style={[s.noteBox, { backgroundColor: fieldBg, borderColor: t.border }]}>
+                    <MaterialCommunityIcons name="shield-check-outline" size={16} color={t.muted} />
+                    <Text style={[s.noteTxt, { color: t.muted }]}>
+                      {tr('newOrder.addressAccuracyNote')}
+                    </Text>
+                  </View>
+                </View>
+              </ScrollView>
+
+              <TouchableOpacity
+                onPress={onSave || onClose}
+                activeOpacity={0.85}
+                style={[common.modalDoneBtn, { backgroundColor: t.orange, marginTop: 14 }]}
+              >
+                <Text style={common.modalDoneTxt}>{tr('newOrder.addressSaveBtn')}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setSheetCollapsed(true)}
+                activeOpacity={0.8}
+                style={[s.collapseBtn, { backgroundColor: t.card, borderColor: t.border }]}
+              >
+                <MaterialCommunityIcons name="chevron-down" size={20} color={t.text} />
+              </TouchableOpacity>
+            </View>
+          </KeyboardStickyView>
         )}
       </View>
 
@@ -249,6 +286,26 @@ export default function AddressModal({
         t={t}
         tr={tr}
       />
+    </>
+  );
+}
+
+// Android'da Modal alohida oyna bo'lgani uchun klaviatura hodisalari uning ichida alohida
+// KeyboardProvider orqali olinadi.
+export default function AddressModal(props) {
+  return (
+    <Modal
+      visible={props.visible}
+      animationType="slide"
+      onRequestClose={props.onClose}
+      statusBarTranslucent
+      navigationBarTranslucent
+    >
+      <SafeAreaProvider>
+        <KeyboardProvider statusBarTranslucent navigationBarTranslucent>
+          <AddressModalContent {...props} />
+        </KeyboardProvider>
+      </SafeAreaProvider>
     </Modal>
   );
 }

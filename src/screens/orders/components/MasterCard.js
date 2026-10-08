@@ -15,7 +15,7 @@ export default function MasterCard({ order, rating, onPress, t }) {
       style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}
       {...(order.workerId ? { onPress, activeOpacity: 0.8 } : {})}
     >
-      <Avatar letter={order.letter} bgColor={order.color} uri={order.masterPhoto} size={46} />
+      <Avatar letter={order.letter} bgColor={order.color} uri={order.masterPhoto} size={52} />
       <View style={{ flex: 1 }}>
         <Text style={[s.name, { color: t.text }]} numberOfLines={1}>
           {order.master || tr('orders.noMasterYet')}
@@ -43,10 +43,10 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     borderWidth: 1,
-    borderRadius: 16,
-    padding: 13,
+    borderRadius: 20,
+    padding: 14,
   },
-  name: { fontSize: 15, fontWeight: '700' },
+  name: { fontSize: 16, fontWeight: '800' },
   trade: { fontSize: 12, fontWeight: '600', marginTop: 2 },
   ratingBadge: {
     flexDirection: 'row',

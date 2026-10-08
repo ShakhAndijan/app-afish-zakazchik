@@ -16,8 +16,8 @@ import useLiveOrder from './requests/hooks/useLiveOrder';
 import useOrderActions, { parsePrice } from './requests/hooks/useOrderActions';
 import { describeOrder, formatPrice, isOpenOrder, timeLabel } from './requests/utils';
 
-// Zakaz kuzatuv ekrani (backenddan jonli): holat banneri, xulosa, usta va narx kelishuvi.
-// Usta zakazni qabul qilgach (ACCEPTED) chat ochiladi, narx taklif/qabul qilinadi (ACTIVE).
+// Buyurtma kuzatuv ekrani (backenddan jonli): holat banneri, xulosa, usta va narx kelishuvi.
+// Usta buyurtmani qabul qilgach (ACCEPTED) chat ochiladi, narx taklif/qabul qilinadi (ACTIVE).
 export default function RequestScreen({ orderId, onBack }) {
   const router = useRouter();
   const { theme: t } = useTheme();

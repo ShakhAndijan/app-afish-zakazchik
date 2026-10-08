@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ScrollView, Share } from 'react-native';
+import * as Linking from 'expo-linking';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '../context/ThemeContext';
@@ -12,19 +13,23 @@ import StatusBanner from './orders/components/StatusBanner';
 import OrderSummary from './orders/components/OrderSummary';
 import SectionLabel from './orders/components/SectionLabel';
 import MasterCard from './orders/components/MasterCard';
-import PaymentInfoCard from './orders/components/PaymentInfoCard';
 import CancelReasonCard from './orders/components/CancelReasonCard';
 import PriceCard from './orders/components/PriceCard';
 import PhotoGallery from './orders/components/PhotoGallery';
 import { MasterNoteCard, CustomerReviewCard } from './orders/components/NoteCard';
 import OrderActions from './orders/components/OrderActions';
+import PromptModal from './requests/components/PromptModal';
+import useOrderActions from './requests/hooks/useOrderActions';
+import { isOpenOrder } from './requests/utils';
 
 // Buyurtma tafsiloti. Backendda yo'q qiymatlar (usta reytingi, narx bo'linishi, izohlar)
 // `extras` dan olinadi va "Namuna ma'lumot" belgisi bilan ko'rsatiladi.
-export default function OrderDetailScreen({ order: listOrder, onBack, onSelectUsta }) {
+export default function OrderDetailScreen({ order: listOrder, onBack, onSelectUsta, onReorder }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
-  const { order, extras } = useOrderDetail(listOrder);
+  const { order, extras, refresh } = useOrderDetail(listOrder);
+  const actions = useOrderActions(listOrder.id, refresh);
+  const [cancelOpen, setCancelOpen] = useState(false);
 
   const [beforeIndex, setBeforeIndex] = useState(0);
   const [afterIndex, setAfterIndex] = useState(0);
@@ -45,7 +50,9 @@ export default function OrderDetailScreen({ order: listOrder, onBack, onSelectUs
       order.price != null
         ? tr('orderDetail.shareMessage', { ...vars, price: formatNumber(Math.round(order.price)) })
         : tr('orderDetail.shareMessageNoPrice', vars);
-    Share.share({ message }).catch(() => {});
+    // Havola ilovaning o'zida shu buyurtma tafsilotini ochadi (faqat buyurtma egasi uchun).
+    const link = Linking.createURL(`/order/${order.id}`);
+    Share.share({ message: `${message}\n${link}` }).catch(() => {});
   };
 
   const openUstaProfile = () => {
@@ -68,16 +75,18 @@ export default function OrderDetailScreen({ order: listOrder, onBack, onSelectUs
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32 }}
       >
-        <StatusBanner meta={meta} label={label} subtext={statusSubtext(tr, order)} />
+        <StatusBanner meta={meta} label={label} subtext={statusSubtext(tr, order)} order={order} />
         <OrderSummary order={order} title={title} />
 
-        <SectionLabel t={t} mock={extras.masterRating != null}>
-          {tr('orderDetail.selectedMaster')}
-        </SectionLabel>
-        <MasterCard order={order} rating={extras.masterRating} onPress={openUstaProfile} t={t} />
-
-        <SectionLabel t={t}>{tr('orderDetail.orderAndPayment')}</SectionLabel>
-        <PaymentInfoCard order={order} meta={meta} statusLabel={label} />
+        {/* Usta hali tayinlanmagan (kutilayotgan) buyurtmada bo'lim ko'rsatilmaydi */}
+        {!!order.master && (
+          <>
+            <SectionLabel t={t} mock={extras.masterRating != null}>
+              {tr('orderDetail.selectedMaster')}
+            </SectionLabel>
+            <MasterCard order={order} rating={extras.masterRating} onPress={openUstaProfile} t={t} />
+          </>
+        )}
 
         {isCancelled && !!order.cancelReason && (
           <>
@@ -131,8 +140,26 @@ export default function OrderDetailScreen({ order: listOrder, onBack, onSelectUs
           </>
         )}
 
-        <OrderActions />
+        <OrderActions
+          isOpen={isOpenOrder(order)}
+          onCancel={() => setCancelOpen(true)}
+          onReorder={() => onReorder?.(order)}
+        />
       </ScrollView>
+
+      <PromptModal
+        visible={cancelOpen}
+        title={tr('requests.cancelTitle')}
+        placeholder={tr('requests.cancelReasonPlaceholder')}
+        confirmLabel={tr('requests.cancelConfirm')}
+        multiline
+        destructive
+        busy={actions.busy}
+        onClose={() => setCancelOpen(false)}
+        onSubmit={async (reason) => {
+          if (await actions.cancel(reason)) setCancelOpen(false);
+        }}
+      />
     </SafeAreaView>
   );
 }

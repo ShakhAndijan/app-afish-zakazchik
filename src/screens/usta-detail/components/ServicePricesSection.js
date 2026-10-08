@@ -1,15 +1,19 @@
 import { View, Text } from 'react-native';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useUstaStyles } from '../styles';
+import SectionTitle from './SectionTitle';
 
 // Yo'nalishlar bo'yicha xizmat narxlari ("dan", kelishiladi yoki belgilanmagan).
-export default function ServicePricesSection({ categories, loading }) {
+export default function ServicePricesSection({ categories: allCategories, selectedId, loading }) {
   const { t: tr } = useLanguage();
   const { C, st } = useUstaStyles();
+  // Tanlangan mutaxassislik bo'lsa — faqat shu yo'nalish narxi ko'rsatiladi.
+  const selected = allCategories.filter((c) => c.id === selectedId);
+  const categories = selected.length > 0 ? selected : allCategories;
 
   return (
     <>
-      <Text style={st.secTitle}>{tr('ustaDetail.servicesPriceTitle')}</Text>
+      <SectionTitle icon="cash-multiple" title={tr('ustaDetail.servicesPriceTitle')} />
       {categories.length > 0 ? (
         <View style={st.card}>
           {categories.map((c, i) => (
@@ -20,7 +24,9 @@ export default function ServicePricesSection({ categories, loading }) {
                 i < categories.length - 1 && { borderBottomWidth: 1, borderBottomColor: C.line },
               ]}
             >
-              <Text style={{ fontSize: 14, fontWeight: '600', color: C.txt, flex: 1, marginRight: 8 }}>
+              <Text
+                style={{ fontSize: 14, fontWeight: '600', color: C.txt, flex: 1, marginRight: 8 }}
+              >
                 {c.name}
               </Text>
               <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 2 }}>
@@ -30,10 +36,15 @@ export default function ServicePricesSection({ categories, loading }) {
                   </Text>
                 ) : c.minPrice || c.price ? (
                   <Text style={{ fontSize: 14, fontWeight: '800', color: C.txt }}>
-                    {tr('ustaDetail.priceFrom', { price: c.minPrice || c.price, currency: c.currency })}
+                    {tr('ustaDetail.priceFrom', {
+                      price: c.minPrice || c.price,
+                      currency: c.currency,
+                    })}
                   </Text>
                 ) : (
-                  <Text style={{ fontSize: 12.5, color: C.dim }}>{tr('ustaDetail.noPriceSet')}</Text>
+                  <Text style={{ fontSize: 12.5, color: C.dim }}>
+                    {tr('ustaDetail.noPriceSet')}
+                  </Text>
                 )}
               </View>
             </View>

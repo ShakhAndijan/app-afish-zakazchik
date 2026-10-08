@@ -3,6 +3,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useUstaStyles } from '../styles';
+import SectionTitle from './SectionTitle';
 import { formatDate } from '../utils';
 
 // Ish jadvali: hafta kunlari, ish vaqti va dam olish sanalari.
@@ -15,7 +16,7 @@ export default function ScheduleSection({ weekDays, workHours, offDates }) {
 
   return (
     <>
-      <Text style={st.secTitle}>{tr('ustaDetail.scheduleTitle')}</Text>
+      <SectionTitle icon="calendar-clock" title={tr('ustaDetail.scheduleTitle')} />
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {weekDays.map((day) => (
           <View

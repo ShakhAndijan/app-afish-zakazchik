@@ -2,6 +2,7 @@ import { View, Text } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useUstaStyles } from '../styles';
+import SectionTitle from './SectionTitle';
 import EmptyState from './EmptyState';
 
 function RatingBar({ label, pct }) {
@@ -38,7 +39,7 @@ export default function RatingSection({ rating, rawRating, reviewCount, reviewIt
 
   return (
     <>
-      <Text style={[st.secTitle, { marginTop: 22 }]}>{tr('ustaDetail.ratingTitle')}</Text>
+      <SectionTitle icon="star-outline" title={tr('ustaDetail.ratingTitle')} />
       {showRatingCard ? (
         <View style={st.card}>
           <View style={{ flexDirection: 'row', gap: 18, alignItems: 'center', padding: 16 }}>

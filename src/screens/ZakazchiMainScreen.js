@@ -7,24 +7,30 @@ import AfishLoader from '../components/AfishLoader';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useWallet } from '../context/WalletContext';
+import { FEATURES } from '../constants/config';
 import { ustaRoute, workRoute, newOrderRoute } from '../navigation/params';
 import useHomeData from './zakazchi-main/hooks/useHomeData';
 import HomeHeader from './zakazchi-main/components/HomeHeader';
+import QuickOrderCard from './zakazchi-main/components/QuickOrderCard';
 import WalletQuickCard from './zakazchi-main/components/WalletQuickCard';
 import ActiveOrdersSection from './requests/components/ActiveOrdersSection';
 import SectionHeader from './zakazchi-main/components/SectionHeader';
 import SectionLoader from './zakazchi-main/components/SectionLoader';
 import SectionError from './zakazchi-main/components/SectionError';
-import ServiceCarousel from './zakazchi-main/components/ServiceCarousel';
+import ServiceCategories from './zakazchi-main/components/ServiceCategories';
+import PromoBanners from './zakazchi-main/components/PromoBanners';
+import SeasonalJobs from './zakazchi-main/components/SeasonalJobs';
 import TopWorkers from './zakazchi-main/components/TopWorkers';
 import WorksCarousel from './zakazchi-main/components/WorksCarousel';
 import FavoriteWorkers from './zakazchi-main/components/FavoriteWorkers';
 import BenefitsSection from './zakazchi-main/components/BenefitsSection';
 import ReturningCustomerSection from './zakazchi-main/components/ReturningCustomerSection';
 import ReviewsCarousel from './zakazchi-main/components/ReviewsCarousel';
+import useTabBarSpace from '../navigation/useTabBarSpace';
 
 // Mijoz bosh sahifasi (pastki menyudagi "home" tabi). Boshqa ekranlarga o'tish expo-router orqali.
 export default function ZakazchiMainScreen() {
+  const bottomSpace = useTabBarSpace(90);
   const router = useRouter();
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
@@ -43,8 +49,21 @@ export default function ZakazchiMainScreen() {
     }, [home.refreshSummary])
   );
 
+  // Mavsum kartasi bosilganda kategoriya tanlanadi va "Eng zo'r ustalar" bo'limiga o'tiladi.
+  const scrollRef = useRef(null);
+  const topWorkersY = useRef(0);
+  const pickSeasonCategory = (categoryId) => {
+    home.selectCategory(categoryId);
+    scrollRef.current?.scrollTo({ y: Math.max(0, topWorkersY.current - 12), animated: true });
+  };
+
   const openUsta = (usta) => router.push(ustaRoute(usta));
   const orderWorker = (worker) => router.navigate(newOrderRoute(worker));
+
+  // "Usta tanlay olmayapsizmi?" kartasi faqat faol buyurtmasi yo'q mijozga ko'rinadi
+  // (ma'lumot kelguncha ko'rsatilmaydi — miltillab o'chib qolmasligi uchun).
+  const showQuickOrder =
+    !home.summary.loading && (home.summary.data?.activeOrders.length ?? 0) === 0;
 
   const hasPersonal =
     !!home.summary.data &&
@@ -55,8 +74,9 @@ export default function ZakazchiMainScreen() {
       <StatusBar style={t.isDark ? 'light' : 'dark'} />
 
       <ScrollView
+        ref={scrollRef}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 90 }}
+        contentContainerStyle={{ paddingBottom: bottomSpace }}
         refreshControl={
           <RefreshControl
             refreshing={home.refreshing}
@@ -69,7 +89,10 @@ export default function ZakazchiMainScreen() {
         <HomeHeader />
 
         <View style={{ paddingHorizontal: 20 }}>
-          <WalletQuickCard balance={balance} onPress={() => router.push('/wallet')} />
+          {showQuickOrder && <QuickOrderCard onPress={() => router.navigate('/new-order')} />}
+          {FEATURES.walletBalance && (
+            <WalletQuickCard balance={balance} onPress={() => router.push('/wallet')} />
+          )}
           <ActiveOrdersSection
             orders={home.summary.data?.activeOrders ?? []}
             categories={home.categories.data ?? []}
@@ -90,18 +113,18 @@ export default function ZakazchiMainScreen() {
               <SectionHeader
                 title={tr('app.taklifXizmatlar.title')}
                 actionLabel={tr('common.seeAll')}
-                onActionPress={() => home.selectCategory(null)}
+                onActionPress={() => router.navigate('/services')}
                 style={{ paddingHorizontal: 20 }}
               />
               {home.categories.loading ? (
-                <SectionLoader height={110} />
+                <SectionLoader height={140} />
               ) : home.categories.error ? (
                 <SectionError
                   style={{ marginHorizontal: 20 }}
                   onRetry={() => home.retry('categories')}
                 />
               ) : (
-                <ServiceCarousel
+                <ServiceCategories
                   categories={home.categories.data ?? []}
                   selectedId={home.selectedCategoryId}
                   onSelect={home.selectCategory}
@@ -109,8 +132,20 @@ export default function ZakazchiMainScreen() {
               )}
             </View>
 
+            {/* ── Mavsum ishlari ── */}
+            <SeasonalJobs
+              categories={home.categories.data ?? []}
+              onPick={pickSeasonCategory}
+              style={{ marginTop: 24 }}
+            />
+
             {/* ── Top ustalar ── */}
-            <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
+            <View
+              style={{ paddingHorizontal: 20, marginTop: 24 }}
+              onLayout={(e) => {
+                topWorkersY.current = e.nativeEvent.layout.y;
+              }}
+            >
               <SectionHeader
                 title={tr('app.engZorUstalar.title')}
                 actionLabel={tr('app.engZorUstalar.rating')}
@@ -132,11 +167,20 @@ export default function ZakazchiMainScreen() {
               {home.works.loading ? (
                 <SectionLoader height={150} />
               ) : home.works.error ? (
-                <SectionError style={{ marginHorizontal: 20 }} onRetry={() => home.retry('works')} />
+                <SectionError
+                  style={{ marginHorizontal: 20 }}
+                  onRetry={() => home.retry('works')}
+                />
               ) : (
-                <WorksCarousel works={home.works.data ?? []} onSelectWork={(work) => router.push(workRoute(work))} />
+                <WorksCarousel
+                  works={home.works.data ?? []}
+                  onSelectWork={(work) => router.push(workRoute(work))}
+                />
               )}
             </View>
+
+            {/* ── Reklama bannerlari ── */}
+            <PromoBanners style={{ marginTop: 24 }} />
 
             {/* ── Sevimli ustalar ── */}
             <FavoriteWorkers

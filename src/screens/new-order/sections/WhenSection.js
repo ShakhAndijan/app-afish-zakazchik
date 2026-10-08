@@ -39,7 +39,10 @@ export default function WhenSection({ when, setWhen, whenDate, setWhenDate }) {
   return (
     <>
       {/* ── Qachon ── */}
-      <Text style={[common.label, { color: t.text }]}>{tr('newOrder.whenLabel')}</Text>
+      <Text style={[common.label, { color: t.text }]}>
+        {tr('newOrder.whenLabel')}
+        <Text style={{ color: t.red }}> *</Text>
+      </Text>
       <View style={s.whenGrid}>
         <WhenOption
           icon="lightning-bolt"

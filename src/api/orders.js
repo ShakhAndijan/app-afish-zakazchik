@@ -247,7 +247,7 @@ function mapChatMessage(m) {
 }
 
 /**
- * Zakaz chati. Mijoz zakazdagi barcha ustalar bilan suhbatlarni ko'radi (ustalar navbat bilan
+ * Buyurtma chati. Mijoz buyurtmadagi barcha ustalar bilan suhbatlarni ko'radi (ustalar navbat bilan
  * kelishadi); `isActive` — hozirgi usta.
  * @returns {Promise<{ threads: object[], unread: number, canSend: boolean }>}
  */
@@ -277,7 +277,7 @@ export async function sendOrderChat(orderId, body) {
 export const markOrderChatRead = (orderId) =>
   postJson(ENDPOINTS.ORDER_CHAT_READ(orderId), undefined, "Chat o'qilmadi");
 
-/** Narx taklif qiladi yoki qarshi narx aytadi (zakaz ACCEPTED bosqichida). */
+/** Narx taklif qiladi yoki qarshi narx aytadi (buyurtma ACCEPTED bosqichida). */
 export const offerOrderPrice = (orderId, price) =>
   postJson(ENDPOINTS.ORDER_OFFER(orderId), { price }, 'Narx yuborilmadi');
 
@@ -286,4 +286,4 @@ export const agreeOrder = (orderId) =>
   postJson(ENDPOINTS.ORDER_AGREE(orderId), undefined, 'Kelishuv amalga oshmadi');
 
 export const cancelOrderByCustomer = (orderId, reason) =>
-  postJson(ENDPOINTS.ORDER_CANCEL(orderId), { reason }, 'Zakaz bekor qilinmadi');
+  postJson(ENDPOINTS.ORDER_CANCEL(orderId), { reason }, 'Buyurtma bekor qilinmadi');

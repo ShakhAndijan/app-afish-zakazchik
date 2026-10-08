@@ -16,7 +16,8 @@ function Pill({ bg, color, children }) {
 export default function PaymentInfoCard({ order, meta, statusLabel }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
-  const paymentColor = PAYMENT_STATUS_COLOR[order.paymentStatus] || PAYMENT_STATUS_COLOR.not_charged;
+  const paymentColor =
+    PAYMENT_STATUS_COLOR[order.paymentStatus] || PAYMENT_STATUS_COLOR.not_charged;
   const divider = <View style={[s.divider, { backgroundColor: t.border }]} />;
 
   return (
@@ -54,7 +55,7 @@ export default function PaymentInfoCard({ order, meta, statusLabel }) {
 }
 
 const s = StyleSheet.create({
-  card: { borderWidth: 1, borderRadius: 16, padding: 14 },
+  card: { borderWidth: 1, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10 },
   divider: { height: 1, marginVertical: 4 },
   pill: { paddingHorizontal: 9, paddingVertical: 4, borderRadius: 8 },
   pillText: { fontSize: 11, fontWeight: '700' },

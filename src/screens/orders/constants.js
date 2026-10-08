@@ -25,8 +25,12 @@ const STATUS_SUBTEXT_KEY = {
 export const statusLabel = (tr, order) =>
   tr(STATUS_LABEL_KEY[order.rawStatus] || STATUS_LABEL_KEY.active);
 
-export const statusSubtext = (tr, order) =>
-  tr(STATUS_SUBTEXT_KEY[order.rawStatus] || STATUS_SUBTEXT_KEY.active);
+export const statusSubtext = (tr, order) => {
+  if (order.rawStatus === 'pending' && order.master) {
+    return tr('orderDetail.statusSubtext.pendingWorker', { name: order.master });
+  }
+  return tr(STATUS_SUBTEXT_KEY[order.rawStatus] || STATUS_SUBTEXT_KEY.active);
+};
 
 export const PAYMENT_STATUS_COLOR = {
   paid: '#2fa37a',

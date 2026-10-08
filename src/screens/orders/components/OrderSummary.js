@@ -4,57 +4,80 @@ import { useTheme } from '../../../context/ThemeContext';
 import { useLanguage } from '../../../context/LanguageContext';
 import { formatOrderDate, formatHours } from '../utils';
 
-// Buyurtma sarlavhasi: nom, raqam, xizmat turi, manzil, sana va taxminiy davomiylik.
+function Row({ icon, label, value, t, last }) {
+  return (
+    <View style={[s.row, !last && { borderBottomWidth: 1, borderBottomColor: t.border }]}>
+      <View style={[s.tile, { backgroundColor: t.orange + '1c' }]}>
+        <Feather name={icon} size={15} color={t.orange} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={[s.label, { color: t.muted }]}>{label}</Text>
+        <Text style={[s.value, { color: t.text }]}>{value}</Text>
+      </View>
+    </View>
+  );
+}
+
+// Buyurtma kartasi: xizmat turi, nom, raqam va manzil / sana / davomiylik qatorlari.
 export default function OrderSummary({ order, title }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
 
-  return (
-    <>
-      <Text style={[s.title, { color: t.text }]}>{title}</Text>
-      <Text style={[s.number, { color: t.muted }]}>{tr('orderDetail.orderNumber', { id: order.id })}</Text>
+  const rows = [
+    !!order.address && {
+      icon: 'map-pin',
+      label: tr('requests.summaryAddress'),
+      value: order.address,
+    },
+    !!order.createdAt && {
+      icon: 'calendar',
+      label: tr('requests.summaryCreated'),
+      value: formatOrderDate(order.createdAt, tr),
+    },
+    order.estimatedHours != null && {
+      icon: 'clock',
+      label: tr('orderDetail.estimatedHours'),
+      value: tr('orderDetail.hours', { n: formatHours(order.estimatedHours) }),
+    },
+  ].filter(Boolean);
 
-      {(!!order.service || !!order.address) && (
-        <View style={s.metaRow}>
-          {!!order.service && (
-            <View style={[s.chip, { backgroundColor: t.orange + '18' }]}>
-              <Text style={[s.chipText, { color: t.orange }]}>{order.service}</Text>
-            </View>
-          )}
-          {!!order.address && (
-            <View style={s.metaItem}>
-              <Feather name="map-pin" size={13} color={t.muted} />
-              <Text style={[s.metaItemText, { color: t.muted }]} numberOfLines={1}>
-                {order.address}
-              </Text>
-            </View>
-          )}
-        </View>
-      )}
-      <View style={[s.metaRow, { marginTop: 8 }]}>
-        <View style={s.metaItem}>
-          <Feather name="calendar" size={13} color={t.muted} />
-          <Text style={[s.metaItemText, { color: t.muted }]}>{formatOrderDate(order.createdAt, tr)}</Text>
-        </View>
-        {order.estimatedHours != null && (
-          <View style={s.metaItem}>
-            <Feather name="clock" size={13} color={t.muted} />
-            <Text style={[s.metaItemText, { color: t.muted }]}>
-              {tr('orderDetail.hours', { n: formatHours(order.estimatedHours) })}
+  return (
+    <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
+      <View style={s.top}>
+        {!!order.service && (
+          <View style={[s.chip, { backgroundColor: t.orange + '18' }]}>
+            <Text style={[s.chipText, { color: t.orange }]} numberOfLines={1}>
+              {order.service}
             </Text>
           </View>
         )}
+        <Text style={[s.number, { color: t.faint }]}>
+          {tr('orderDetail.orderNumber', { id: order.id })}
+        </Text>
       </View>
-    </>
+      <Text style={[s.title, { color: t.text }]}>{title}</Text>
+
+      {rows.length > 0 && (
+        <View style={s.rows}>
+          {rows.map((row, i) => (
+            <Row key={row.icon} {...row} t={t} last={i === rows.length - 1} />
+          ))}
+        </View>
+      )}
+    </View>
   );
 }
 
 const s = StyleSheet.create({
-  title: { fontSize: 20, fontWeight: '800', lineHeight: 27, marginTop: 20 },
-  number: { fontSize: 12.5, fontWeight: '600', marginTop: 3 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginTop: 12 },
-  chip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999 },
+  card: { borderWidth: 1, borderRadius: 20, padding: 16, marginTop: 14 },
+  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  chip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, flexShrink: 1 },
   chipText: { fontSize: 11.5, fontWeight: '700' },
-  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1 },
-  metaItemText: { fontSize: 12, fontWeight: '600' },
+  number: { fontSize: 12, fontWeight: '700' },
+  title: { fontSize: 19, fontWeight: '800', lineHeight: 25, letterSpacing: -0.2, marginTop: 10 },
+  rows: { marginTop: 8 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11 },
+  tile: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  label: { fontSize: 11.5, fontWeight: '600' },
+  value: { fontSize: 13.5, fontWeight: '700', marginTop: 1 },
 });

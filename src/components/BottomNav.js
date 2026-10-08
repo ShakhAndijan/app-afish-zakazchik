@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLanguage } from '../context/LanguageContext';
 
 const NAV = [
@@ -20,10 +21,13 @@ export default function BottomNav({
   ringColor,
 }) {
   const { t } = useLanguage();
+  const bottomInset = useSafeAreaInsets().bottom;
   const ring = ringColor ?? background;
 
   return (
-    <View style={[s.nav, { backgroundColor: background, borderColor: border }]}>
+    <View
+      style={[s.nav, { backgroundColor: background, borderColor: border, bottom: bottomInset + 10 }]}
+    >
       {NAV.map((item) => {
         const active = item.key === activeTab;
         return (
@@ -32,6 +36,9 @@ export default function BottomNav({
             style={s.tab}
             onPress={() => onTabChange?.(item.key)}
             activeOpacity={0.75}
+            accessibilityRole="tab"
+            accessibilityLabel={t(item.labelKey)}
+            accessibilityState={{ selected: active }}
           >
             {active ? (
               <View style={[s.bubble, { backgroundColor: accent, borderColor: ring, shadowColor: accent }]}>

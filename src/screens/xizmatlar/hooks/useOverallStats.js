@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { getSystemStats } from '../../../api/stats';
+import { FEATURES } from '../../../constants/config';
 
 // Umumiy statistika (GET /system/stats). Olinmaguncha yoki xatoda qiymatlar '—'.
 export default function useOverallStats() {
   const [systemStats, setSystemStats] = useState(null);
 
   useEffect(() => {
+    if (!FEATURES.overallStats) return undefined;
     let cancelled = false;
     getSystemStats()
       .then((data) => {

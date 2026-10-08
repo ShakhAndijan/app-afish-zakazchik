@@ -16,21 +16,35 @@ export default function ProfileCover({
   location,
   stats,
   onEdit,
+  onOrdersPress,
 }) {
   const { theme: t } = useTheme();
 
   return (
-    <View style={[styles.cover, { backgroundColor: t.cover }]}>
-      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 14 }}>
-        <ProfileAvatar letter={letter} uri={avatarUri} uploading={avatarUploading} onPress={onAvatarPress} />
-        <ProfileInfo name={name} phone={phone} location={location} onEdit={onEdit} />
-        <ThemeToggleButton />
+    <>
+      <View style={[styles.cover, { backgroundColor: t.cover }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 14 }}>
+          <ProfileAvatar
+            letter={letter}
+            uri={avatarUri}
+            uploading={avatarUploading}
+            onPress={onAvatarPress}
+          />
+          <ProfileInfo name={name} phone={phone} location={location} onEdit={onEdit} />
+          <ThemeToggleButton />
+        </View>
       </View>
-      <ActivityStats stats={stats} />
-    </View>
+      <ActivityStats stats={stats} onOrdersPress={onOrdersPress} />
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  cover: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 22 },
+  cover: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 46,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+  },
 });

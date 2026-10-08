@@ -30,7 +30,7 @@ function XizmatlarContent({ onSelectWorker, initialCertifiedOnly = false }) {
   const [filterOpen, setFilterOpen] = useState(false);
 
   const filters = useFilters(initialCertifiedOnly);
-  const { categories, popular, loading: categoriesLoading } = useCategories();
+  const { categories, loading: categoriesLoading } = useCategories();
   const overallStats = useOverallStats();
   const verified = useVerifiedWorkers(!catFilter && filters.certifiedOnly);
   const categoryWorkers = useCategoryWorkers(catFilter, filters, query);
@@ -79,7 +79,6 @@ function XizmatlarContent({ onSelectWorker, initialCertifiedOnly = false }) {
           certifiedOnly={filters.certifiedOnly}
           verified={verified}
           onClearVerified={() => filters.setCertifiedOnly(false)}
-          popular={popular}
           categories={categories}
           categoriesLoading={categoriesLoading}
           onOpenCategory={openCategory}
