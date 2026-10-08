@@ -135,6 +135,10 @@ export function mapOrder(o) {
     estimatedHours: hours,
     hourlyRate,
     priceMode: o.price_mode ?? null,
+    // Kelishuv bosqichi (ACCEPTED): kim qanday narx taklif qilgan va kelishilgan narx.
+    offerPrice: toNumber(o.offer_price),
+    offerBy: o.offer_by ?? null,
+    agreedPrice: agreed,
     price,
     priceKind,
     paymentMethod: o.payment_method ?? null,
@@ -207,3 +211,79 @@ export async function createOrder(payload, idempotencyKey) {
   const json = await res.json();
   return json.response_data;
 }
+
+// ─── Kelishuv: chat, narx taklifi, kelishish, bekor qilish ───────────
+
+async function postJson(url, body, fallbackMessage) {
+  const res = await apiFetch(url, {
+    method: 'POST',
+    ...(body !== undefined
+      ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+      : {}),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const detailMsg = Array.isArray(json.detail)
+      ? json.detail.map((d) => d.msg).join('; ')
+      : json.detail;
+    const e = new Error(json.message || detailMsg || fallbackMessage);
+    e.status = res.status;
+    e.code = json.code ?? null;
+    throw e;
+  }
+  return json.response_data;
+}
+
+// Chat xabari: sender_type 'customer' — mijozning o'zi (bu ilova mijoz uchun).
+function mapChatMessage(m) {
+  return {
+    id: m.id,
+    from: m.sender_type === 'customer' ? 'me' : m.sender_type,
+    kind: m.kind,
+    body: m.body ?? '',
+    offerPrice: toNumber(m.offer_price),
+    at: m.created_at,
+  };
+}
+
+/**
+ * Zakaz chati. Mijoz zakazdagi barcha ustalar bilan suhbatlarni ko'radi (ustalar navbat bilan
+ * kelishadi); `isActive` — hozirgi usta.
+ * @returns {Promise<{ threads: object[], unread: number, canSend: boolean }>}
+ */
+export function mapChat(data) {
+  return {
+    threads: (data?.threads ?? []).map((t) => ({
+      workerId: t.worker_id ?? null,
+      workerName: t.worker_name ?? null,
+      workerPhoto: t.worker_photo ?? null,
+      isActive: !!t.is_active,
+      messages: (t.messages ?? []).map(mapChatMessage),
+    })),
+    unread: data?.unread ?? 0,
+    canSend: data?.can_send !== false,
+  };
+}
+
+export async function getOrderChat(orderId) {
+  return mapChat(await getJson(ENDPOINTS.ORDER_CHAT(orderId), 'Chat yuklanmadi'));
+}
+
+/** Xabar yuboradi; yangilangan butun chatni qaytaradi. */
+export async function sendOrderChat(orderId, body) {
+  return mapChat(await postJson(ENDPOINTS.ORDER_CHAT(orderId), { body }, 'Xabar yuborilmadi'));
+}
+
+export const markOrderChatRead = (orderId) =>
+  postJson(ENDPOINTS.ORDER_CHAT_READ(orderId), undefined, "Chat o'qilmadi");
+
+/** Narx taklif qiladi yoki qarshi narx aytadi (zakaz ACCEPTED bosqichida). */
+export const offerOrderPrice = (orderId, price) =>
+  postJson(ENDPOINTS.ORDER_OFFER(orderId), { price }, 'Narx yuborilmadi');
+
+/** Ustaning taklifini qabul qiladi: ACCEPTED → ACTIVE. */
+export const agreeOrder = (orderId) =>
+  postJson(ENDPOINTS.ORDER_AGREE(orderId), undefined, 'Kelishuv amalga oshmadi');
+
+export const cancelOrderByCustomer = (orderId, reason) =>
+  postJson(ENDPOINTS.ORDER_CANCEL(orderId), { reason }, 'Zakaz bekor qilinmadi');

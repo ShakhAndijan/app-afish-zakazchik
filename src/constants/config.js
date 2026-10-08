@@ -48,6 +48,11 @@ export const ENDPOINTS = {
     `${API_BASE_URL}/api/v1/orders/public/${encodeURIComponent(token)}`,
   ORDER_DETAIL: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}`,
   ORDER_PAYMENT: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/payment`,
+  ORDER_CHAT: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/chat`,
+  ORDER_CHAT_READ: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/chat/read`,
+  ORDER_OFFER: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/offer`,
+  ORDER_AGREE: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/agree`,
+  ORDER_CANCEL: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/cancel-by-customer`,
 };
 // https://engraver-garnet-scalded.ngrok-free.dev
 // http://10.240.8.109:9494

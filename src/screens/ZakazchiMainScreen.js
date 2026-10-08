@@ -2,16 +2,16 @@ import { useCallback, useRef } from 'react';
 import { View, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import AfishLoader from '../components/AfishLoader';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useWallet } from '../context/WalletContext';
-import { decodeParam, ustaRoute, workRoute, newOrderRoute } from '../navigation/params';
+import { ustaRoute, workRoute, newOrderRoute } from '../navigation/params';
 import useHomeData from './zakazchi-main/hooks/useHomeData';
 import HomeHeader from './zakazchi-main/components/HomeHeader';
 import WalletQuickCard from './zakazchi-main/components/WalletQuickCard';
-import OrderSuccessCard from './zakazchi-main/components/OrderSuccessCard';
+import ActiveOrdersSection from './requests/components/ActiveOrdersSection';
 import SectionHeader from './zakazchi-main/components/SectionHeader';
 import SectionLoader from './zakazchi-main/components/SectionLoader';
 import SectionError from './zakazchi-main/components/SectionError';
@@ -26,9 +26,6 @@ import ReviewsCarousel from './zakazchi-main/components/ReviewsCarousel';
 // Mijoz bosh sahifasi (pastki menyudagi "home" tabi). Boshqa ekranlarga o'tish expo-router orqali.
 export default function ZakazchiMainScreen() {
   const router = useRouter();
-  // Buyurtma yaratilgach new-order tabidan keladi (JSON parametr); karta yopilganda tozalanadi.
-  const { createdOrder } = useLocalSearchParams();
-  const justCreatedOrder = decodeParam(createdOrder);
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
   const { balance } = useWallet();
@@ -73,13 +70,12 @@ export default function ZakazchiMainScreen() {
 
         <View style={{ paddingHorizontal: 20 }}>
           <WalletQuickCard balance={balance} onPress={() => router.push('/wallet')} />
+          <ActiveOrdersSection
+            orders={home.summary.data?.activeOrders ?? []}
+            categories={home.categories.data ?? []}
+            style={{ marginBottom: 6 }}
+          />
         </View>
-
-        {!!justCreatedOrder && (
-          <View style={{ paddingHorizontal: 20, marginTop: 6 }}>
-            <OrderSuccessCard order={justCreatedOrder} onClose={() => router.setParams({ createdOrder: undefined })} />
-          </View>
-        )}
 
         {home.initialLoading ? (
           <View style={{ paddingVertical: 140, alignItems: 'center', justifyContent: 'center' }}>

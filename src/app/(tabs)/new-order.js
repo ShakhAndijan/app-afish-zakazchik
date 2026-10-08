@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useRouter, useNavigation, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import NewOrderScreen from '../../screens/NewOrderScreen';
-import { decodeParam, encodeParam } from '../../navigation/params';
+import { decodeParam } from '../../navigation/params';
 
 // Tabdan chiqilganda forma yangidan boshlanadi (avvalgi xatti-harakat); `worker` — ma'lum ustaga
 // buyurtma berilganda uzatiladigan usta.
@@ -25,9 +25,8 @@ export default function NewOrderRoute() {
     <NewOrderScreen
       key={`${formKey}:${worker ?? ''}`}
       targetWorker={decodeParam(worker)}
-      onOrderCreated={(order) =>
-        router.navigate({ pathname: '/home', params: { createdOrder: encodeParam(order) } })
-      }
+      // Zakaz berilgach bosh sahifaga qaytiladi — u yerda "Faol zakazlar" ro'yxatida ko'rinadi.
+      onOrderCreated={() => router.navigate('/home')}
     />
   );
 }
