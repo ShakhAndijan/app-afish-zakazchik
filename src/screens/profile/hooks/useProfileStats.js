@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { getCustomerMe } from '../../../api/user';
 import { getFavoritesCount } from '../../../api/workers';
 
@@ -7,30 +7,29 @@ const toRating = (v) => {
   return Number.isFinite(n) ? n : null;
 };
 
+const STALE_MS = 30 * 1000;
+
 // Profil ekranidagi statistika: buyurtmalar soni va reyting (GET /customers/me),
 // sevimli ustalar soni (GET /customers/me/favorites). `active` true bo'lganda
-// (profil ekrani ko'ringanda) qayta yuklanadi. Olinmagan qiymat — null.
+// (profil ekrani ko'ringanda) ma'lumot eskirgan bo'lsa qayta yuklanadi. Olinmagan qiymat — null;
+// yangilash xato bersa, avval olingan qiymat saqlanadi.
 export default function useProfileStats(active) {
-  const [stats, setStats] = useState({ orders: null, favorites: null, rating: null });
+  const me = useQuery({
+    queryKey: ['customer', 'me'],
+    queryFn: getCustomerMe,
+    enabled: active,
+    staleTime: STALE_MS,
+  });
+  const favorites = useQuery({
+    queryKey: ['favorites', 'count'],
+    queryFn: getFavoritesCount,
+    enabled: active,
+    staleTime: STALE_MS,
+  });
 
-  useEffect(() => {
-    if (!active) return;
-    let cancelled = false;
-
-    Promise.allSettled([getCustomerMe(), getFavoritesCount()]).then(([me, fav]) => {
-      if (cancelled) return;
-      // Xato bo'lsa, avval olingan qiymat saqlanadi.
-      setStats((prev) => ({
-        orders: me.status === 'fulfilled' ? me.value?.total_orders ?? null : prev.orders,
-        rating: me.status === 'fulfilled' ? toRating(me.value?.overall_rating) : prev.rating,
-        favorites: fav.status === 'fulfilled' ? fav.value : prev.favorites,
-      }));
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [active]);
-
-  return stats;
+  return {
+    orders: me.data?.total_orders ?? null,
+    rating: toRating(me.data?.overall_rating),
+    favorites: favorites.data ?? null,
+  };
 }

@@ -1,0 +1,1312 @@
+
+// ============================================================
+// FAYL: src/app/index.js
+// ============================================================
+import { useRouter } from 'expo-router';
+import LandingScreen from '../screens/LandingScreen';
+import { ustaRoute } from '../navigation/params';
+
+export default function LandingRoute() {
+  const router = useRouter();
+  return (
+    <LandingScreen
+      onLogin={() => router.push('/login')}
+      onSelectUsta={(usta) => router.push(ustaRoute(usta))}
+    />
+  );
+}
+
+// ============================================================
+// FAYL: src/screens/LandingScreen.js
+// ============================================================
+import { ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { COLORS } from '../constants/colors';
+import { useLanguage } from '../context/LanguageContext';
+import { DarkScope } from '../context/ThemeContext';
+import LandingHeader from './landing/components/LandingHeader';
+import PromoBanner from './landing/components/PromoBanner';
+import TrustRow from './landing/components/TrustRow';
+import ServiceCategories from './landing/components/ServiceCategories';
+import SeasonalSection from './landing/components/SeasonalSection';
+import TopWorkers from './landing/components/TopWorkers';
+import TopWorks from './landing/components/TopWorks';
+import SectionHead from './landing/components/SectionHead';
+import HowItWorks from './landing/components/HowItWorks';
+import ReviewsCarousel from './landing/components/ReviewsCarousel';
+import Benefits from './landing/components/Benefits';
+import ClosingCta from './landing/components/ClosingCta';
+import PromoBanners from './zakazchi-main/components/PromoBanners';
+import useTabBarSpace from '../navigation/useTabBarSpace';
+
+// Kirmagan foydalanuvchi (mehmon) uchun bosh sahifa. Har bir bo'lim `landing/components/` da.
+export default function LandingScreen({ onLogin, onSelectUsta }) {
+  const bottomSpace = useTabBarSpace(110);
+  const { t } = useLanguage();
+
+  return (
+    <DarkScope>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: bottomSpace }}
+        >
+          <LandingHeader onLogin={onLogin} />
+
+          <PromoBanner onPress={onLogin} />
+          <TrustRow />
+
+          <ServiceCategories />
+          <SeasonalSection onLogin={onLogin} />
+
+          <SectionHead title={t('app.sectionHead.howItWorks')} />
+          <HowItWorks />
+
+          <TopWorkers onSelectUsta={onSelectUsta} />
+          <TopWorks />
+
+          {/* Mehmon uchun hamma slayd kirish oynasiga olib boradi */}
+          <PromoBanners style={{ marginTop: 28 }} hPad={16} onSlidePress={onLogin} />
+
+          <ReviewsCarousel />
+
+          <SectionHead title={t('app.sectionHead.whyAfish')} />
+          <Benefits />
+
+          <ClosingCta onPress={onLogin} />
+        </ScrollView>
+      </SafeAreaView>
+    </DarkScope>
+  );
+}
+
+const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: COLORS.bg },
+});
+
+// ============================================================
+// FAYL: src/screens/landing/constants.js
+// ============================================================
+// Mehmon (kirmagan) bosh sahifasi uchun doimiy ma'lumotlar. Matnlar `app.*` tarjimalarida.
+
+export const STEPS = [
+  { num: 1, key: 'step1', icon: 'magnify' },
+  { num: 2, key: 'step2', icon: 'clipboard-check-outline' },
+  { num: 3, key: 'step3', icon: 'star-outline' },
+];
+
+export const BENEFITS = [
+  { icon: 'shield-check', color: '#2ecc71', key: 'guaranteed' },
+  { icon: 'check-decagram', color: '#3b82f6', key: 'verified' },
+  { icon: 'lightning-bolt', color: '#f5b81f', key: 'fast' },
+];
+
+export const TRUST_ITEMS = [
+  { icon: 'shield-check', color: '#2ecc71', key: 'guarantee' },
+  { icon: 'check-decagram', color: '#3b82f6', key: 'verified' },
+  { icon: 'lightning-bolt', color: '#f5b81f', key: 'service247' },
+];
+
+// Statistika yuklanmaguncha (yoki xatoda) ko'rinadigan boshlang'ich qiymatlar.
+export const DEFAULT_STATS = [
+  { value: '1 200+', key: 'workers' },
+  { value: '8 500+', key: 'completedJobs' },
+  { value: '4.8★', key: 'avgRating' },
+];
+
+// ============================================================
+// FAYL: src/screens/landing/components/LandingHeader.js
+// ============================================================
+import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import Feather from '@expo/vector-icons/Feather';
+import { COLORS } from '../../../constants/colors';
+import { useLanguage } from '../../../context/LanguageContext';
+
+// Logo va "Kirish" tugmasi.
+export default function LandingHeader({ onLogin }) {
+  const { t } = useLanguage();
+
+  return (
+    <View style={styles.header}>
+      <Image
+        source={require('../../../../assets/afish-logo-horizontal.png')}
+        style={styles.logoImg}
+        resizeMode="contain"
+      />
+      <TouchableOpacity style={styles.loginBtn} activeOpacity={0.8} onPress={onLogin}>
+        <Feather name="log-in" size={16} color={COLORS.white} style={{ marginRight: 6 }} />
+        <Text style={styles.loginBtnTxt}>{t('app.header.login')}</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
+  },
+  logoImg: { width: 130, height: 36 },
+  loginBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.orange,
+    paddingVertical: 9,
+    paddingHorizontal: 16,
+    borderRadius: 24,
+  },
+  loginBtnTxt: { color: COLORS.white, fontWeight: '600', fontSize: 14 },
+});
+
+// ============================================================
+// FAYL: src/screens/landing/components/PromoBanner.js
+// ============================================================
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { COLORS } from '../../../constants/colors';
+import { useLanguage } from '../../../context/LanguageContext';
+
+// To'q sarg'ish reklama banneri: "Kirish" ga yo'naltiradi.
+export default function PromoBanner({ onPress }) {
+  const { t } = useLanguage();
+
+  return (
+    <View style={styles.wrap}>
+      <View style={styles.glow} />
+      <View style={styles.iconBg}>
+        <MaterialCommunityIcons name="shield-check" size={140} color="#fff" style={{ opacity: 0.12 }} />
+      </View>
+      <Text style={styles.heading}>{t('app.promo.heading')}</Text>
+      <Text style={styles.sub}>{t('app.promo.sub')}</Text>
+      <TouchableOpacity style={styles.cta} activeOpacity={0.85} onPress={onPress}>
+        <Text style={styles.ctaTxt}>{t('app.promo.cta')}</Text>
+        <Ionicons name="arrow-forward" size={16} color={COLORS.orange} />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  wrap: {
+    marginHorizontal: 16,
+    marginTop: 20,
+    marginBottom: 16,
+    borderRadius: 22,
+    backgroundColor: COLORS.orange,
+    padding: 22,
+    overflow: 'hidden',
+  },
+  glow: {
+    position: 'absolute',
+    top: -60,
+    right: -50,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(255,255,255,0.10)',
+  },
+  iconBg: { position: 'absolute', right: -12, bottom: -20 },
+  heading: {
+    fontSize: 21,
+    fontWeight: '800',
+    color: '#fff',
+    lineHeight: 28,
+    marginBottom: 8,
+  },
+  sub: {
+    fontSize: 13.5,
+    color: 'rgba(255,255,255,0.92)',
+    lineHeight: 20,
+    marginBottom: 18,
+  },
+  cta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  ctaTxt: { color: COLORS.orange, fontWeight: '700', fontSize: 14 },
+});
+
+// ============================================================
+// FAYL: src/screens/landing/components/TrustRow.js
+// ============================================================
+import { View, Text } from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { COLORS } from '../../../constants/colors';
+import { useLanguage } from '../../../context/LanguageContext';
+import { TRUST_ITEMS } from '../constants';
+
+// Uchta ishonch nishoni: kafolat, tekshirilgan ustalar, 24/7 xizmat.
+export default function TrustRow() {
+  const { t } = useLanguage();
+
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 10,
+        marginBottom: 10,
+        paddingHorizontal: 16,
+      }}
+    >
+      {TRUST_ITEMS.map((item) => (
+        <View
+          key={item.key}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 6,
+            backgroundColor: COLORS.card,
+            paddingHorizontal: 13,
+            paddingVertical: 9,
+            borderRadius: 22,
+            borderWidth: 1,
+            borderColor: 'rgba(255,255,255,0.07)',
+          }}
+        >
+          <MaterialCommunityIcons name={item.icon} size={14} color={item.color} />
+          <Text style={{ fontSize: 12, color: COLORS.white, fontWeight: '600' }}>
+            {t(`app.trust.${item.key}`)}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+// ============================================================
+// FAYL: src/screens/landing/components/ServiceCategories.js
+// ============================================================
+import { useState, useEffect } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { COLORS } from '../../../constants/colors';
+import { useLanguage } from '../../../context/LanguageContext';
+import { getCategories } from '../../../api/categories';
+import CategoryPills from '../../zakazchi-main/components/ServiceCategories';
+
+// "Taklif xizmatlar": yo'nalishlar rangli kartalarda, ikki qatorda (bosh sahifadagi bilan bir xil).
+// Ma'lumot bo'lmasa — chizilmaydi.
+export default function ServiceCategories() {
+  const { t } = useLanguage();
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    getCategories()
+      .then(setCategories)
+      .catch(() => {});
+  }, []);
+
+  if (categories.length === 0) return null;
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>{t('app.taklifXizmatlar.title')}</Text>
+      </View>
+      <CategoryPills categories={categories} horizontalPadding={16} />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { marginTop: 26, marginBottom: 6 },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 14,
+  },
+  title: { color: COLORS.white, fontSize: 18, fontWeight: '700' },
+});
+
+// ============================================================
+// FAYL: src/screens/landing/components/SeasonalSection.js
+// ============================================================
+import { useState, useEffect } from 'react';
+import { getCategories } from '../../../api/categories';
+import SeasonalJobs from '../../zakazchi-main/components/SeasonalJobs';
+
+// Mehmon uchun "Mavsum ishlari": kartani bossa kirish sahifasiga o'tkaziladi.
+export default function SeasonalSection({ onLogin }) {
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    getCategories()
+      .then(setCategories)
+      .catch(() => {});
+  }, []);
+
+  return (
+    <SeasonalJobs categories={categories} onPick={() => onLogin?.()} style={{ marginTop: 24 }} />
+  );
+}
+
+// ============================================================
+// FAYL: src/screens/landing/components/TopWorkers.js
+// ============================================================
+import { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { COLORS } from '../../../constants/colors';
+import { useLanguage } from '../../../context/LanguageContext';
+import { getWorkers } from '../../../api/workers';
+import { formatYears } from '../../../utils/format';
+
+// "Eng zo'r ustalar": reyting bo'yicha 5 ta usta. Ma'lumot bo'lmasa — chizilmaydi.
+export default function TopWorkers({ onSelectUsta }) {
+  const { t } = useLanguage();
+  const [workers, setWorkers] = useState([]);
+
+  useEffect(() => {
+    getWorkers({ size: 5 })
+      .then(setWorkers)
+      .catch(() => {});
+  }, []);
+
+  if (workers.length === 0) return null;
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>{t('app.engZorUstalar.title')}</Text>
+        <TouchableOpacity activeOpacity={0.7}>
+          <Text style={styles.link}>{t('app.engZorUstalar.rating')}</Text>
+        </TouchableOpacity>
+      </View>
+      {workers.map((worker, i) => (
+        <TouchableOpacity
+          key={worker.id}
+          style={[styles.card, i < workers.length - 1 && { marginBottom: 11 }]}
+          activeOpacity={0.8}
+          onPress={() => onSelectUsta?.(worker)}
+        >
+          {/* Avatar + reyting nishoni (#1) + onlayn nuqta */}
+          <View style={{ marginRight: 13 }}>
+            <View style={[styles.avatar, { backgroundColor: worker.color }]}>
+              <Text style={styles.avatarText}>{worker.initial}</Text>
+            </View>
+            {i === 0 && (
+              <View style={styles.rankBadge}>
+                <Text style={styles.rankText}>#1</Text>
+              </View>
+            )}
+            {worker.is_online && <View style={styles.onlineDot} />}
+          </View>
+
+          <View style={styles.info}>
+            <Text style={styles.name}>{worker.name}</Text>
+            <View style={styles.metaRow}>
+              <Text style={styles.prof} numberOfLines={1}>
+                {worker.profession}
+              </Text>
+              <MaterialCommunityIcons name="shield-check" size={12} color="#22C55E" />
+              <Text style={styles.loc}>{worker.location}</Text>
+            </View>
+            <Text style={styles.price}>
+              {t('app.engZorUstalar.priceFrom', { price: worker.startingPrice })}
+            </Text>
+          </View>
+
+          <View style={{ alignItems: 'flex-end', gap: 6 }}>
+            <View style={styles.ratingBox}>
+              <Ionicons name="star" size={13} color="#FBBF24" />
+              <Text style={styles.ratingText}>{worker.rating.toFixed(1)}</Text>
+            </View>
+            {worker.experienceYears > 0 && (
+              <Text style={styles.exp}>{formatYears(t, worker.experienceYears)}</Text>
+            )}
+          </View>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { marginTop: 28 },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 13,
+  },
+  title: { color: COLORS.white, fontSize: 18, fontWeight: '700' },
+  link: { color: COLORS.orange, fontSize: 14, fontWeight: '600' },
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.card,
+    marginHorizontal: 16,
+    borderRadius: 18,
+    padding: 13,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  rankBadge: {
+    position: 'absolute',
+    top: -7,
+    left: -7,
+    backgroundColor: '#f5c451',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 7,
+  },
+  rankText: { fontSize: 9, fontWeight: '800', color: '#3a2a08' },
+  onlineDot: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 11,
+    height: 11,
+    borderRadius: 6,
+    backgroundColor: '#22C55E',
+    borderWidth: 2,
+    borderColor: COLORS.card,
+  },
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: { color: COLORS.white, fontSize: 19, fontWeight: '700' },
+  info: { flex: 1 },
+  name: {
+    color: COLORS.white,
+    fontSize: 14.5,
+    fontWeight: '700',
+    marginBottom: 3,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 3,
+  },
+  prof: { color: COLORS.gray, fontSize: 12 },
+  loc: { color: COLORS.gray, fontSize: 11.5 },
+  price: { fontSize: 12, color: COLORS.gray },
+  ratingBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(245,196,81,0.13)',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    gap: 3,
+  },
+  ratingText: { color: '#FBBF24', fontSize: 12.5, fontWeight: '700' },
+  exp: { fontSize: 12, color: COLORS.gray },
+});
+
+// ============================================================
+// FAYL: src/screens/landing/components/TopWorks.js
+// ============================================================
+import { useState, useEffect } from 'react';
+import { View, Text, Image, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { COLORS } from '../../../constants/colors';
+import { useLanguage } from '../../../context/LanguageContext';
+import { getTopOrders } from '../../../api/reviews';
+import useAutoScroll from '../hooks/useAutoScroll';
+
+const CARD_W = 160;
+const GAP = 12;
+const SLOT = CARD_W + GAP;
+
+// "Eng zo'r ishlar": baholangan ishlar karuseli (o'zi aylanadi). Ma'lumot bo'lmasa — chizilmaydi.
+export default function TopWorks() {
+  const { t } = useLanguage();
+  const [works, setWorks] = useState([]);
+  const listRef = useAutoScroll(works.length, SLOT, 2000);
+
+  useEffect(() => {
+    getTopOrders({ limit: 10 })
+      .then(setWorks)
+      .catch(() => {});
+  }, []);
+
+  if (works.length === 0) return null;
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>{t('app.engZorIshlar.title')}</Text>
+        <TouchableOpacity activeOpacity={0.7}>
+          <Text style={styles.link}>{t('app.engZorIshlar.gallery')}</Text>
+        </TouchableOpacity>
+      </View>
+      <FlatList
+        ref={listRef}
+        data={works}
+        keyExtractor={(item) => item.id}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        snapToInterval={SLOT}
+        decelerationRate="fast"
+        contentContainerStyle={styles.list}
+        renderItem={({ item }) => <WorkCard item={item} />}
+      />
+    </View>
+  );
+}
+
+// Bitta ish: suratlar (chap/o'ng tugmalar bilan almashtiriladi), reyting, nom va usta.
+function WorkCard({ item }) {
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const total = item.photos.length;
+
+  const goPrev = () => setPhotoIndex((i) => (i - 1 + total) % total);
+  const goNext = () => setPhotoIndex((i) => (i + 1) % total);
+
+  return (
+    <TouchableOpacity style={styles.card} activeOpacity={0.85}>
+      <View style={styles.imgBox}>
+        <Image source={{ uri: item.photos[photoIndex] }} style={styles.img} />
+        <View style={styles.ratingBadge}>
+          <Ionicons name="star" size={11} color="#FBBF24" />
+          <Text style={styles.ratingBadgeText}>{item.rating.toFixed(1)}</Text>
+        </View>
+        {total > 1 && (
+          <>
+            <TouchableOpacity
+              style={[styles.navBtn, styles.navBtnLeft]}
+              activeOpacity={0.7}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              onPress={goPrev}
+            >
+              <Ionicons name="chevron-back" size={14} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.navBtn, styles.navBtnRight]}
+              activeOpacity={0.7}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              onPress={goNext}
+            >
+              <Ionicons name="chevron-forward" size={14} color="#fff" />
+            </TouchableOpacity>
+            <View style={styles.dots}>
+              {item.photos.map((_, i) => (
+                <View key={i} style={[styles.dot, i === photoIndex && styles.dotActive]} />
+              ))}
+            </View>
+          </>
+        )}
+      </View>
+      <Text style={styles.cardTitle} numberOfLines={1}>
+        {item.title}
+      </Text>
+      <Text style={styles.cardSub} numberOfLines={1}>
+        {item.worker}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { marginTop: 28, marginBottom: 6 },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  title: { color: COLORS.white, fontSize: 18, fontWeight: '700' },
+  link: { color: COLORS.orange, fontSize: 14, fontWeight: '600' },
+  list: { paddingHorizontal: 16, gap: GAP },
+  card: { width: CARD_W },
+  imgBox: {
+    width: CARD_W,
+    height: 140,
+    backgroundColor: COLORS.card,
+    borderRadius: 14,
+    marginBottom: 8,
+    overflow: 'hidden',
+  },
+  img: {
+    width: '100%',
+    height: '100%',
+  },
+  ratingBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    gap: 3,
+  },
+  ratingBadgeText: { color: COLORS.white, fontSize: 11, fontWeight: '700' },
+  navBtn: {
+    position: 'absolute',
+    top: '50%',
+    marginTop: -12,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navBtnLeft: { left: 6 },
+  navBtnRight: { right: 6 },
+  dots: {
+    position: 'absolute',
+    bottom: 8,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  dot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.4)',
+  },
+  dotActive: {
+    backgroundColor: COLORS.white,
+    width: 12,
+  },
+  cardTitle: {
+    color: COLORS.white,
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 3,
+  },
+  cardSub: { color: COLORS.gray, fontSize: 11 },
+});
+
+// ============================================================
+// FAYL: src/screens/landing/components/SectionHead.js
+// ============================================================
+import { View, Text } from 'react-native';
+import { COLORS } from '../../../constants/colors';
+
+// Bo'lim sarlavhasi (ixtiyoriy havola matni bilan).
+export default function SectionHead({ title, link }) {
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        marginBottom: 14,
+        marginTop: 28,
+      }}
+    >
+      <Text style={{ color: COLORS.white, fontSize: 18, fontWeight: '700' }}>{title}</Text>
+      {link && <Text style={{ color: COLORS.orange, fontSize: 14, fontWeight: '600' }}>{link}</Text>}
+    </View>
+  );
+}
+
+// ============================================================
+// FAYL: src/screens/landing/components/HowItWorks.js
+// ============================================================
+import { View, Text, StyleSheet } from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { COLORS } from '../../../constants/colors';
+import { useLanguage } from '../../../context/LanguageContext';
+import { STEPS } from '../constants';
+
+// "Qanday ishlaydi": 3 qadam, chapda raqamli chiziq (timeline), o'ngda kartochka.
+export default function HowItWorks() {
+  const { t } = useLanguage();
+
+  return (
+    <View style={s.wrap}>
+      {STEPS.map((step, i) => {
+        const last = i === STEPS.length - 1;
+        return (
+          <View key={step.num} style={s.row}>
+            <View style={s.rail}>
+              <View style={s.num}>
+                <Text style={s.numText}>{step.num}</Text>
+              </View>
+              {!last && <View style={s.line} />}
+            </View>
+            <View style={[s.card, !last && { marginBottom: 12 }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={s.title}>{t(`app.steps.${step.key}Title`)}</Text>
+                <Text style={s.desc}>{t(`app.steps.${step.key}Desc`)}</Text>
+              </View>
+              <View style={s.iconBox}>
+                <MaterialCommunityIcons name={step.icon} size={24} color={COLORS.orange} />
+              </View>
+            </View>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+const s = StyleSheet.create({
+  wrap: { paddingHorizontal: 16, marginBottom: 8 },
+  row: { flexDirection: 'row', gap: 12 },
+  rail: { width: 34, alignItems: 'center' },
+  num: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: COLORS.orange,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  numText: { color: '#fff', fontWeight: '800', fontSize: 15 },
+  line: {
+    flex: 1,
+    width: 2,
+    marginVertical: 4,
+    borderRadius: 1,
+    backgroundColor: 'rgba(232,122,69,0.3)',
+  },
+  card: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: COLORS.card,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    padding: 14,
+  },
+  title: { color: COLORS.white, fontWeight: '700', fontSize: 14.5, marginBottom: 3 },
+  desc: { color: COLORS.gray, fontSize: 12.5, lineHeight: 18 },
+  iconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(232,122,69,0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
+
+// ============================================================
+// FAYL: src/screens/landing/components/ReviewsCarousel.js
+// ============================================================
+import { useState, useEffect } from 'react';
+import { View, Text, FlatList } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { COLORS } from '../../../constants/colors';
+import { getTopComments } from '../../../api/reviews';
+import { useLanguage } from '../../../context/LanguageContext';
+import useAutoScroll from '../hooks/useAutoScroll';
+import SectionHead from './SectionHead';
+
+const CARD_W = 240;
+const GAP = 12;
+const SLOT = CARD_W + GAP;
+
+// "Mijozlar fikri": sarlavha va eng yaxshi sharhlar karuseli (o'zi aylanadi). Sharhlar bo'lmasa
+// sarlavhasi bilan birga butunlay chizilmaydi.
+export default function ReviewsCarousel() {
+  const { t } = useLanguage();
+  const [reviews, setReviews] = useState([]);
+  const listRef = useAutoScroll(reviews.length, SLOT, 2500);
+
+  useEffect(() => {
+    getTopComments({ limit: 10 })
+      .then(setReviews)
+      .catch(() => {});
+  }, []);
+
+  if (reviews.length === 0) return null;
+
+  return (
+    <>
+      <SectionHead title={t('app.sectionHead.reviews')} />
+      <FlatList
+        ref={listRef}
+        data={reviews}
+        keyExtractor={(_, i) => String(i)}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        snapToInterval={SLOT}
+        decelerationRate="fast"
+        contentContainerStyle={{ paddingHorizontal: 16, gap: GAP, paddingBottom: 4 }}
+        style={{ marginBottom: 32 }}
+        renderItem={({ item }) => <ReviewCard review={item} />}
+      />
+    </>
+  );
+}
+
+function ReviewCard({ review: r }) {
+  return (
+    <View
+      style={{
+        width: CARD_W,
+        backgroundColor: COLORS.card,
+        borderRadius: 18,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.06)',
+      }}
+    >
+      <View style={{ flexDirection: 'row', gap: 3, marginBottom: 10 }}>
+        {[0, 1, 2, 3, 4].map((j) => (
+          <Ionicons key={j} name="star" size={14} color={j < r.stars ? '#f5b81f' : '#2a3a4a'} />
+        ))}
+      </View>
+      <Text style={{ color: '#c4cdd8', fontSize: 13.5, lineHeight: 20, marginBottom: 14 }}>
+        {r.text}
+      </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <View
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: 10,
+            backgroundColor: r.color,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>{r.initial}</Text>
+        </View>
+        <View>
+          <Text style={{ color: COLORS.white, fontWeight: '600', fontSize: 13 }}>{r.name}</Text>
+          <Text style={{ color: COLORS.gray, fontSize: 11.5, marginTop: 1 }}>{r.location}</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+// ============================================================
+// FAYL: src/screens/landing/components/Benefits.js
+// ============================================================
+import { View } from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useLanguage } from '../../../context/LanguageContext';
+import { BENEFITS } from '../constants';
+import InfoRow from './InfoRow';
+
+// "Nega AFISH?": kafolat, tekshirilgan ustalar, tezkor xizmat kartochkalari.
+export default function Benefits() {
+  const { t } = useLanguage();
+
+  return (
+    <View style={{ paddingHorizontal: 16, marginBottom: 32, gap: 12 }}>
+      {BENEFITS.map((b) => (
+        <InfoRow
+          key={b.key}
+          card
+          accent={b.color}
+          badge={<MaterialCommunityIcons name={b.icon} size={24} color={b.color} />}
+          title={t(`app.benefits.${b.key}Title`)}
+          description={t(`app.benefits.${b.key}Desc`)}
+        />
+      ))}
+    </View>
+  );
+}
+
+// ============================================================
+// FAYL: src/screens/landing/components/StatsBand.js
+// ============================================================
+import { useState, useEffect } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { COLORS } from '../../../constants/colors';
+import { ENDPOINTS } from '../../../constants/config';
+import { useLanguage } from '../../../context/LanguageContext';
+import { DEFAULT_STATS } from '../constants';
+
+const LOOK = {
+  workers: { icon: 'account-group', color: '#3b82f6' },
+  completedJobs: { icon: 'check-circle', color: '#2ecc71' },
+  avgRating: { icon: 'star', color: '#f5b81f' },
+};
+
+// Umumiy statistika: ustalar, bajarilgan ishlar, o'rtacha reyting (GET /system/stats).
+// Javob kelguncha yoki xatoda — DEFAULT_STATS ko'rinadi. Uch alohida rangli kartochka.
+export default function StatsBand() {
+  const { t } = useLanguage();
+  const [stats, setStats] = useState(DEFAULT_STATS);
+
+  useEffect(() => {
+    fetch(ENDPOINTS.SYSTEM_STATS)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.response_data) {
+          const { worker_count, order_count, average_rating } = data.response_data;
+          setStats([
+            { value: `${worker_count}+`, key: 'workers' },
+            { value: `${order_count}+`, key: 'completedJobs' },
+            { value: `${average_rating.toFixed(1)}★`, key: 'avgRating' },
+          ]);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  return (
+    <View style={s.row}>
+      {stats.map((item) => {
+        const look = LOOK[item.key];
+        return (
+          <View key={item.key} style={s.tile}>
+            <View style={[s.icon, { backgroundColor: `${look.color}22` }]}>
+              <MaterialCommunityIcons name={look.icon} size={20} color={look.color} />
+            </View>
+            <Text style={s.value} numberOfLines={1} adjustsFontSizeToFit>
+              {item.value}
+            </Text>
+            <Text style={s.label} numberOfLines={2}>
+              {t(`app.stats.${item.key}`)}
+            </Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+const s = StyleSheet.create({
+  row: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginTop: 22 },
+  tile: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: COLORS.card,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 6,
+  },
+  icon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  value: { fontSize: 20, fontWeight: '800', color: COLORS.white },
+  label: { fontSize: 11, color: COLORS.gray, marginTop: 3, textAlign: 'center' },
+});
+
+// ============================================================
+// FAYL: src/screens/landing/components/InfoRow.js
+// ============================================================
+import { View, Text } from 'react-native';
+import { COLORS } from '../../../constants/colors';
+
+// Sarlavha + tavsifli qator; chap tomonda `badge` (raqam yoki ikonka) joylashadi.
+// "Qanday ishlaydi" va "Nega AFISH?" bo'limlari shu qatorni ishlatadi.
+export default function InfoRow({ badge, accent, title, description, card = false }) {
+  return (
+    <View
+      style={[
+        { flexDirection: 'row', alignItems: 'flex-start', gap: 14 },
+        card && {
+          backgroundColor: COLORS.card,
+          borderRadius: 18,
+          padding: 16,
+          borderWidth: 1,
+          borderColor: 'rgba(255,255,255,0.06)',
+        },
+      ]}
+    >
+      <View
+        style={{
+          width: card ? 46 : 36,
+          height: card ? 46 : 36,
+          borderRadius: card ? 13 : 11,
+          backgroundColor: accent + '22',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}
+      >
+        {badge}
+      </View>
+      <View style={{ flex: 1, paddingTop: 2 }}>
+        <Text style={{ color: COLORS.white, fontWeight: '700', fontSize: 14.5, marginBottom: 4 }}>
+          {title}
+        </Text>
+        <Text style={{ color: COLORS.gray, fontSize: 13, lineHeight: 19 }}>{description}</Text>
+      </View>
+    </View>
+  );
+}
+
+// ============================================================
+// FAYL: src/screens/landing/components/ClosingCta.js
+// ============================================================
+import { View, Text, TouchableOpacity } from 'react-native';
+import Feather from '@expo/vector-icons/Feather';
+import { COLORS } from '../../../constants/colors';
+import { useLanguage } from '../../../context/LanguageContext';
+
+// Sahifa oxiridagi "Kirish" chaqirig'i.
+export default function ClosingCta({ onPress }) {
+  const { t } = useLanguage();
+
+  return (
+    <View
+      style={{
+        marginHorizontal: 16,
+        marginBottom: 24,
+        backgroundColor: COLORS.card,
+        borderRadius: 22,
+        padding: 24,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.06)',
+        overflow: 'hidden',
+      }}
+    >
+      <View
+        style={{
+          position: 'absolute',
+          width: 220,
+          height: 180,
+          backgroundColor: 'rgba(232,122,69,0.10)',
+          borderRadius: 110,
+        }}
+      />
+      <Text
+        style={{
+          color: COLORS.white,
+          fontWeight: '800',
+          fontSize: 20,
+          marginBottom: 8,
+          textAlign: 'center',
+          lineHeight: 27,
+        }}
+      >
+        {t('app.closingCta.title')}
+      </Text>
+      <Text
+        style={{
+          color: COLORS.gray,
+          fontSize: 13.5,
+          textAlign: 'center',
+          marginBottom: 20,
+          lineHeight: 20,
+        }}
+      >
+        {t('app.closingCta.sub')}
+      </Text>
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.85}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: COLORS.orange,
+          borderRadius: 14,
+          paddingVertical: 14,
+          gap: 8,
+          width: '100%',
+        }}
+      >
+        <Feather name="log-in" size={18} color="#fff" />
+        <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>{t('app.closingCta.button')}</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+// ============================================================
+// FAYL: src/screens/zakazchi-main/components/PromoBanners.js
+// ============================================================
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  StyleSheet,
+  useWindowDimensions,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useTheme } from '../../../context/ThemeContext';
+import { useLanguage } from '../../../context/LanguageContext';
+import { FEATURES } from '../../../constants/config';
+
+const DEFAULT_H_PAD = 20;
+const GAP = 12;
+const HEIGHT = 156;
+const AUTO_MS = 5000;
+
+// Bosh sahifadagi reklama/tanishtiruv bannerlari. Backendda bannerlar uchun endpoint yo'q, shuning
+// uchun ular ilovaning o'z bo'limlariga olib boruvchi doimiy slaydlar; keyinchalik serverdan
+// kelsa, faqat shu ro'yxat almashtiriladi.
+const SLIDES = [
+  {
+    key: 'verified',
+    bg: '#2f5fb3',
+    icon: 'shield-check-outline',
+    go: { pathname: '/services', params: { verified: '1' } },
+  },
+  { key: 'order', bg: '#d8602a', icon: 'hammer-wrench', go: '/new-order' },
+  { key: 'wallet', bg: '#1f8f6e', icon: 'wallet-outline', go: '/wallet' },
+  { key: 'help', bg: '#6d4bb8', icon: 'lifebuoy', go: '/help' },
+];
+
+// Onlayn to'lov (v2) qo'shilguncha hamyon slaydi ko'rsatilmaydi.
+const ACTIVE_SLIDES = SLIDES.filter((slide) => slide.key !== 'wallet' || FEATURES.walletBalance);
+
+// `onSlidePress(slide)` berilsa, slayd bosilganda o'sha chaqiriladi (mehmon uchun — kirish oynasi);
+// berilmasa slaydning o'z yo'nalishiga o'tiladi.
+export default function PromoBanners({ style, hPad = DEFAULT_H_PAD, onSlidePress }) {
+  const router = useRouter();
+  const { theme: t } = useTheme();
+  const { t: tr } = useLanguage();
+  const { width: screenW } = useWindowDimensions();
+  const listRef = useRef(null);
+  const [index, setIndex] = useState(0);
+  const dragging = useRef(false);
+
+  const itemW = screenW - hPad * 2;
+  const step = itemW + GAP;
+
+  // Foydalanuvchi suradigan paytdan tashqari har bir necha soniyada keyingi slaydga o'tadi.
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (dragging.current) return;
+      setIndex((i) => {
+        const next = (i + 1) % ACTIVE_SLIDES.length;
+        listRef.current?.scrollToOffset({ offset: next * step, animated: true });
+        return next;
+      });
+    }, AUTO_MS);
+    return () => clearInterval(id);
+  }, [step]);
+
+  const onMomentumEnd = useCallback(
+    (e) => {
+      dragging.current = false;
+      setIndex(Math.round(e.nativeEvent.contentOffset.x / step));
+    },
+    [step]
+  );
+
+  const renderItem = ({ item }) => (
+    <TouchableOpacity
+      activeOpacity={0.9}
+      onPress={() => (onSlidePress ? onSlidePress(item) : router.navigate(item.go))}
+      accessibilityRole="button"
+      accessibilityLabel={tr(`app.homePromo.${item.key}.title`)}
+      style={[s.card, { width: itemW, backgroundColor: item.bg }]}
+    >
+      <View style={[s.circle, s.circleBig]} />
+      <View style={[s.circle, s.circleSmall]} />
+      <MaterialCommunityIcons
+        name={item.icon}
+        size={104}
+        color="rgba(255,255,255,0.92)"
+        style={s.art}
+      />
+
+      <View style={s.textCol}>
+        <Text style={s.title} numberOfLines={2}>
+          {tr(`app.homePromo.${item.key}.title`)}
+        </Text>
+        <Text style={s.text} numberOfLines={3}>
+          {tr(`app.homePromo.${item.key}.text`)}
+        </Text>
+        <View style={s.cta}>
+          <Text style={[s.ctaText, { color: item.bg }]}>{tr(`app.homePromo.${item.key}.cta`)}</Text>
+          <MaterialCommunityIcons name="arrow-right" size={15} color={item.bg} />
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  return (
+    <View style={style}>
+      <FlatList
+        ref={listRef}
+        data={ACTIVE_SLIDES}
+        keyExtractor={(item) => item.key}
+        renderItem={renderItem}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        decelerationRate="fast"
+        snapToInterval={step}
+        snapToAlignment="start"
+        onScrollBeginDrag={() => {
+          dragging.current = true;
+        }}
+        onMomentumScrollEnd={onMomentumEnd}
+        contentContainerStyle={{ paddingHorizontal: hPad, gap: GAP }}
+        getItemLayout={(_, i) => ({ length: itemW, offset: step * i, index: i })}
+      />
+      <View style={s.dots}>
+        {ACTIVE_SLIDES.map((slide, i) => (
+          <View
+            key={slide.key}
+            style={[
+              s.dot,
+              i === index
+                ? { width: 20, backgroundColor: t.orange }
+                : { width: 6, backgroundColor: t.line2 },
+            ]}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+const s = StyleSheet.create({
+  card: {
+    height: HEIGHT,
+    borderRadius: 26,
+    padding: 18,
+    overflow: 'hidden',
+    justifyContent: 'center',
+  },
+  circle: { position: 'absolute', backgroundColor: 'rgba(255,255,255,0.10)', borderRadius: 999 },
+  circleBig: { width: 190, height: 190, right: -50, top: -60 },
+  circleSmall: { width: 110, height: 110, right: 70, bottom: -50 },
+  art: { position: 'absolute', right: 14, bottom: 14 },
+  textCol: { width: '66%' },
+  title: { color: '#fff', fontSize: 18, fontWeight: '800', lineHeight: 22 },
+  text: { color: 'rgba(255,255,255,0.88)', fontSize: 12, lineHeight: 16, marginTop: 5 },
+  cta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 4,
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 14,
+    backgroundColor: '#fff',
+  },
+  ctaText: { fontSize: 12, fontWeight: '700' },
+  dots: { flexDirection: 'row', justifyContent: 'center', gap: 5, marginTop: 10 },
+  dot: { height: 6, borderRadius: 3 },
+});

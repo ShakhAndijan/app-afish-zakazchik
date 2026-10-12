@@ -7,7 +7,16 @@ import { useXizmatlarStyles } from '../styles';
 export default function RegionPickerSheet({ filters }) {
   const { t: tr } = useLanguage();
   const { t, styles } = useXizmatlarStyles();
-  const { pickerFor, setPickerFor, regions, districts, region, district, pickRegion, pickDistrict } = filters;
+  const {
+    pickerFor,
+    setPickerFor,
+    regions,
+    districts,
+    region,
+    district,
+    pickRegion,
+    pickDistrict,
+  } = filters;
   const isRegion = pickerFor === 'region';
   const close = () => setPickerFor(null);
 
@@ -28,7 +37,9 @@ export default function RegionPickerSheet({ filters }) {
                   style={styles.sheetRow}
                   onPress={() => (isRegion ? pickRegion(item) : pickDistrict(item))}
                 >
-                  <Text style={[styles.sheetRowText, active && styles.sheetRowTextActive]}>{item.name}</Text>
+                  <Text style={[styles.sheetRowText, active && styles.sheetRowTextActive]}>
+                    {item.name}
+                  </Text>
                   {active && <Feather name="check" size={16} color={t.orange} />}
                 </TouchableOpacity>
               );

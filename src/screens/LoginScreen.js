@@ -22,6 +22,7 @@ import CodeStep from './steps/CodeStep';
 import NewPasswordStep from './steps/NewPasswordStep';
 import CompleteProfileStep from './steps/CompleteProfileStep';
 import { devLog } from '../utils/log';
+import { getErrorMessage } from '../utils/errors';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -76,7 +77,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
       setDevCode(data?.dev_code || '');
       setStep('code');
     } catch (e) {
-      setOtpError(e.message || t('login.errors.sendCodeFailed'));
+      setOtpError(getErrorMessage(e, t, 'login.errors.sendCodeFailed'));
     } finally {
       setOtpLoading(false);
     }
@@ -108,7 +109,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
         setVerifyError(t('login.errors.loginFailed'));
       }
     } catch (e) {
-      setVerifyError(e.message || t('login.errors.loginFailed'));
+      setVerifyError(getErrorMessage(e, t, 'login.errors.loginFailed'));
     } finally {
       setVerifyLoading(false);
     }
@@ -121,7 +122,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
       const data = await completeCustomerAuth(ticket, firstName, lastName);
       await finishLogin(data);
     } catch (e) {
-      setCompleteError(e.message || t('login.registerStep.errors.finishFailed'));
+      setCompleteError(getErrorMessage(e, t, 'login.registerStep.errors.finishFailed'));
     } finally {
       setCompleteLoading(false);
     }
@@ -135,7 +136,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
       const data = await loginCustomer(fullPhone, password);
       await finishLogin(data);
     } catch (e) {
-      setLoginError(e.message || t('login.errors.loginFailed'));
+      setLoginError(getErrorMessage(e, t, 'login.errors.loginFailed'));
     } finally {
       setLoginLoading(false);
     }
@@ -150,7 +151,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
       setForgotDevCode(data?.dev_code || '');
       setStep('forgotCode');
     } catch (e) {
-      setForgotError(e.message || t('login.errors.sendCodeFailed'));
+      setForgotError(getErrorMessage(e, t, 'login.errors.sendCodeFailed'));
     } finally {
       setForgotLoading(false);
     }
@@ -163,7 +164,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
       const data = await requestResetPasswordOtp(fullPhone);
       setForgotDevCode(data?.dev_code || '');
     } catch (e) {
-      Alert.alert(t('common.errorTitle'), e.message || t('login.errors.sendCodeFailed'));
+      Alert.alert(t('common.errorTitle'), getErrorMessage(e, t, 'login.errors.sendCodeFailed'));
     } finally {
       setForgotResendLoading(false);
     }
@@ -178,7 +179,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
       setStep('phone');
       return data;
     } catch (e) {
-      setResetError(e.message || t('login.errors.savePasswordFailed'));
+      setResetError(getErrorMessage(e, t, 'login.errors.savePasswordFailed'));
     } finally {
       setResetLoading(false);
     }
@@ -191,7 +192,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
       await finishLogin({ access_token: token, refresh_token: refreshToken });
     } catch (e) {
       if (e.message !== 'cancelled') {
-        Alert.alert(t('common.errorTitle'), e.message || t('login.errors.googleFailed'));
+        Alert.alert(t('common.errorTitle'), getErrorMessage(e, t, 'login.errors.googleFailed'));
       }
     } finally {
       setGoogleLoading(false);

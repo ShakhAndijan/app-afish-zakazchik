@@ -1,38 +1,49 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
+import * as LocalAuthentication from 'expo-local-authentication';
 
-// Ikkala token (access + refresh) bitta SecureStore yozuvida JSON bo'lib saqlanadi:
-// shunda yozishda ham, o'qishda ham biometrik oynasi faqat BIR marta chiqadi.
+// Ikkala token (access + refresh) bitta SecureStore yozuvida JSON bo'lib saqlanadi.
 const SESSION_KEY = 'session_tokens';
 const ACTOR_TYPE_KEY = 'actor_type';
-// AsyncStorage'dagi belgi: sessiya borligi va u qanday saqlangani (biometrik yoki oddiy).
-// Qiymatni biometrikka murojaat qilmay o'qish mumkin.
+// AsyncStorage'dagi belgi: sessiya borligi va u qanday saqlangani. Qiymatni SecureStore'ga
+// murojaat qilmay o'qish mumkin.
+//  - 'plain'  — oddiy SecureStore (Keystore/Keychain bilan shifrlangan), yozish va o'qish jimgina;
+//  - 'bio'    — eski versiya: yozuv biometrikka bog'langan (o'qishda biometrik oynasi chiqadi);
+//  - '1'      — undan ham eski versiya: alohida kalitlar.
 const HAS_SESSION_KEY = 'has_session';
 const MODE_BIOMETRIC = 'bio';
 const MODE_PLAIN = 'plain';
-// Eski versiya (biometrik o'chiq bo'lgan paytdagi) formati: alohida kalitlar, oddiy saqlash.
 const MODE_LEGACY = '1';
 const LEGACY_TOKEN_KEY = 'access_token';
 const LEGACY_REFRESH_TOKEN_KEY = 'refresh_token';
 
 const UNLOCK_PROMPT = 'Ilovaga kirish uchun barmoq izi yoki Face ID orqali tasdiqlang';
 
-// So'rov boshiga SecureStore'dan (biometrik bilan) o'qish o'rniga, bir marta unlockToken()
-// orqali xotiraga olib, shu yerdan tez qaytaramiz.
+// Ilova ochilganda biometrik (yoki qurilma qulfi) so'raladimi.
+// Nega tokenlar biometrikka "bog'lanmaydi": refresh token bir martalik — har yangilanishda yangi
+// juftlik yoziladi. Biometrikka bog'langan yozuvga yozish har safar biometrik oynasini chiqarar edi.
+// Shuning uchun tokenlar jimgina yoziladi, biometrik esa ilova ochilganda tekshiriladi.
+// Biometrik yoki ekran qulfi sozlanmagan qurilmada tekshiruv o'tkazib yuboriladi.
+const BIOMETRIC_LOCK = true;
+
+// So'rov boshiga SecureStore'dan o'qish o'rniga, bir marta unlockToken() orqali xotiraga olib,
+// shu yerdan tez qaytaramiz.
 let cachedToken = null;
 let cachedRefreshToken = null;
 
-// Tokenlarni biometrikka bog'lash. Expo Go'da biometrik kalitlar ishlamaydi, shuning uchun
-// hozircha o'chiq (tokenlar oddiy SecureStore'da). Production build uchun `true` qiling.
-const BIOMETRIC_BINDING = false;
-
-// Qurilma biometrikani qo'llaydimi (barmoq izi/yuz ro'yxatdan o'tgan va yetarlicha xavfsiz).
-function canUseBiometrics() {
-  if (!BIOMETRIC_BINDING) return false;
+async function passBiometricLock() {
+  if (!BIOMETRIC_LOCK) return true;
   try {
-    return SecureStore.canUseBiometricAuthentication();
+    const [hasHardware, enrolled] = await Promise.all([
+      LocalAuthentication.hasHardwareAsync(),
+      LocalAuthentication.isEnrolledAsync(),
+    ]);
+    if (!hasHardware || !enrolled) return true;
+    const result = await LocalAuthentication.authenticateAsync({ promptMessage: UNLOCK_PROMPT });
+    return result.success;
   } catch {
-    return false;
+    // Tekshiruv moduli ishlamasa foydalanuvchi ilovadan qulflanib qolmasin.
+    return true;
   }
 }
 
@@ -44,23 +55,24 @@ async function clearStoredSession() {
 }
 
 /**
- * Login'dan keyin tokenlarni saqlaydi. Qurilmada biometrik bo'lsa, tokenlar shu biometrikka
- * bog'lanadi (keyin o'qish uchun barmoq izi/Face ID kerak bo'ladi).
- * Foydalanuvchi biometrik oynasini bekor qilsa, tokenlar faqat joriy sessiya uchun xotirada
- * qoladi va diskka yozilmaydi (keyingi ochilishda qayta login kerak).
+ * Tokenlarni saqlaydi: login'dan keyin ham, tokenlar yangilanganda ham (refresh token bir
+ * martalik, shuning uchun yangi juftlik darhol yozilishi shart). Yozish jimgina, biometrik so'ramaydi.
+ * Yozib bo'lmasa, tokenlar faqat joriy sessiya uchun xotirada qoladi (keyingi ochilishda qayta login).
  */
 export async function saveSession({ accessToken, refreshToken }) {
   cachedToken = accessToken ?? null;
   cachedRefreshToken = refreshToken ?? null;
 
-  const biometric = canUseBiometrics();
   try {
+    // Eski, biometrikka bog'langan yozuv bo'lsa, avval o'chiriladi (almashtirishda xato bermasin).
+    if ((await AsyncStorage.getItem(HAS_SESSION_KEY)) === MODE_BIOMETRIC) {
+      await SecureStore.deleteItemAsync(SESSION_KEY).catch(() => {});
+    }
     await SecureStore.setItemAsync(
       SESSION_KEY,
-      JSON.stringify({ accessToken: accessToken ?? null, refreshToken: refreshToken ?? null }),
-      { requireAuthentication: biometric, authenticationPrompt: UNLOCK_PROMPT }
+      JSON.stringify({ accessToken: accessToken ?? null, refreshToken: refreshToken ?? null })
     );
-    await AsyncStorage.setItem(HAS_SESSION_KEY, biometric ? MODE_BIOMETRIC : MODE_PLAIN);
+    await AsyncStorage.setItem(HAS_SESSION_KEY, MODE_PLAIN);
   } catch {
     await clearStoredSession();
   }
@@ -82,9 +94,8 @@ async function readStoredSession(mode) {
 
 /**
  * Ilova ochilganda (saqlangan sessiya bo'lsa) bir marta chaqiriladi.
- * Tokenlar biometrikka bog'langan bo'lsa, barmoq izi / Face ID so'raydi va tokenni xotiraga
- * yuklaydi. Biometrik o'tmasa yoki yangi barmoq izi qo'shilib kalit bekor bo'lgan bo'lsa,
- * null qaytadi.
+ * Avval biometrik tekshiriladi, so'ng tokenlar xotiraga yuklanadi. Biometrik o'tmasa yoki
+ * o'qib bo'lmasa, null qaytadi (qulf ekrani ko'rsatiladi).
  * @returns {Promise<string|null>} muvaffaqiyatli bo'lsa access_token, aks holda null
  */
 export async function unlockToken() {
@@ -93,6 +104,8 @@ export async function unlockToken() {
   try {
     const mode = await AsyncStorage.getItem(HAS_SESSION_KEY);
     if (!mode) return null;
+    // Eski 'bio' yozuvni o'qishning o'zi biometrik so'raydi; ikkinchi marta so'ralmaydi.
+    if (mode !== MODE_BIOMETRIC && !(await passBiometricLock())) return null;
     const session = await readStoredSession(mode);
     cachedToken = session?.accessToken ?? null;
     cachedRefreshToken = session?.refreshToken ?? null;

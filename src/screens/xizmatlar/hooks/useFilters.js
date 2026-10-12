@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
-import { getRegions, getDistricts } from '../../../api/reference';
+import { useState } from 'react';
+import { useRegions, useDistricts } from '../../../queries/reference';
+
+const EMPTY = [];
 
 // Filtr paneli holati: narx/tajriba/reyting/viloyat/tuman/tasdiqlangan.
 // Viloyat va tuman ro'yxatlari backenddan (GET /regions, /regions/{id}/districts);
@@ -13,42 +15,10 @@ export default function useFilters(initialCertifiedOnly = false) {
   const [district, setDistrict] = useState(null);
   // Viloyat/tuman tanlash oynasi: 'region' | 'district' | null.
   const [pickerFor, setPickerFor] = useState(null);
-  const [regions, setRegions] = useState([]);
-  const [districts, setDistricts] = useState([]);
+  const regions = useRegions().data ?? EMPTY;
+  const districts = useDistricts(region).data ?? EMPTY;
 
-  useEffect(() => {
-    let cancelled = false;
-    getRegions()
-      .then((data) => {
-        if (!cancelled) setRegions(data);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!region) {
-      setDistricts([]);
-      return;
-    }
-    let cancelled = false;
-    getDistricts(region)
-      .then((data) => {
-        if (!cancelled) setDistricts(data);
-      })
-      .catch(() => {
-        if (!cancelled) setDistricts([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [region]);
-
-  const hasActive = !!(
-    sort || minExp || certifiedOnly || minRating || region || district
-  );
+  const hasActive = !!(sort || minExp || certifiedOnly || minRating || region || district);
 
   const reset = () => {
     setSort(null);

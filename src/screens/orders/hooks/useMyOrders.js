@@ -1,59 +1,40 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { getMyOrders } from '../../../api/orders';
-import { getCategories } from '../../../api/categories';
+import { useCategoriesQuery } from '../../../queries/categories';
+
+export const MY_ORDERS_KEY = ['orders', 'list'];
 
 // Mijoz buyurtmalarini yuklaydi. Ro'yxatda faqat category_id bor, shuning uchun
 // xizmat nomi kategoriyalar ro'yxatidan olinadi (u yuklanmasa ham ro'yxat chiqadi).
 export default function useMyOrders() {
-  const [orders, setOrders] = useState(null); // null — hali yuklanmagan
-  const [error, setError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const mounted = useRef(true);
+  const { categories } = useCategoriesQuery();
+  const query = useQuery({ queryKey: MY_ORDERS_KEY, queryFn: getMyOrders, staleTime: 30 * 1000 });
+  const { data, isError, isFetching, refetch } = query;
 
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
-
-  const load = useCallback(async () => {
-    try {
-      const [list, categories] = await Promise.all([
-        getMyOrders(),
-        getCategories().catch(() => []),
-      ]);
-      if (!mounted.current) return;
-      const names = new Map(categories.map((c) => [c.id, c.name]));
-      setOrders(list.map((o) => ({ ...o, service: o.service ?? names.get(o.categoryId) ?? null })));
-      setError(false);
-    } catch {
-      // Yangilash muvaffaqiyatsiz bo'lsa, avval yuklangan ro'yxat saqlanadi.
-      if (mounted.current) setError(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  // null — hali yuklanmagan. Yangilash xato bersa, avval yuklangan ro'yxat saqlanadi.
+  const orders = useMemo(() => {
+    if (!data) return null;
+    const names = new Map(categories.map((c) => [c.id, c.name]));
+    return data.map((o) => ({ ...o, service: o.service ?? names.get(o.categoryId) ?? null }));
+  }, [data, categories]);
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
-    await load();
-    if (mounted.current) setRefreshing(false);
-  }, [load]);
-
-  const retry = useCallback(() => {
-    setError(false);
-    load();
-  }, [load]);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch]);
 
   return {
     orders,
-    initialLoading: orders === null && !error,
-    failed: orders === null && error,
+    initialLoading: orders === null && (!isError || isFetching),
+    failed: orders === null && isError && !isFetching,
     refreshing,
     refresh,
-    retry,
+    retry: refetch,
   };
 }

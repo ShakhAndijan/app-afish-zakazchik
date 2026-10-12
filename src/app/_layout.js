@@ -2,9 +2,11 @@ import { useEffect, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Stack, useRouter, useRootNavigationState } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { COLORS } from '../constants/colors';
+import { queryClient, persistOptions } from '../queries/client';
 import AfishLoader from '../components/AfishLoader';
 import BiometricLockScreen from '../screens/BiometricLockScreen';
 import { AuthProvider, useAuth } from '../context/AuthContext';
@@ -19,17 +21,19 @@ import { WalletProvider } from '../context/WalletContext';
 //  - hammaga:  usta/[id], work
 export default function RootLayout() {
   return (
-    <LanguageProvider>
-      <ThemeProvider>
-        <SafeAreaProvider>
-          <KeyboardProvider>
-            <AuthProvider>
-              <RootNavigator />
-            </AuthProvider>
-          </KeyboardProvider>
-        </SafeAreaProvider>
-      </ThemeProvider>
-    </LanguageProvider>
+    <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
+      <LanguageProvider>
+        <ThemeProvider>
+          <SafeAreaProvider>
+            <KeyboardProvider>
+              <AuthProvider>
+                <RootNavigator />
+              </AuthProvider>
+            </KeyboardProvider>
+          </SafeAreaProvider>
+        </ThemeProvider>
+      </LanguageProvider>
+    </PersistQueryClientProvider>
   );
 }
 

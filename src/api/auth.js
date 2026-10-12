@@ -3,16 +3,27 @@ import * as Linking from 'expo-linking';
 import * as FileSystem from 'expo-file-system/legacy';
 import { ENDPOINTS } from '../constants/config';
 import { devLog } from '../utils/log';
+import { getToken, getRefreshToken } from '../utils/token';
+import { request } from '../utils/request';
 
 const logReq = (name) => devLog(`[auth] → ${name}`);
 const logOk = (name) => devLog(`[auth] ✓ ${name}`);
 const logErr = (name, err) => devLog(`[auth] ✗ ${name}`, err?.message || err);
 
-export async function uploadImageToPresignedUrl(
-  uploadUrl,
-  imageUri,
-  contentType
-) {
+// Kirish oqimidagi so'rovlar: token yo'q (auth: false), xato ApiError bo'lib chiqadi.
+async function authPost(name, url, body, fallbackMessage) {
+  logReq(name);
+  try {
+    const data = await request(url, { method: 'POST', body, auth: false, fallbackMessage });
+    logOk(name);
+    return data;
+  } catch (err) {
+    logErr(name, err);
+    throw err;
+  }
+}
+
+export async function uploadImageToPresignedUrl(uploadUrl, imageUri, contentType) {
   const ct = contentType || 'image/jpeg';
 
   const base64 = await FileSystem.readAsStringAsync(imageUri, {
@@ -44,20 +55,12 @@ export async function uploadImageToPresignedUrl(
 }
 
 export async function loginCustomer(phone, password) {
-  logReq('loginCustomer');
-  const res = await fetch(ENDPOINTS.CUSTOMER_LOGIN, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone, password }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    logErr('loginCustomer', err);
-    throw new Error(err.message || 'Kirishda xatolik yuz berdi');
-  }
-  const data = await res.json();
-  logOk('loginCustomer', data.response_data);
-  return data.response_data;
+  return authPost(
+    'loginCustomer',
+    ENDPOINTS.CUSTOMER_LOGIN,
+    { phone, password },
+    'Kirishda xatolik yuz berdi'
+  );
 }
 
 /**
@@ -67,20 +70,12 @@ export async function loginCustomer(phone, password) {
  * @returns {Promise<{ sent: boolean, dev_code?: string }>}
  */
 export async function startCustomerAuth(identifier, channel = 'sms') {
-  logReq('startCustomerAuth');
-  const res = await fetch(ENDPOINTS.AUTH_CUSTOMER_START, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ identifier, channel }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    logErr('startCustomerAuth', err);
-    throw new Error(err.message || 'Kod yuborishda xatolik yuz berdi');
-  }
-  const data = await res.json();
-  logOk('startCustomerAuth', data.response_data);
-  return data.response_data;
+  return authPost(
+    'startCustomerAuth',
+    ENDPOINTS.AUTH_CUSTOMER_START,
+    { identifier, channel },
+    'Kod yuborishda xatolik yuz berdi'
+  );
 }
 
 /**
@@ -96,20 +91,12 @@ export async function startCustomerAuth(identifier, channel = 'sms') {
  * @returns {Promise<{ access_token: string|null, refresh_token: string|null, status?: string, ticket?: string, suggested_first_name?: string, suggested_last_name?: string }>}
  */
 export async function verifyCustomerAuth(identifier, code) {
-  logReq('verifyCustomerAuth');
-  const res = await fetch(ENDPOINTS.AUTH_CUSTOMER_VERIFY, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ identifier, code }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    logErr('verifyCustomerAuth', err);
-    throw new Error(err.message || 'Kodni tasdiqlashda xatolik yuz berdi');
-  }
-  const data = await res.json();
-  logOk('verifyCustomerAuth', data.response_data);
-  return data.response_data;
+  return authPost(
+    'verifyCustomerAuth',
+    ENDPOINTS.AUTH_CUSTOMER_VERIFY,
+    { identifier, code },
+    'Kodni tasdiqlashda xatolik yuz berdi'
+  );
 }
 
 /**
@@ -119,63 +106,30 @@ export async function verifyCustomerAuth(identifier, code) {
  * @returns {Promise<{ access_token: string, refresh_token: string }>}
  */
 export async function completeCustomerAuth(ticket, firstName, lastName) {
-  logReq('completeCustomerAuth');
-  const res = await fetch(ENDPOINTS.AUTH_CUSTOMER_COMPLETE, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      ticket,
-      first_name: firstName,
-      last_name: lastName,
-    }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    logErr('completeCustomerAuth', err);
-    throw new Error(err.message || "Hisob yaratishda xatolik yuz berdi");
-  }
-  const data = await res.json();
-  logOk('completeCustomerAuth', data.response_data);
-  return data.response_data;
+  return authPost(
+    'completeCustomerAuth',
+    ENDPOINTS.AUTH_CUSTOMER_COMPLETE,
+    { ticket, first_name: firstName, last_name: lastName },
+    'Hisob yaratishda xatolik yuz berdi'
+  );
 }
 
 export async function requestResetPasswordOtp(phone) {
-  logReq('requestResetPasswordOtp');
-  const res = await fetch(ENDPOINTS.RESET_PASSWORD_REQUEST_OTP, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone, actor_type: 'customer' }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    logErr('requestResetPasswordOtp', err);
-    throw new Error(err.message || 'Kod yuborishda xatolik yuz berdi');
-  }
-  const data = await res.json();
-  logOk('requestResetPasswordOtp', data.response_data);
-  return data.response_data; // { sent, dev_code }
+  return authPost(
+    'requestResetPasswordOtp',
+    ENDPOINTS.RESET_PASSWORD_REQUEST_OTP,
+    { phone, actor_type: 'customer' },
+    'Kod yuborishda xatolik yuz berdi'
+  );
 }
 
 export async function verifyResetPasswordOtp(phone, code, newPassword) {
-  logReq('verifyResetPasswordOtp');
-  const res = await fetch(ENDPOINTS.RESET_PASSWORD_VERIFY_OTP, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      phone,
-      actor_type: 'customer',
-      code,
-      new_password: newPassword,
-    }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    logErr('verifyResetPasswordOtp', err);
-    throw new Error(err.message || 'Parolni saqlashda xatolik yuz berdi');
-  }
-  const data = await res.json();
-  logOk('verifyResetPasswordOtp', data.response_data);
-  return data.response_data;
+  return authPost(
+    'verifyResetPasswordOtp',
+    ENDPOINTS.RESET_PASSWORD_VERIFY_OTP,
+    { phone, actor_type: 'customer', code, new_password: newPassword },
+    'Parolni saqlashda xatolik yuz berdi'
+  );
 }
 
 export async function googleLogin(actorType = 'customer') {
@@ -203,4 +157,24 @@ export async function googleLogin(actorType = 'customer') {
 
   logOk('googleLogin', { hasToken: !!token, hasRefreshToken: !!params.refresh_token });
   return { token, refreshToken: params.refresh_token };
+}
+
+/**
+ * Chiqishda refresh tokenni serverda bekor qiladi (POST /auth/logout). Server tomoni idempotent,
+ * foydalanuvchi baribir chiqadi — shuning uchun xato yoki tarmoq yo'qligi e'tiborga olinmaydi.
+ */
+export async function revokeSession() {
+  const [token, refreshToken] = await Promise.all([getToken(), getRefreshToken()]);
+  if (!refreshToken) return;
+  try {
+    await request(ENDPOINTS.AUTH_LOGOUT, {
+      method: 'POST',
+      body: { refresh_token: refreshToken },
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      auth: false,
+      timeout: 4000,
+    });
+  } catch {
+    // Chiqishga to'sqinlik qilmaydi.
+  }
 }

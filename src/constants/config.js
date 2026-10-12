@@ -1,11 +1,14 @@
-// Backend manzili .env dagi EXPO_PUBLIC_API_BASE_URL dan olinadi; berilmasa dev server ishlatiladi.
+// Backend manzili va xarita kalitlari to'g'ridan-to'g'ri shu yerda turadi (loyiha ikki xil
+// kompyuterda gitdan olinib ishlatiladi, .env gitga kirmaydi). .env dagi EXPO_PUBLIC_* qiymatlari
+// berilsa, ular shu qiymatlardan ustun turadi. Backend tayyor bo'lgach geocoder serverga o'tadi.
 export const API_BASE_URL = (
   process.env.EXPO_PUBLIC_API_BASE_URL || 'https://dev-back.afish.uz'
 ).replace(/\/+$/, '');
 
-// Kalitlar .env faylidan olinadi (.env.example ga qarang). Backend tayyor bo'lgach geocoder serverga o'tadi.
-export const YANDEX_MAPS_API_KEY = process.env.EXPO_PUBLIC_YANDEX_MAPS_API_KEY ?? '';
-export const YANDEX_GEOCODER_API_KEY = process.env.EXPO_PUBLIC_YANDEX_GEOCODER_API_KEY ?? '';
+export const YANDEX_MAPS_API_KEY =
+  process.env.EXPO_PUBLIC_YANDEX_MAPS_API_KEY || 'e9e77baf-a133-46b1-9f59-055744b55c57';
+export const YANDEX_GEOCODER_API_KEY =
+  process.env.EXPO_PUBLIC_YANDEX_GEOCODER_API_KEY || 'ca902206-f8b0-42a0-8ba2-9ae813f026d8';
 
 // Imkoniyat bayroqlari. Onlayn to'lov (ikkinchi versiya) qo'shilguncha hamyon balansi yashirin.
 export const FEATURES = {
@@ -21,6 +24,8 @@ export const ENDPOINTS = {
   AUTH_CUSTOMER_VERIFY: `${API_BASE_URL}/api/v1/auth/customer/verify`,
   AUTH_CUSTOMER_COMPLETE: `${API_BASE_URL}/api/v1/auth/customer/complete`,
   AUTH_ME: `${API_BASE_URL}/api/v1/auth/me`,
+  AUTH_REFRESH: `${API_BASE_URL}/api/v1/auth/refresh`,
+  AUTH_LOGOUT: `${API_BASE_URL}/api/v1/auth/logout`,
   AUTH_SET_PASSWORD: `${API_BASE_URL}/api/v1/auth/set-password`,
   AUTH_CHANGE_PHONE_REQUEST_OTP: `${API_BASE_URL}/api/v1/auth/change-phone/request-otp`,
   AUTH_CHANGE_PHONE_VERIFY_OTP: `${API_BASE_URL}/api/v1/auth/change-phone/verify-otp`,

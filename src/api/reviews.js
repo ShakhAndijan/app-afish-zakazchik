@@ -1,5 +1,5 @@
 import { ENDPOINTS } from '../constants/config';
-import { apiFetch } from '../utils/apiClient';
+import { request } from '../utils/request';
 
 const AVATAR_COLORS = ['#ec4899', '#3b82f6', '#8b5cf6', '#2fa37a', '#e87a45', '#f5c451', '#06b6d4'];
 
@@ -16,26 +16,10 @@ export function mapTopComment(item, index) {
 }
 
 export async function getTopComments({ limit = 10 } = {}) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10000);
-
-  let res;
-  try {
-    res = await apiFetch(ENDPOINTS.TOP_COMMENTS(limit), {
-      signal: controller.signal,
-    });
-  } catch (err) {
-    throw err;
-  } finally {
-    clearTimeout(timeout);
-  }
-
-  if (!res.ok) {
-    throw new Error(`Top comments fetch failed: ${res.status}`);
-  }
-
-  const json = await res.json();
-  return (json.response_data ?? []).map(mapTopComment);
+  const data = await request(ENDPOINTS.TOP_COMMENTS(limit), {
+    fallbackMessage: 'Sharhlar yuklanmadi',
+  });
+  return (data ?? []).map(mapTopComment);
 }
 
 // Bitta order_title — bitta ish. Har bir ishning bir nechta after_photo'si
@@ -67,43 +51,14 @@ export function mapTopOrders(orders) {
 
 // Ochiq (tokenli) buyurtma: haqiqiy kategoriya va yakunlangan sana.
 export async function getPublicOrder(token) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10000);
-
-  let res;
-  try {
-    res = await apiFetch(ENDPOINTS.PUBLIC_ORDER(token), { signal: controller.signal });
-  } finally {
-    clearTimeout(timeout);
-  }
-
-  if (!res.ok) {
-    throw new Error(`Public order fetch failed: ${res.status}`);
-  }
-
-  const json = await res.json();
-  return json.response_data ?? null;
+  return (
+    (await request(ENDPOINTS.PUBLIC_ORDER(token), { fallbackMessage: 'Ish topilmadi' })) ?? null
+  );
 }
 
 export async function getTopOrders({ limit = 10 } = {}) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10000);
-
-  let res;
-  try {
-    res = await apiFetch(ENDPOINTS.TOP_ORDERS(limit), {
-      signal: controller.signal,
-    });
-  } catch (err) {
-    throw err;
-  } finally {
-    clearTimeout(timeout);
-  }
-
-  if (!res.ok) {
-    throw new Error(`Top orders fetch failed: ${res.status}`);
-  }
-
-  const json = await res.json();
-  return mapTopOrders(json.response_data ?? []);
+  const data = await request(ENDPOINTS.TOP_ORDERS(limit), {
+    fallbackMessage: 'Ishlar yuklanmadi',
+  });
+  return mapTopOrders(data ?? []);
 }

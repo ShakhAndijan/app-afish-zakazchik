@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 import AddressModal from '../../new-order/components/AddressModal';
 import useOrderLocation from '../../new-order/hooks/useOrderLocation';
 import LabelPicker from './LabelPicker';
+import { getErrorMessage } from '../../../utils/errors';
 
 // Manzilni qo'shish/tahrirlash oynasi (xaritali AddressModal asosida).
 // `mode`: 'primary' — asosiy manzil (turi va kirish/qavat maydonlarisiz),
@@ -49,7 +50,12 @@ export default function AddressEditor({ mode, initial, onClose, onSave, t, tr })
         regionId: loc.regionId,
         regionName: nameOf(loc.regions, loc.regionId, initial?.regionId, initial?.regionName),
         districtId: loc.districtId,
-        districtName: nameOf(loc.districts, loc.districtId, initial?.districtId, initial?.districtName),
+        districtName: nameOf(
+          loc.districts,
+          loc.districtId,
+          initial?.districtId,
+          initial?.districtName
+        ),
         street: street.trim(),
         entrance: isPrimary ? '' : entrance.trim(),
         floor: isPrimary ? '' : floor.trim(),
@@ -57,7 +63,7 @@ export default function AddressEditor({ mode, initial, onClose, onSave, t, tr })
         lng: gpsLng,
       });
     } catch (e) {
-      Alert.alert(tr('common.errorTitle'), e?.message || tr('addresses.errorSave'));
+      Alert.alert(tr('common.errorTitle'), getErrorMessage(e, tr, 'addresses.errorSave'));
     } finally {
       setSaving(false);
     }

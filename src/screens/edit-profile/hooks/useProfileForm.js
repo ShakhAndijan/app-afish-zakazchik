@@ -4,6 +4,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { useUser } from '../../../context/UserContext';
 import { getCustomerMe, updateCustomerMe } from '../../../api/user';
 import { EMPTY_PROFILE, profileToForm, formToPayload } from '../utils';
+import { getErrorMessage } from '../../../utils/errors';
 
 // Profil formasi: joriy ma'lumotni yuklaydi (GET /customers/me), qiymatlarni saqlaydi
 // va "Saqlash" da yuboradi (PATCH). `setField('firstName', 'Ali')` bitta maydonni o'zgartiradi.
@@ -26,7 +27,7 @@ export default function useProfileForm() {
         setValues(profileToForm(data));
       })
       .catch((e) => {
-        Alert.alert(tr('common.errorTitle'), e.message || tr('editProfile.loadError'));
+        Alert.alert(tr('common.errorTitle'), getErrorMessage(e, tr, 'editProfile.loadError'));
       })
       .finally(() => alive && setInitialLoading(false));
     return () => {
@@ -34,7 +35,8 @@ export default function useProfileForm() {
     };
   }, []);
 
-  const isReady = values.firstName.trim().length > 0 && values.lastName.trim().length > 0 && !saving;
+  const isReady =
+    values.firstName.trim().length > 0 && values.lastName.trim().length > 0 && !saving;
 
   const save = async () => {
     if (!isReady) return;
@@ -44,7 +46,7 @@ export default function useProfileForm() {
       await refreshUser();
       setSaved(true);
     } catch (e) {
-      Alert.alert(tr('common.errorTitle'), e.message || tr('editProfile.saveError'));
+      Alert.alert(tr('common.errorTitle'), getErrorMessage(e, tr, 'editProfile.saveError'));
     } finally {
       setSaving(false);
     }

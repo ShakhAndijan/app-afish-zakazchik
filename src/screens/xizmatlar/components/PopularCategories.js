@@ -26,7 +26,11 @@ export default function PopularCategories({ categories, onSelect }) {
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={{ gap: POPULAR_GAP }}
-      getItemLayout={(_, index) => ({ length: POPULAR_TILE_W, offset: POPULAR_SLOT * index, index })}
+      getItemLayout={(_, index) => ({
+        length: POPULAR_TILE_W,
+        offset: POPULAR_SLOT * index,
+        index,
+      })}
       renderItem={({ item }) => (
         <CategoryTile item={item} variant="popular" onPress={() => onSelect(item.id)} />
       )}

@@ -42,7 +42,6 @@ function XizmatlarContent({ onSelectWorker, initialCertifiedOnly = false }) {
 
   const backToCategories = () => {
     setCatFilter(null);
-    categoryWorkers.reset();
   };
 
   const searchRow = (
@@ -85,7 +84,6 @@ function XizmatlarContent({ onSelectWorker, initialCertifiedOnly = false }) {
           onSelectWorker={onSelectWorker}
         />
       )}
-
 
       <FilterModal
         open={filterOpen}

@@ -1,5 +1,5 @@
 import { ENDPOINTS } from '../constants/config';
-import { apiFetch } from '../utils/apiClient';
+import { request } from '../utils/request';
 import { devLog } from '../utils/log';
 
 const AVATAR_COLORS = ['#2fa37a', '#e87a45', '#3f7fd4', '#ec4899', '#8b5cf6', '#f5c451', '#06b6d4'];
@@ -61,17 +61,13 @@ export async function getWorkersPage({
   if (districtId) params.push(`district_id=${districtId}`);
   if (minRating) params.push(`min_rating=${minRating}`);
   if (verifiedOnly) params.push('is_verified=true');
-  const res = await apiFetch(`${ENDPOINTS.WORKERS}?${params.join('&')}`);
-
-  if (!res.ok) {
-    throw new Error(`Workers fetch failed: ${res.status}`);
-  }
-
-  const json = await res.json();
-  const items = json.response_data?.items ?? json.response_data ?? [];
+  const data = await request(`${ENDPOINTS.WORKERS}?${params.join('&')}`, {
+    fallbackMessage: "Ustalar ro'yxati yuklanmadi",
+  });
+  const items = data?.items ?? data ?? [];
   return {
     items: items.map(mapWorker),
-    total: json.response_data?.pagination?.total ?? null,
+    total: data?.pagination?.total ?? null,
   };
 }
 
@@ -80,27 +76,19 @@ export async function getWorkersPage({
  * @returns {Promise<ReturnType<mapWorker>[]>}
  */
 export async function getFavorites({ page = 1, size = 10 } = {}) {
-  const res = await apiFetch(ENDPOINTS.CUSTOMER_FAVORITES(page, size));
-
-  if (!res.ok) {
-    throw new Error(`Favorites fetch failed: ${res.status}`);
-  }
-
-  const json = await res.json();
-  devLog('[getFavorites] /customers/me/favorites response:', json.response_data);
-  return (json.response_data?.items ?? []).map(mapWorker);
+  const data = await request(ENDPOINTS.CUSTOMER_FAVORITES(page, size), {
+    fallbackMessage: 'Sevimlilar yuklanmadi',
+  });
+  devLog('[getFavorites] /customers/me/favorites response:', data);
+  return (data?.items ?? []).map(mapWorker);
 }
 
 /** Sevimli ustalar soni (sahifalashdagi `total`, faqat 1 ta element so'raladi). */
 export async function getFavoritesCount() {
-  const res = await apiFetch(ENDPOINTS.CUSTOMER_FAVORITES(1, 1));
-
-  if (!res.ok) {
-    throw new Error(`Favorites count fetch failed: ${res.status}`);
-  }
-
-  const json = await res.json();
-  return json.response_data?.pagination?.total ?? 0;
+  const data = await request(ENDPOINTS.CUSTOMER_FAVORITES(1, 1), {
+    fallbackMessage: 'Sevimlilar soni yuklanmadi',
+  });
+  return data?.pagination?.total ?? 0;
 }
 
 function mapWorkerCategory(c) {
@@ -164,8 +152,7 @@ function mapSchedule(s) {
 /** Backenddan kelgan worker detail obyektini UI formatiga o'giradi */
 export function mapWorkerDetail(w) {
   const mappedCategories = (w.categories ?? []).map(mapWorkerCategory);
-  const primary =
-    mappedCategories.find((c) => c.isPrimary) ?? mappedCategories[0] ?? null;
+  const primary = mappedCategories.find((c) => c.isPrimary) ?? mappedCategories[0] ?? null;
   const ratingBreakdown = w.rating_breakdown ?? null;
 
   return {
@@ -214,37 +201,31 @@ export function mapWorkerDetail(w) {
  * @returns {Promise<ReturnType<mapWorkerDetail>>}
  */
 export async function getWorkerById(workerId) {
-  const res = await apiFetch(ENDPOINTS.WORKER_DETAIL(workerId));
-
-  if (!res.ok) {
-    throw new Error(`Worker detail fetch failed: ${res.status}`);
-  }
-
-  const json = await res.json();
-  devLog('[getWorkerById] /workers/{id} response:', json.response_data);
-  return mapWorkerDetail(json.response_data);
+  const data = await request(ENDPOINTS.WORKER_DETAIL(workerId), {
+    fallbackMessage: "Usta ma'lumoti yuklanmadi",
+  });
+  devLog('[getWorkerById] /workers/{id} response:', data);
+  return mapWorkerDetail(data);
 }
 
 /**
  * @param {number|string} workerId
  */
 export async function likeWorker(workerId) {
-  const res = await apiFetch(ENDPOINTS.WORKER_LIKE(workerId), { method: 'POST' });
-
-  if (!res.ok) {
-    throw new Error(`Like worker failed: ${res.status}`);
-  }
+  await request(ENDPOINTS.WORKER_LIKE(workerId), {
+    method: 'POST',
+    fallbackMessage: "Sevimlilarga qo'shib bo'lmadi",
+  });
 }
 
 /**
  * @param {number|string} workerId
  */
 export async function unlikeWorker(workerId) {
-  const res = await apiFetch(ENDPOINTS.WORKER_LIKE(workerId), { method: 'DELETE' });
-
-  if (!res.ok) {
-    throw new Error(`Unlike worker failed: ${res.status}`);
-  }
+  await request(ENDPOINTS.WORKER_LIKE(workerId), {
+    method: 'DELETE',
+    fallbackMessage: "Sevimlilardan olib tashlab bo'lmadi",
+  });
 }
 
 /**
@@ -253,13 +234,9 @@ export async function unlikeWorker(workerId) {
  * @returns {Promise<ReturnType<mapCertificate>[]>}
  */
 export async function getWorkerCertificates(workerId, categoryId) {
-  const res = await apiFetch(ENDPOINTS.WORKER_CERTIFICATES(workerId, categoryId));
-
-  if (!res.ok) {
-    throw new Error(`Worker certificates fetch failed: ${res.status}`);
-  }
-
-  const json = await res.json();
-  devLog('[getWorkerCertificates] /workers/{id}/certificates response:', json.response_data);
-  return (json.response_data ?? []).map(mapCertificate);
+  const data = await request(ENDPOINTS.WORKER_CERTIFICATES(workerId, categoryId), {
+    fallbackMessage: 'Sertifikatlar yuklanmadi',
+  });
+  devLog('[getWorkerCertificates] /workers/{id}/certificates response:', data);
+  return (data ?? []).map(mapCertificate);
 }

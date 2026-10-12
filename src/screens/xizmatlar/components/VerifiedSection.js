@@ -14,7 +14,9 @@ export default function VerifiedSection({ verified, onClear, onSelectWorker }) {
     <>
       <View style={styles.verifiedHeader}>
         <Text style={[styles.groupLabel, { marginBottom: 0 }]}>
-          {tr('xizmatlar.browse.verifiedMasters', { count: verified.total ?? verified.items.length })}
+          {tr('xizmatlar.browse.verifiedMasters', {
+            count: verified.total ?? verified.items.length,
+          })}
         </Text>
         <TouchableOpacity onPress={onClear}>
           <Text style={styles.resetLink}>{tr('xizmatlar.browse.clearVerified')}</Text>
@@ -25,7 +27,11 @@ export default function VerifiedSection({ verified, onClear, onSelectWorker }) {
           <AfishLoader size={80} />
         </View>
       ) : verified.items.length > 0 ? (
-        <WorkerList workers={verified.items} onSelect={onSelectWorker} style={{ marginBottom: 22 }} />
+        <WorkerList
+          workers={verified.items}
+          onSelect={onSelectWorker}
+          style={{ marginBottom: 22 }}
+        />
       ) : (
         <EmptyBox text={tr('xizmatlar.browse.verifiedEmpty')} style={{ marginBottom: 22 }} />
       )}

@@ -17,6 +17,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { setPassword } from '../api/user';
 import SuccessModal from '../components/SuccessModal';
+import { getErrorMessage } from '../utils/errors';
 
 const HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 };
 
@@ -34,10 +35,7 @@ function PasswordField({ label, value, onChangeText, placeholder, t, error }) {
     <View style={{ gap: 8 }}>
       <Text style={[s.fieldLabel, { color: t.muted }]}>{label}</Text>
       <View
-        style={[
-          s.inputWrap,
-          { backgroundColor: t.inputBg, borderColor: error ? t.red : t.border },
-        ]}
+        style={[s.inputWrap, { backgroundColor: t.inputBg, borderColor: error ? t.red : t.border }]}
       >
         <Feather name="lock" size={17} color={t.faint} />
         <TextInput
@@ -107,7 +105,7 @@ export default function ChangePasswordScreen({ onBack }) {
       if (e.status === 400 || e.status === 401 || e.status === 403) {
         setCurrentPwError(tr('changePassword.currentPwError'));
       } else {
-        Alert.alert(tr('common.errorTitle'), e.message || tr('changePassword.genericError'));
+        Alert.alert(tr('common.errorTitle'), getErrorMessage(e, tr, 'changePassword.genericError'));
       }
     } finally {
       setLoading(false);
@@ -134,9 +132,7 @@ export default function ChangePasswordScreen({ onBack }) {
           <View style={[s.heroIcon, { backgroundColor: t.blue + '1c' }]}>
             <MaterialCommunityIcons name="shield-lock-outline" size={24} color={t.blue} />
           </View>
-          <Text style={[s.heroText, { color: t.muted }]}>
-            {tr('changePassword.heroText')}
-          </Text>
+          <Text style={[s.heroText, { color: t.muted }]}>{tr('changePassword.heroText')}</Text>
         </View>
 
         <View style={{ gap: 18, marginTop: 20 }}>
@@ -175,10 +171,7 @@ export default function ChangePasswordScreen({ onBack }) {
         </View>
 
         <TouchableOpacity
-          style={[
-            s.submitBtn,
-            { backgroundColor: isReady ? t.orange : t.orange + '55' },
-          ]}
+          style={[s.submitBtn, { backgroundColor: isReady ? t.orange : t.orange + '55' }]}
           activeOpacity={0.85}
           onPress={handleSubmit}
           disabled={!isReady}

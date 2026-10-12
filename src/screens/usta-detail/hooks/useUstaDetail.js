@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import {
   getWorkerById,
   getWorkerCertificates,
@@ -6,73 +7,63 @@ import {
   unlikeWorker,
 } from '../../../api/workers';
 
+const workerKey = (id) => ['worker', id];
+
 // Usta ekranining ma'lumotlari: batafsil profil, tanlangan yo'nalish bo'yicha sertifikatlar
-// va "yoqtirish" (sevimli) holati.
+// va "yoqtirish" (sevimli) holati. Profil va sertifikatlar keshlanadi: ustaga qayta kirilganda
+// darhol ko'rinadi va fonda yangilanadi.
 export default function useUstaDetail(usta) {
-  const [detail, setDetail] = useState(null);
-  const [loadingDetail, setLoadingDetail] = useState(false);
-  const [certificates, setCertificates] = useState([]);
-  const [loadingCertificates, setLoadingCertificates] = useState(false);
-  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
-  const [liked, setLiked] = useState(false);
-  const [likeSubmitting, setLikeSubmitting] = useState(false);
+  const queryClient = useQueryClient();
+  const workerId = usta?.id;
 
-  useEffect(() => {
-    if (!usta?.id) return;
-    let cancelled = false;
-    setLoadingDetail(true);
-    setCertificates([]);
-    getWorkerById(usta.id)
-      .then((data) => {
-        if (!cancelled) {
-          setDetail(data);
-          setLiked(!!data.isLiked);
-          setSelectedCategoryId(data.mainCategoryId ?? null);
-        }
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setLoadingDetail(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [usta?.id]);
+  const detailQuery = useQuery({
+    queryKey: workerKey(workerId),
+    queryFn: () => getWorkerById(workerId),
+    enabled: !!workerId,
+  });
+  const detail = detailQuery.data ?? null;
 
-  useEffect(() => {
-    if (!detail?.id) return;
-    let cancelled = false;
-    setLoadingCertificates(true);
-    getWorkerCertificates(detail.id, selectedCategoryId)
-      .then((data) => {
-        if (!cancelled) setCertificates(data);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setLoadingCertificates(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [detail?.id, selectedCategoryId]);
+  // Foydalanuvchi tanlamaguncha — ustaning asosiy yo'nalishi.
+  const [pickedCategoryId, setSelectedCategoryId] = useState(undefined);
+  const selectedCategoryId =
+    pickedCategoryId !== undefined ? pickedCategoryId : (detail?.mainCategoryId ?? null);
+
+  const certificatesQuery = useQuery({
+    queryKey: [...workerKey(detail?.id), 'certificates', selectedCategoryId],
+    queryFn: () => getWorkerCertificates(detail.id, selectedCategoryId),
+    enabled: !!detail?.id,
+    placeholderData: keepPreviousData,
+  });
 
   // Optimistik: avval holat o'zgaradi, so'rov xato bersa qaytariladi.
+  const [likeOverride, setLikeOverride] = useState(null);
+  const [likeSubmitting, setLikeSubmitting] = useState(false);
+  const liked = likeOverride ?? !!detail?.isLiked;
+
   const toggleLike = () => {
-    const workerId = usta?.id ?? detail?.id;
-    if (!workerId || likeSubmitting) return;
+    const id = workerId ?? detail?.id;
+    if (!id || likeSubmitting) return;
     const next = !liked;
-    setLiked(next);
+    setLikeOverride(next);
     setLikeSubmitting(true);
-    (next ? likeWorker(workerId) : unlikeWorker(workerId))
-      .catch(() => setLiked(!next))
-      .finally(() => setLikeSubmitting(false));
+    (next ? likeWorker(id) : unlikeWorker(id))
+      .then(() => {
+        // Keshdagi profil ham yangi holatni bilsin (ustaga qaytganda eski belgi chiqmasin).
+        queryClient.setQueryData(workerKey(id), (d) => (d ? { ...d, isLiked: next } : d));
+      })
+      .catch(() => setLikeOverride(!next))
+      .finally(() => {
+        setLikeSubmitting(false);
+        // Bosh sahifadagi sevimlilar va profildagi son yangilansin.
+        queryClient.invalidateQueries({ queryKey: ['favorites'] });
+      });
   };
 
   return {
     detail,
-    loadingDetail,
-    certificates,
-    loadingCertificates,
+    loadingDetail: detailQuery.isLoading,
+    certificates: certificatesQuery.data ?? [],
+    loadingCertificates: certificatesQuery.isFetching,
     selectedCategoryId,
     setSelectedCategoryId,
     liked,

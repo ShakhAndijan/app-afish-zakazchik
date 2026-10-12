@@ -1,5 +1,5 @@
 import { ENDPOINTS } from '../constants/config';
-import { apiFetch } from '../utils/apiClient';
+import { request } from '../utils/request';
 import { uploadImageToPresignedUrl } from './auth';
 
 // Backend faqat shu turlarni qabul qiladi (POST /api/v1/orders/upload-url).
@@ -13,7 +13,11 @@ const EXT_TO_TYPE = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', w
 export function resolvePhotoContentType(uri, mimeType) {
   const mime = mimeType === 'image/jpg' ? 'image/jpeg' : mimeType;
   if (mime && ALLOWED_PHOTO_TYPES.includes(mime)) return mime;
-  const ext = String(uri || '').split('?')[0].split('.').pop().toLowerCase();
+  const ext = String(uri || '')
+    .split('?')[0]
+    .split('.')
+    .pop()
+    .toLowerCase();
   return EXT_TO_TYPE[ext] || null;
 }
 
@@ -21,23 +25,12 @@ export function resolvePhotoContentType(uri, mimeType) {
  * Buyurtma rasmi uchun bitta presigned URL so'raydi (har bir rasmga alohida).
  * @returns {Promise<{ upload_url: string, temp_key: string, expires_in: number }>}
  */
-export async function requestOrderPhotoUpload(contentType) {
-  const res = await apiFetch(ENDPOINTS.ORDER_UPLOAD_URL, {
+export const requestOrderPhotoUpload = (contentType) =>
+  request(ENDPOINTS.ORDER_UPLOAD_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content_type: contentType }),
+    body: { content_type: contentType },
+    fallbackMessage: 'Rasm yuklash manzili olinmadi',
   });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    const e = new Error(err.message || `Rasm yuklash URL'i olinmadi: ${res.status}`);
-    e.status = res.status;
-    throw e;
-  }
-
-  const json = await res.json();
-  return json.response_data;
-}
 
 /**
  * Bitta rasmni presigned URL orqali yuklab, `photo_temp_keys`ga qo'yiladigan
@@ -58,7 +51,6 @@ export async function uploadOrderPhoto(uri, mimeType) {
 // ─── Buyurtmalar tarixi ──────────────────────────────────────────
 
 const AVATAR_COLORS = ['#2fa37a', '#e87a45', '#3f7fd4', '#ec4899', '#8b5cf6', '#f5c451', '#06b6d4'];
-const REQUEST_TIMEOUT_MS = 15000;
 const PAGE_SIZE = 100; // backend maksimumi
 const MAX_PAGES = 5;
 
@@ -76,22 +68,7 @@ const toNumber = (v) => {
   return Number.isFinite(n) ? n : null;
 };
 
-async function getJson(url, errorLabel) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-  try {
-    const res = await apiFetch(url, { signal: controller.signal });
-    if (!res.ok) {
-      const e = new Error(`${errorLabel}: ${res.status}`);
-      e.status = res.status;
-      throw e;
-    }
-    const json = await res.json();
-    return json.response_data;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
+const getJson = (url, errorLabel) => request(url, { fallbackMessage: errorLabel });
 
 /**
  * Backenddagi OrderOut / OrderDetailOut obyektini UI formatiga o'giradi.
@@ -179,60 +156,26 @@ const PAYMENT_STATE_TO_UI = { paid: 'paid', refunded: 'refunded' };
 export async function getOrderDetail(orderId) {
   const [detail, payment] = await Promise.all([
     getJson(ENDPOINTS.ORDER_DETAIL(orderId), 'Buyurtma yuklanmadi'),
-    getJson(ENDPOINTS.ORDER_PAYMENT(orderId), 'To\'lov yuklanmadi').catch(() => null),
+    getJson(ENDPOINTS.ORDER_PAYMENT(orderId), "To'lov yuklanmadi").catch(() => null),
   ]);
   const order = mapOrder(detail);
   order.paymentStatus = PAYMENT_STATE_TO_UI[payment?.state] || 'not_charged';
   return order;
 }
 
-export async function createOrder(payload, idempotencyKey) {
-  const res = await apiFetch(ENDPOINTS.ORDERS, {
+// 422 validatsiya xatolarining maydon nomlari ApiError xabariga request() ichida qo'shiladi.
+export const createOrder = (payload, idempotencyKey) =>
+  request(ENDPOINTS.ORDERS, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
-    },
-    body: JSON.stringify(payload),
+    headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
+    body: payload,
+    fallbackMessage: 'Buyurtma yuborishda xatolik yuz berdi',
   });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    // FastAPI 422 validatsiya xatolari odatda `detail` massivida keladi —
-    // shu tafsilotlarni ko'rsatish sabab-oqibatni tezroq topishga yordam beradi.
-    const detailMsg = Array.isArray(err.detail)
-      ? err.detail.map((d) => `${(d.loc || []).slice(-1)[0]}: ${d.msg}`).join('; ')
-      : err.detail;
-    const e = new Error(err.message || detailMsg || 'Buyurtma yuborishda xatolik yuz berdi');
-    e.status = res.status;
-    throw e;
-  }
-
-  const json = await res.json();
-  return json.response_data;
-}
 
 // ─── Kelishuv: chat, narx taklifi, kelishish, bekor qilish ───────────
 
-async function postJson(url, body, fallbackMessage) {
-  const res = await apiFetch(url, {
-    method: 'POST',
-    ...(body !== undefined
-      ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
-      : {}),
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const detailMsg = Array.isArray(json.detail)
-      ? json.detail.map((d) => d.msg).join('; ')
-      : json.detail;
-    const e = new Error(json.message || detailMsg || fallbackMessage);
-    e.status = res.status;
-    e.code = json.code ?? null;
-    throw e;
-  }
-  return json.response_data;
-}
+const postJson = (url, body, fallbackMessage) =>
+  request(url, { method: 'POST', body, fallbackMessage });
 
 // Chat xabari: sender_type 'customer' — mijozning o'zi (bu ilova mijoz uchun).
 function mapChatMessage(m) {

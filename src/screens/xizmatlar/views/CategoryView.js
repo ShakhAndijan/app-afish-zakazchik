@@ -38,7 +38,11 @@ export default function CategoryView({
   const mastersCount = !minExp && total != null ? total : results.length;
 
   return (
-    <ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: bottomSpace }} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.body}
+      contentContainerStyle={{ paddingBottom: bottomSpace }}
+      showsVerticalScrollIndicator={false}
+    >
       <View>
         <CategoryHero category={category} mastersCount={mastersCount} searchRow={searchRow} />
 
@@ -48,14 +52,20 @@ export default function CategoryView({
           </View>
         ) : (
           <>
-            {results.length > 0 && <CategoryStatsCard mastersCount={mastersCount} workers={results} />}
+            {results.length > 0 && (
+              <CategoryStatsCard mastersCount={mastersCount} workers={results} />
+            )}
 
             {results.length > 0 ? (
               <WorkerList workers={results} onSelect={onSelectWorker} />
             ) : (
               <EmptyBox
                 style={{ marginTop: 16 }}
-                text={query.trim() ? tr('xizmatlar.detail.noMastersFound') : tr('xizmatlar.detail.noMastersYet')}
+                text={
+                  query.trim()
+                    ? tr('xizmatlar.detail.noMastersFound')
+                    : tr('xizmatlar.detail.noMastersYet')
+                }
               >
                 <TouchableOpacity onPress={onBack}>
                   <Text style={styles.resetLink}>{tr('xizmatlar.detail.chooseAnother')}</Text>

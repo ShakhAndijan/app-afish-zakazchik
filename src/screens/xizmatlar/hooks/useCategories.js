@@ -1,27 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
-import { getCategories } from '../../../api/categories';
+import { useMemo } from 'react';
+import { useCategoriesQuery } from '../../../queries/categories';
 import { CATEGORY_ACCENT } from '../constants';
 
 // Yo'nalishlar ro'yxati (GET /categories). `categories` — kartochkaga tayyor ko'rinishda,
 // `popular` — ustasi bor yo'nalishlar, ustalar soni bo'yicha kamayish tartibida.
 export default function useCategories() {
-  const [raw, setRaw] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    getCategories()
-      .then((data) => {
-        if (!cancelled) setRaw(data);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { categories: raw, loading } = useCategoriesQuery();
 
   const categories = useMemo(
     () =>

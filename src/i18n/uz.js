@@ -19,6 +19,11 @@ export const uz = {
     yes: 'Ha',
     no: "Yo'q",
   },
+  errors: {
+    network: "Internet bilan aloqa yo'q",
+    timeout: "Server javob bermadi, qayta urinib ko'ring",
+    server: "Serverda xatolik yuz berdi, birozdan so'ng urinib ko'ring",
+  },
   bottomNav: {
     home: 'Asosiy',
     newOrder: 'Yangi buyurtma',

@@ -16,7 +16,14 @@ export const SEASONS = {
   },
   autumn: {
     months: [8, 9, 10],
-    match: [/isitish/i, /elektrik/i, /santexnik/i, /ta.?mirlash/i, /avtomobil/i, /tozalik|tozalash/i],
+    match: [
+      /isitish/i,
+      /elektrik/i,
+      /santexnik/i,
+      /ta.?mirlash/i,
+      /avtomobil/i,
+      /tozalik|tozalash/i,
+    ],
   },
 };
 

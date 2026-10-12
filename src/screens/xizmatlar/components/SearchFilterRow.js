@@ -28,8 +28,18 @@ export default function SearchFilterRow({
           <Feather name="chevron-left" size={18} color="#fff" />
         </TouchableOpacity>
       )}
-      <View style={[styles.searchBox, embedded && styles.searchBoxOnHero, focused && styles.searchBoxFocused]}>
-        <Feather name="search" size={17} color={focused ? t.orange : embedded ? onHeroTint : t.faint} />
+      <View
+        style={[
+          styles.searchBox,
+          embedded && styles.searchBoxOnHero,
+          focused && styles.searchBoxFocused,
+        ]}
+      >
+        <Feather
+          name="search"
+          size={17}
+          color={focused ? t.orange : embedded ? onHeroTint : t.faint}
+        />
         <TextInput
           style={styles.searchInput}
           value={query}

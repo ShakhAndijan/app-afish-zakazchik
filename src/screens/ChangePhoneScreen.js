@@ -17,6 +17,7 @@ import PhoneInput from '../components/login/PhoneInput';
 import { requestChangePhoneOtp, verifyChangePhoneOtp } from '../api/user';
 import SuccessModal from '../components/SuccessModal';
 import OtpInput from '../components/login/OtpInput';
+import { getErrorMessage } from '../utils/errors';
 
 const formatPhone = (raw = '') => {
   const d = raw.replace(/\D/g, '').slice(0, 9);
@@ -65,7 +66,7 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
       setTimer(60);
       setStep('otp');
     } catch (e) {
-      setSendError(e.message || tr('changePhone.sendError'));
+      setSendError(getErrorMessage(e, tr, 'changePhone.sendError'));
     } finally {
       setSending(false);
     }
@@ -79,7 +80,7 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
       setCode('');
       setTimer(60);
     } catch (e) {
-      Alert.alert(tr('common.errorTitle'), e.message || tr('changePhone.sendError'));
+      Alert.alert(tr('common.errorTitle'), getErrorMessage(e, tr, 'changePhone.sendError'));
     } finally {
       setResending(false);
     }
@@ -93,7 +94,7 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
       await verifyChangePhoneOtp(fullPhone(), code);
       setShowSuccess(true);
     } catch (e) {
-      setConfirmError(e.message || tr('changePhone.codeError'));
+      setConfirmError(getErrorMessage(e, tr, 'changePhone.codeError'));
     } finally {
       setVerifying(false);
     }
@@ -116,20 +117,24 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
         </Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={s.scroll}
+        keyboardShouldPersistTaps="handled"
+      >
         {step === 'input' ? (
           <>
             <View style={[s.hero, { backgroundColor: t.card, borderColor: t.border }]}>
               <View style={[s.heroIcon, { backgroundColor: t.blue + '1c' }]}>
                 <MaterialCommunityIcons name="phone-check-outline" size={24} color={t.blue} />
               </View>
-              <Text style={[s.heroText, { color: t.muted }]}>
-                {tr('changePhone.heroText')}
-              </Text>
+              <Text style={[s.heroText, { color: t.muted }]}>{tr('changePhone.heroText')}</Text>
             </View>
 
             <View style={{ marginTop: 20, gap: 8 }}>
-              <Text style={[s.fieldLabel, { color: t.muted }]}>{tr('changePhone.currentLabel')}</Text>
+              <Text style={[s.fieldLabel, { color: t.muted }]}>
+                {tr('changePhone.currentLabel')}
+              </Text>
               <View style={[s.currentRow, { backgroundColor: t.inputBg, borderColor: t.border }]}>
                 <MaterialCommunityIcons name="phone-outline" size={17} color={t.faint} />
                 <Text style={[s.currentText, { color: t.text }]}>{currentPhone}</Text>
@@ -139,9 +144,7 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
             <View style={{ marginTop: 18, gap: 8 }}>
               <Text style={[s.fieldLabel, { color: t.muted }]}>{tr('changePhone.newLabel')}</Text>
               <PhoneInput value={phone} onChangeText={setPhone} theme={t} />
-              {!!sendError && (
-                <Text style={[s.errorText, { color: t.red }]}>{sendError}</Text>
-              )}
+              {!!sendError && <Text style={[s.errorText, { color: t.red }]}>{sendError}</Text>}
             </View>
 
             <TouchableOpacity
@@ -160,8 +163,17 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
         ) : (
           <>
             <View style={s.otpHero}>
-              <View style={[s.heroIcon, { backgroundColor: t.green + '1c', width: 64, height: 64, borderRadius: 18 }]}>
-                <MaterialCommunityIcons name="message-processing-outline" size={28} color={t.green} />
+              <View
+                style={[
+                  s.heroIcon,
+                  { backgroundColor: t.green + '1c', width: 64, height: 64, borderRadius: 18 },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="message-processing-outline"
+                  size={28}
+                  color={t.green}
+                />
               </View>
               <Text style={[s.otpTitle, { color: t.text }]}>{tr('changePhone.smsSentTitle')}</Text>
               <Text style={[s.otpSubtitle, { color: t.muted }]}>
@@ -195,7 +207,8 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
 
             {!!devCode && (
               <Text style={[s.devCode, { color: t.muted }]}>
-                {tr('changePhone.devCode')} <Text style={{ color: t.orange, fontWeight: '700' }}>{devCode}</Text>
+                {tr('changePhone.devCode')}{' '}
+                <Text style={{ color: t.orange, fontWeight: '700' }}>{devCode}</Text>
               </Text>
             )}
 
@@ -217,7 +230,10 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
             </Text>
 
             <TouchableOpacity
-              style={[s.submitBtn, { backgroundColor: isCodeReady ? t.orange : t.orange + '55', marginTop: 8 }]}
+              style={[
+                s.submitBtn,
+                { backgroundColor: isCodeReady ? t.orange : t.orange + '55', marginTop: 8 },
+              ]}
               activeOpacity={0.85}
               onPress={handleConfirm}
               disabled={!isCodeReady}

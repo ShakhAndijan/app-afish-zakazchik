@@ -9,9 +9,20 @@ export default function FilterPanel({ filters, inCategory }) {
   const { t: tr } = useLanguage();
   const { t, styles } = useXizmatlarStyles();
   const {
-    sort, setSort, minExp, setMinExp, minRating, setMinRating,
-    region, district, selectedRegion, selectedDistrict, setPickerFor,
-    certifiedOnly, setCertifiedOnly, reset,
+    sort,
+    setSort,
+    minExp,
+    setMinExp,
+    minRating,
+    setMinRating,
+    region,
+    district,
+    selectedRegion,
+    selectedDistrict,
+    setPickerFor,
+    certifiedOnly,
+    setCertifiedOnly,
+    reset,
   } = filters;
 
   return (
@@ -56,7 +67,9 @@ export default function FilterPanel({ filters, inCategory }) {
                 style={[styles.chipPill, minRating === r.key && styles.chipPillActive]}
                 onPress={() => setMinRating(minRating === r.key ? null : r.key)}
               >
-                <Text style={[styles.chipPillLabel, minRating === r.key && styles.chipPillLabelActive]}>
+                <Text
+                  style={[styles.chipPillLabel, minRating === r.key && styles.chipPillLabelActive]}
+                >
                   ★ {r.label}
                 </Text>
               </TouchableOpacity>
@@ -65,7 +78,11 @@ export default function FilterPanel({ filters, inCategory }) {
 
           <Text style={styles.filterSectionLabel}>{tr('xizmatlar.filters.region')}</Text>
           <View style={{ gap: 8, marginBottom: 12 }}>
-            <TouchableOpacity style={styles.selectRow} onPress={() => setPickerFor('region')} activeOpacity={0.8}>
+            <TouchableOpacity
+              style={styles.selectRow}
+              onPress={() => setPickerFor('region')}
+              activeOpacity={0.8}
+            >
               <Feather name="map-pin" size={14} color={t.muted} />
               <Text style={[styles.selectRowText, region && styles.selectRowTextActive]}>
                 {selectedRegion ? selectedRegion.name : tr('xizmatlar.filters.regionSelect')}

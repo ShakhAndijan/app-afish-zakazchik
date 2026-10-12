@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { View, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -9,7 +9,8 @@ import LocationMapPicker from '../components/LocationMapPicker';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useUser } from '../context/UserContext';
-import { getCategories } from '../api/categories';
+import { useCategoriesQuery } from '../queries/categories';
+import { useQueryClient } from '@tanstack/react-query';
 import { createOrder } from '../api/orders';
 import { stripCountryCode } from './new-order/utils';
 import buildOrderPayload from './new-order/buildOrderPayload';
@@ -33,6 +34,7 @@ import SubmitButton from './new-order/sections/SubmitButton';
 import useOrderPhotos from './new-order/hooks/useOrderPhotos';
 import useOrderLocation from './new-order/hooks/useOrderLocation';
 import useTabBarSpace from '../navigation/useTabBarSpace';
+import { getErrorMessage } from '../utils/errors';
 
 // `onBack` berilsa (masalan usta profilidan ochilganda) tepada orqaga tugmasi chiqadi va
 // pastki menyu uchun joy qoldirilmaydi.
@@ -45,7 +47,6 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
   const { user } = useUser();
 
   const [orderWorker, setOrderWorker] = useState(targetWorker || null);
-  const [categories, setCategories] = useState([]);
   const [categoryIds, setCategoryIds] = useState(
     targetWorker?.categoryId ? [targetWorker.categoryId] : []
   );
@@ -92,11 +93,8 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
     autoSelectLocation,
   } = useOrderLocation();
 
-  useEffect(() => {
-    getCategories()
-      .then(setCategories)
-      .catch(() => {});
-  }, []);
+  const { categories } = useCategoriesQuery();
+  const queryClient = useQueryClient();
 
   const toggleCategory = (id) => {
     setCategoryIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -196,6 +194,10 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
       }
 
       const created = await createOrder(payload, idempotencyKeyRef.current);
+      // Yangi buyurtma ro'yxatda, bosh sahifada va profil sonida ko'rinsin.
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['home', 'summary'] });
+      queryClient.invalidateQueries({ queryKey: ['customer', 'me'] });
       setReviewOpen(false);
       onOrderCreated?.({
         id: created?.id ?? null,
@@ -204,7 +206,7 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
         raw: created,
       });
     } catch (err) {
-      Alert.alert(tr('newOrder.submitErrorTitle'), err?.message || tr('common.error'));
+      Alert.alert(tr('newOrder.submitErrorTitle'), getErrorMessage(err, tr, 'common.error'));
     } finally {
       setSubmitting(false);
     }

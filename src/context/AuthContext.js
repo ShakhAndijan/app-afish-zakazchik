@@ -1,7 +1,10 @@
-import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
 import useAuthGate from '../hooks/useAuthGate';
 import { clearTokens } from '../utils/token';
+import { setSessionExpiredHandler } from '../utils/apiClient';
+import { revokeSession } from '../api/auth';
 import { clearCachedUser } from './UserContext';
+import { queryClient } from '../queries/client';
 
 const AuthContext = createContext({
   signedIn: false,
@@ -22,11 +25,26 @@ export function AuthProvider({ children }) {
 
   const signIn = useCallback(() => setSignedIn(true), []);
 
-  const signOut = useCallback(async () => {
+  const endSession = useCallback(async () => {
     await clearTokens();
     await clearCachedUser();
+    // Oldingi foydalanuvchining keshlangan ma'lumoti keyingisiga ko'rinmasin.
+    queryClient.clear();
     setSignedIn(false);
   }, []);
+
+  // Foydalanuvchi o'zi chiqadi: refresh token serverda ham bekor qilinadi.
+  const signOut = useCallback(async () => {
+    await revokeSession();
+    await endSession();
+  }, [endSession]);
+
+  // Refresh token ham yaroqsiz bo'lsa (muddati tugagan yoki boshqa qurilmadan bekor qilingan),
+  // sessiya jimgina tugatiladi va foydalanuvchi kirish ekraniga qaytadi.
+  useEffect(() => {
+    setSessionExpiredHandler(endSession);
+    return () => setSessionExpiredHandler(null);
+  }, [endSession]);
 
   const value = useMemo(
     () => ({
@@ -39,7 +57,16 @@ export function AuthProvider({ children }) {
       signIn,
       signOut,
     }),
-    [signedIn, gate.authChecked, gate.locked, gate.unlocking, gate.retryUnlock, gate.abandonSession, signIn, signOut]
+    [
+      signedIn,
+      gate.authChecked,
+      gate.locked,
+      gate.unlocking,
+      gate.retryUnlock,
+      gate.abandonSession,
+      signIn,
+      signOut,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -19,6 +19,11 @@ export const en = {
     yes: 'Yes',
     no: 'No',
   },
+  errors: {
+    network: 'No internet connection',
+    timeout: 'The server did not respond, please try again',
+    server: 'Server error, please try again later',
+  },
   bottomNav: {
     home: 'Home',
     newOrder: 'New order',

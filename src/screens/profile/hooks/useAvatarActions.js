@@ -5,6 +5,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { useUser } from '../../../context/UserContext';
 import { getAvatarUploadUrl, confirmAvatar, deleteAvatar } from '../../../api/user';
 import { uploadImageToPresignedUrl } from '../../../api/auth';
+import { getErrorMessage } from '../../../utils/errors';
 
 // Galereya yoki kameradan kvadrat rasm tanlaydi; tanlansa onPicked(uri, mimeType) chaqiriladi.
 async function pickImage(source, onPicked, tr) {
@@ -49,7 +50,10 @@ export default function useAvatarActions() {
       setPreviewUri(null);
     } catch (e) {
       setPreviewUri(null);
-      Alert.alert(tr('common.errorTitle'), e.message || tr('profile.errors.avatarUploadFailed'));
+      Alert.alert(
+        tr('common.errorTitle'),
+        getErrorMessage(e, tr, 'profile.errors.avatarUploadFailed')
+      );
     } finally {
       setUploading(false);
     }
@@ -73,7 +77,10 @@ export default function useAvatarActions() {
       await deleteAvatar();
       await refreshUser();
     } catch (e) {
-      Alert.alert(tr('common.errorTitle'), e.message || tr('profile.errors.avatarDeleteFailed'));
+      Alert.alert(
+        tr('common.errorTitle'),
+        getErrorMessage(e, tr, 'profile.errors.avatarDeleteFailed')
+      );
     } finally {
       setUploading(false);
     }

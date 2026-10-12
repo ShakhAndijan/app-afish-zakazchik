@@ -45,7 +45,11 @@ export default function BrowseView({
     <>
       {searchRow}
 
-      <ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: bottomSpace }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.body}
+        contentContainerStyle={{ paddingBottom: bottomSpace }}
+        showsVerticalScrollIndicator={false}
+      >
         <View>
           <Text style={styles.sectionTitle}>{tr('xizmatlar.browse.title')}</Text>
           <Text style={styles.sectionSubtitle}>{tr('xizmatlar.browse.subtitle')}</Text>
@@ -55,7 +59,11 @@ export default function BrowseView({
               {FEATURES.overallStats && <OverallStats stats={overallStats} />}
 
               {certifiedOnly && (
-                <VerifiedSection verified={verified} onClear={onClearVerified} onSelectWorker={onSelectWorker} />
+                <VerifiedSection
+                  verified={verified}
+                  onClear={onClearVerified}
+                  onSelectWorker={onSelectWorker}
+                />
               )}
 
               {seasonal.length > 0 && (
@@ -72,7 +80,9 @@ export default function BrowseView({
           )}
 
           <Text style={styles.groupLabel}>
-            {searching ? tr('xizmatlar.browse.searchResults') : tr('xizmatlar.browse.allDirections')}
+            {searching
+              ? tr('xizmatlar.browse.searchResults')
+              : tr('xizmatlar.browse.allDirections')}
           </Text>
           {categoriesLoading ? (
             <View style={{ paddingVertical: 40, alignItems: 'center' }}>

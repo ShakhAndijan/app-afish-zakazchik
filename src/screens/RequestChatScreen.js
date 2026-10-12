@@ -22,6 +22,7 @@ import usePolling from './requests/hooks/usePolling';
 import useLiveOrder from './requests/hooks/useLiveOrder';
 import useOrderActions, { parsePrice } from './requests/hooks/useOrderActions';
 import { clockLabel, formatPrice } from './requests/utils';
+import { getErrorMessage } from '../utils/errors';
 
 const CHAT_POLL_MS = 5000;
 
@@ -68,7 +69,7 @@ export default function RequestChatScreen({ orderId, onBack }) {
       setChat(await sendOrderChat(orderId, body));
       setText('');
     } catch (e) {
-      Alert.alert(tr('common.errorTitle'), e?.message || tr('requests.actionFailed'));
+      Alert.alert(tr('common.errorTitle'), getErrorMessage(e, tr, 'requests.actionFailed'));
     } finally {
       setSending(false);
     }
@@ -79,7 +80,10 @@ export default function RequestChatScreen({ orderId, onBack }) {
   const canSend = chat ? chat.canSend : true;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: t.bg }}
+      edges={['top', 'left', 'right', 'bottom']}
+    >
       <StatusBar style={t.isDark ? 'light' : 'dark'} />
 
       <View style={[s.header, { borderBottomColor: t.border }]}>
@@ -117,7 +121,9 @@ export default function RequestChatScreen({ orderId, onBack }) {
                   : tr('requests.offerFromMe')}
             </Text>
             {order.offerPrice != null && (
-              <Text style={[s.priceValue, { color: t.orange }]}>{formatPrice(tr, order.offerPrice)}</Text>
+              <Text style={[s.priceValue, { color: t.orange }]}>
+                {formatPrice(tr, order.offerPrice)}
+              </Text>
             )}
           </View>
           <TouchableOpacity
@@ -163,7 +169,10 @@ export default function RequestChatScreen({ orderId, onBack }) {
         {canSend ? (
           <View style={[s.inputRow, { borderTopColor: t.border, backgroundColor: t.bg }]}>
             <TextInput
-              style={[s.input, { backgroundColor: t.inputBg, color: t.text, borderColor: t.border }]}
+              style={[
+                s.input,
+                { backgroundColor: t.inputBg, color: t.text, borderColor: t.border },
+              ]}
               value={text}
               onChangeText={setText}
               placeholder={tr('requests.chatPlaceholder')}
@@ -219,7 +228,11 @@ function MessageBubble({ message: m, t, tr }) {
       <View
         style={[
           s.offer,
-          { alignSelf: mine ? 'flex-end' : 'flex-start', backgroundColor: t.card, borderColor: t.orange },
+          {
+            alignSelf: mine ? 'flex-end' : 'flex-start',
+            backgroundColor: t.card,
+            borderColor: t.orange,
+          },
         ]}
       >
         <Text style={[s.offerLabel, { color: t.muted }]}>{tr('requests.offerBubble')}</Text>
@@ -307,6 +320,12 @@ const s = StyleSheet.create({
     paddingBottom: 11,
     fontSize: 14.5,
   },
-  sendBtn: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  sendBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   closed: { textAlign: 'center', fontSize: 12.5, paddingVertical: 14, borderTopWidth: 1 },
 });

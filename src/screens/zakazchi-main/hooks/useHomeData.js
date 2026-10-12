@@ -1,10 +1,12 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { getCategories } from '../../../api/categories';
+import { useState, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { categoriesQuery } from '../../../queries/categories';
 import { getWorkers, getFavorites } from '../../../api/workers';
 import { getTopOrders, getTopComments } from '../../../api/reviews';
 import { getSystemStats } from '../../../api/stats';
 import { getRecentOrders } from '../../../api/orders';
-import { devLog } from '../../../utils/log';
+
+const MIN = 60 * 1000;
 
 // Mijozning shaxsiy xulosasi: faol buyurtmalar va qayta buyurtma berish mumkin bo'lgan
 // oxirgi bajarilgan buyurtma. Buyurtmalar ro'yxati olinmasa ham xato emas — bo'sh xulosa.
@@ -16,134 +18,99 @@ async function loadSummary() {
   };
 }
 
-// Har bir bo'lim: { data: null | ma'lumot, loading, error }
+// Har bir bo'lim ekranga { data: null | ma'lumot, loading, error } ko'rinishida beriladi:
 //  - data === null  → hali birorta muvaffaqiyatli javob kelmagan
+//  - loading        → ko'rsatadigan ma'lumot yo'q va so'rov ketmoqda (qayta urinishda ham)
 //  - error          → so'rov xato bergan va ko'rsatadigan ma'lumot yo'q
-const idle = () => ({ data: null, loading: true, error: false });
+// Fon rejimidagi yangilanish xato bersa, eski ma'lumot saqlanadi.
+function toSection(q) {
+  const noData = q.data === undefined;
+  return {
+    data: q.data ?? null,
+    loading: noData && (q.isPending || q.isFetching),
+    error: noData && q.isError && !q.isFetching,
+  };
+}
 
-// Bosh sahifa ma'lumotlari: har bir bo'lim mustaqil yuklanadi — biri xato bersa,
-// qolganlari baribir o'z holatini yangilaydi.
+// Bosh sahifa ma'lumotlari: har bir bo'lim mustaqil so'rov — biri xato bersa, qolganlari
+// baribir o'z holatini yangilaydi. Kesh va qayta yuklash React Query'da.
 export default function useHomeData() {
-  const [categories, setCategories] = useState(idle);
-  const [workers, setWorkers] = useState(idle);
-  const [works, setWorks] = useState(idle);
-  const [favorites, setFavorites] = useState(idle);
-  const [stats, setStats] = useState(idle);
-  const [reviews, setReviews] = useState(idle);
-  const [summary, setSummary] = useState(idle);
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const mountedRef = useRef(true);
-  // Yangilash (pull-to-refresh) ham tanlangan kategoriyani hisobga olishi uchun
-  const categoryRef = useRef(null);
-  // Kategoriya tez-tez almashtirilganda eski javob yangisini bosib ketmasin
-  const workersReqRef = useRef(0);
-
-  // silent: true — fon rejimida yangilash (mavjud ma'lumot yo'qolmaydi, xato bo'lsa
-  // eski ma'lumot saqlanadi). false — foydalanuvchi harakati: loader ko'rsatiladi,
-  // xato bo'lsa xato holati chiqadi.
-  const loadSection = useCallback((name, setState, fetcher, { silent = false, isStale } = {}) => {
-    setState((prev) =>
-      silent && prev.data !== null ? prev : { ...prev, loading: true, error: false }
-    );
-    return fetcher()
-      .then((data) => {
-        if (!mountedRef.current || isStale?.()) return;
-        setState({ data, loading: false, error: false });
-      })
-      .catch((err) => {
-        devLog(`[home] ${name} error:`, err?.message ?? err);
-        if (!mountedRef.current || isStale?.()) return;
-        setState((prev) =>
-          silent && prev.data !== null
-            ? { ...prev, loading: false }
-            : { ...prev, loading: false, error: true }
-        );
-      });
-  }, []);
-
-  const loadWorkers = useCallback(
-    ({ silent = false } = {}) => {
-      const id = ++workersReqRef.current;
-      return loadSection(
-        'workers',
-        setWorkers,
-        () => getWorkers({ page: 1, size: 5, categoryId: categoryRef.current }),
-        { silent, isStale: () => id !== workersReqRef.current }
-      );
-    },
-    [loadSection]
-  );
-
-  const sourcesRef = useRef({
-    categories: [setCategories, () => getCategories()],
-    works: [setWorks, () => getTopOrders({ limit: 10 })],
-    favorites: [setFavorites, () => getFavorites({ page: 1, size: 10 })],
-    stats: [setStats, () => getSystemStats()],
-    reviews: [setReviews, () => getTopComments({ limit: 10 })],
-    summary: [setSummary, loadSummary],
+  const categories = useQuery(categoriesQuery);
+  // Kategoriya almashganda kalit o'zgaradi: yangi ro'yxat yuklanguncha loader ko'rinadi.
+  const workers = useQuery({
+    queryKey: ['workers', 'top', selectedCategoryId],
+    queryFn: () => getWorkers({ page: 1, size: 5, categoryId: selectedCategoryId }),
+  });
+  const works = useQuery({
+    queryKey: ['home', 'works'],
+    queryFn: () => getTopOrders({ limit: 10 }),
+    staleTime: 5 * MIN,
+  });
+  const favorites = useQuery({
+    queryKey: ['favorites', 'home'],
+    queryFn: () => getFavorites({ page: 1, size: 10 }),
+  });
+  const stats = useQuery({
+    queryKey: ['home', 'stats'],
+    queryFn: async () => (await getSystemStats()) ?? null,
+    staleTime: 10 * MIN,
+  });
+  const reviews = useQuery({
+    queryKey: ['home', 'reviews'],
+    queryFn: () => getTopComments({ limit: 10 }),
+    staleTime: 5 * MIN,
+  });
+  // Faol buyurtmalar tez o'zgaradi: har safar bosh sahifa ochilganda/qaytilganda yangilanadi.
+  const summary = useQuery({
+    queryKey: ['home', 'summary'],
+    queryFn: loadSummary,
+    staleTime: 0,
   });
 
-  const loadAll = useCallback(
-    () =>
-      Promise.allSettled([
-        ...Object.entries(sourcesRef.current).map(([name, [setState, fetcher]]) =>
-          loadSection(name, setState, fetcher, { silent: true })
-        ),
-        loadWorkers({ silent: true }),
-      ]),
-    [loadSection, loadWorkers]
-  );
+  const queries = { categories, workers, works, favorites, stats, reviews, summary };
 
-  useEffect(() => {
-    mountedRef.current = true;
-    loadAll();
-    return () => {
-      mountedRef.current = false;
-    };
-  }, [loadAll]);
-
+  // Pull-to-refresh: kesh yangi bo'lsa ham hamma bo'lim qayta olinadi.
   const refresh = useCallback(() => {
     setRefreshing(true);
-    return loadAll().finally(() => setRefreshing(false));
-  }, [loadAll]);
+    return Promise.allSettled(Object.values(queries).map((q) => q.refetch())).finally(() =>
+      setRefreshing(false)
+    );
+    // refetch funksiyalari barqaror; queries obyekti har renderda yangi.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    categories.refetch,
+    workers.refetch,
+    works.refetch,
+    favorites.refetch,
+    stats.refetch,
+    reviews.refetch,
+    summary.refetch,
+  ]);
 
   // Foydalanuvchi xato bergan bo'limni qayta yuklaydi
-  const retry = useCallback(
-    (name) => {
-      if (name === 'workers') return loadWorkers();
-      const [setState, fetcher] = sourcesRef.current[name];
-      return loadSection(name, setState, fetcher);
-    },
-    [loadSection, loadWorkers]
-  );
+  const retry = (name) => queries[name]?.refetch();
 
-  const selectCategory = useCallback(
-    (id) => {
-      categoryRef.current = id;
-      setSelectedCategoryId(id);
-      loadWorkers();
-    },
-    [loadWorkers]
-  );
-
-  // Bosh sahifaga qaytilganda shaxsiy xulosa (faol buyurtmalar) jimgina yangilanadi.
-  const refreshSummary = useCallback(
-    () => loadSection('summary', setSummary, loadSummary, { silent: true }),
-    [loadSection]
-  );
-
-  const sections = { categories, workers, works, favorites, stats, reviews, summary };
+  const sections = {
+    categories: toSection(categories),
+    workers: toSection(workers),
+    works: toSection(works),
+    favorites: toSection(favorites),
+    stats: toSection(stats),
+    reviews: toSection(reviews),
+    summary: toSection(summary),
+  };
   const all = Object.values(sections);
 
   return {
     ...sections,
     selectedCategoryId,
-    selectCategory,
+    selectCategory: setSelectedCategoryId,
     refreshing,
     refresh,
-    refreshSummary,
+    refreshSummary: summary.refetch,
     retry,
     initialLoading: all.every((s) => s.loading),
     allFailed: all.every((s) => s.error),
