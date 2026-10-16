@@ -16,7 +16,7 @@
     },
     "android": {
       "package": "uz.afish.zakazchik",
-      "versionCode": 2,
+      "versionCode": 3,
       "softwareKeyboardLayoutMode": "resize",
       "usesCleartextTraffic": true,
       "adaptiveIcon": {

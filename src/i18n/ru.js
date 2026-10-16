@@ -445,6 +445,8 @@ export const ru = {
       seasons: { winter: "Зима", spring: "Весна", summer: "Лето", autumn: "Осень" },
       searchResults: 'Результаты поиска',
       allDirections: 'Все направления',
+      allInDirection: 'Все',
+      subDirections: 'Подкатегории',
       noDirectionsFound: 'Направления по запросу не найдены',
     },
     detail: {
@@ -725,6 +727,8 @@ export const ru = {
     submitErrorTitle: 'Не удалось отправить',
     requiredTitle: "Обязательные поля",
     requiredMsg: "Чтобы отправить заказ, заполните:\n{fields}",
+    requiredSub: "Чтобы оформить заказ, заполните следующее",
+    requiredOk: "Понятно",
     extraTitle: "Дополнительно",
     extraSubtitle: "По желанию: цена, инструменты, требования, способ оплаты…",
     extraFilled: "Заполнено полей: {n}",

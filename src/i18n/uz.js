@@ -445,6 +445,8 @@ export const uz = {
       seasons: { winter: "Qish", spring: "Bahor", summer: "Yoz", autumn: "Kuz" },
       searchResults: 'Qidiruv natijalari',
       allDirections: "Barcha yo'nalishlar",
+      allInDirection: 'Barchasi',
+      subDirections: "Quyi yo'nalishlar",
       noDirectionsFound: "Qidiruvga mos yo'nalish topilmadi",
     },
     detail: {
@@ -725,6 +727,8 @@ export const uz = {
     submitErrorTitle: 'Buyurtma berilmadi',
     requiredTitle: "Majburiy maydonlar",
     requiredMsg: "Buyurtma berish uchun to'ldiring:\n{fields}",
+    requiredSub: "Buyurtma berish uchun quyidagilarni to'ldiring",
+    requiredOk: "Tushunarli",
     extraTitle: "Qo'shimcha ma'lumotlar",
     extraSubtitle: "Ixtiyoriy: ish anjomlari, ustalar soni, talablar, zaxira telefon…",
     extraFilled: "{n} ta maydon to'ldirilgan",

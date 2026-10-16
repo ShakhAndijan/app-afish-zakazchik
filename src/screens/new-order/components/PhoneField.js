@@ -9,7 +9,7 @@ export default function PhoneField({ value, onChangeText, placeholder, t }) {
       </View>
       <TextInput
         value={formatPhone(value)}
-        onChangeText={(v) => onChangeText(v.replace(/D/g, '').slice(0, 9))}
+        onChangeText={(v) => onChangeText(v.replace(/\D/g, '').slice(0, 9))}
         keyboardType="phone-pad"
         placeholder={placeholder}
         placeholderTextColor={t.faint}

@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getMyOrders } from '../../../api/orders';
-import { useCategoriesQuery } from '../../../queries/categories';
+import { useAllCategoriesQuery } from '../../../queries/categories';
 
 export const MY_ORDERS_KEY = ['orders', 'list'];
 
@@ -9,7 +9,7 @@ export const MY_ORDERS_KEY = ['orders', 'list'];
 // xizmat nomi kategoriyalar ro'yxatidan olinadi (u yuklanmasa ham ro'yxat chiqadi).
 export default function useMyOrders() {
   const [refreshing, setRefreshing] = useState(false);
-  const { categories } = useCategoriesQuery();
+  const { categories } = useAllCategoriesQuery();
   const query = useQuery({ queryKey: MY_ORDERS_KEY, queryFn: getMyOrders, staleTime: 30 * 1000 });
   const { data, isError, isFetching, refetch } = query;
 

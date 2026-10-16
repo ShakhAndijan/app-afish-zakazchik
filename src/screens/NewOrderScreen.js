@@ -9,7 +9,7 @@ import LocationMapPicker from '../components/LocationMapPicker';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useUser } from '../context/UserContext';
-import { useCategoriesQuery } from '../queries/categories';
+import { useAllCategoriesQuery, useCategoryTreeQuery } from '../queries/categories';
 import { useQueryClient } from '@tanstack/react-query';
 import { createOrder } from '../api/orders';
 import { stripCountryCode } from './new-order/utils';
@@ -93,7 +93,8 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
     autoSelectLocation,
   } = useOrderLocation();
 
-  const { categories } = useCategoriesQuery();
+  const { categories } = useAllCategoriesQuery();
+  const { tree: categoryTree } = useCategoryTreeQuery();
   const queryClient = useQueryClient();
 
   const toggleCategory = (id) => {
@@ -228,7 +229,13 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
         contentContainerStyle={{ padding: 20, paddingBottom: bottomSpace }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        bottomOffset={20}
+        // Klaviatura va maydon orasidagi zaxira masofa. Kutubxona ekran balandligini tizim panellarisiz
+        // hisoblagani uchun Android'da maydonni yetarlicha ko'tarmay qo'yadi (maydon klaviatura tagida
+        // qoladi) — zaxira pastki tizim paneli balandligiga qarab oshiriladi.
+        bottomOffset={96 + insets.bottom}
+        // "layout": klaviatura balandligicha bo'sh joy (spacer) qo'shiladi — Android'da skroll doim ishlaydi.
+        // Standart "insets" rejimi (1.21+) ClippingScrollView ishlatadi va ayrim qurilmalarda skrollni buzadi.
+        mode="layout"
       >
         {!!onBack && (
           <TouchableOpacity
@@ -303,7 +310,7 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
       <CategoryPickerModal
         visible={categoryPickerOpen}
         onClose={() => setCategoryPickerOpen(false)}
-        categories={categories}
+        categories={categoryTree}
         selectedIds={categoryIds}
         onToggle={toggleCategory}
         t={t}

@@ -1,4 +1,5 @@
 import { apiFetch } from './apiClient';
+import { getApiLanguage } from './apiLanguage';
 
 const DEFAULT_TIMEOUT_MS = 15000;
 
@@ -83,7 +84,11 @@ export async function request(
   const init = {
     method,
     signal: controller.signal,
-    headers: { ...(isJsonBody ? { 'Content-Type': 'application/json' } : {}), ...(headers || {}) },
+    headers: {
+      'Accept-Language': getApiLanguage(),
+      ...(isJsonBody ? { 'Content-Type': 'application/json' } : {}),
+      ...(headers || {}),
+    },
     ...(body !== undefined ? { body: isJsonBody ? JSON.stringify(body) : body } : {}),
   };
 

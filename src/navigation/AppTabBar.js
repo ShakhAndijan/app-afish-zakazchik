@@ -1,5 +1,6 @@
 import { View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useKeyboardState } from 'react-native-keyboard-controller';
 import BottomNav from '../components/BottomNav';
 import { useTheme } from '../context/ThemeContext';
 
@@ -18,6 +19,11 @@ export default function AppTabBar({ state, navigation }) {
   const { theme: t } = useTheme();
   const activeRoute = state.routes[state.index];
   const bottomInset = useSafeAreaInsets().bottom;
+  const keyboardVisible = useKeyboardState((st) => st.isVisible);
+
+  // Klaviatura ochiq paytda menyu yashiriladi: aks holda u klaviatura ustiga ko'tarilib, kontentni yopadi
+  // va skrollni to'sadi.
+  if (keyboardVisible) return null;
 
   const onTabChange = (key) => {
     const route = state.routes.find((r) => r.name === KEY_TO_ROUTE[key]);

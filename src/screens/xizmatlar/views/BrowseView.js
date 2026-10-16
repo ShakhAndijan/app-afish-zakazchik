@@ -5,15 +5,17 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { useXizmatlarStyles } from '../styles';
 import OverallStats from '../components/OverallStats';
 import VerifiedSection from '../components/VerifiedSection';
-import PopularCategories from '../components/PopularCategories';
-import CategoryTile from '../components/CategoryTile';
+import SeasonalRail from '../components/SeasonalRail';
+import BentoGrid from '../components/BentoGrid';
+import CategoryRow from '../components/CategoryRow';
 import EmptyBox from '../components/EmptyBox';
 import useTabBarSpace from '../../../navigation/useTabBarSpace';
 import { seasonOf, seasonalCategories } from '../season';
 import { FEATURES } from '../../../constants/config';
 
-// Bosh ko'rinish (yo'nalish tanlanmagan): statistika, tasdiqlangan ustalar,
-// ommabop va barcha yo'nalishlar. Qidiruv bo'lsa — faqat mos yo'nalishlar.
+// Bosh ko'rinish (yo'nalish tanlanmagan): statistika, tasdiqlangan ustalar, mavsumiy
+// yo'nalishlar va barcha yo'nalishlar (rangli "bento" kartalar). Qidiruv bo'lsa — mos
+// yo'nalishlar ro'yxat qatorlarida (quyi yo'nalish ostida ota yo'nalish nomi bilan).
 export default function BrowseView({
   searchRow,
   query,
@@ -22,6 +24,7 @@ export default function BrowseView({
   verified,
   onClearVerified,
   categories,
+  allCategories,
   categoriesLoading,
   onOpenCategory,
   onSelectWorker,
@@ -33,13 +36,18 @@ export default function BrowseView({
 
   // Joriy mavsumga mos yo'nalishlar (mos kategoriya bo'lmasa bo'lim ko'rsatilmaydi).
   const season = seasonOf();
-  const seasonal = useMemo(() => seasonalCategories(categories, season), [categories, season]);
+  const seasonal = useMemo(
+    () => seasonalCategories(allCategories, season),
+    [allCategories, season]
+  );
 
-  const visibleCategories = useMemo(() => {
-    if (!searching) return categories;
+  const found = useMemo(() => {
+    if (!searching) return [];
     const q = query.trim().toLowerCase();
-    return categories.filter((c) => c.label.toLowerCase().includes(q));
-  }, [categories, query, searching]);
+    return allCategories.filter((c) => c.label.toLowerCase().includes(q));
+  }, [allCategories, query, searching]);
+
+  const parentName = useMemo(() => new Map(categories.map((c) => [c.id, c.label])), [categories]);
 
   return (
     <>
@@ -72,7 +80,7 @@ export default function BrowseView({
                     {`${tr('xizmatlar.browse.seasonalJobs')} · ${tr(`xizmatlar.browse.seasons.${season}`)}`}
                   </Text>
                   <View style={{ marginBottom: 22 }}>
-                    <PopularCategories categories={seasonal} onSelect={onOpenCategory} />
+                    <SeasonalRail items={seasonal} onPress={onOpenCategory} />
                   </View>
                 </>
               )}
@@ -88,12 +96,23 @@ export default function BrowseView({
             <View style={{ paddingVertical: 40, alignItems: 'center' }}>
               <AfishLoader size={90} />
             </View>
-          ) : visibleCategories.length > 0 ? (
-            <View style={styles.categoryGrid}>
-              {visibleCategories.map((c) => (
-                <CategoryTile key={c.id} item={c} onPress={() => onOpenCategory(c.id)} />
-              ))}
-            </View>
+          ) : searching ? (
+            found.length > 0 ? (
+              <View style={{ gap: 10 }}>
+                {found.map((c) => (
+                  <CategoryRow
+                    key={c.id}
+                    item={c}
+                    hint={c.parentId != null ? parentName.get(c.parentId) : undefined}
+                    onPress={() => onOpenCategory(c.id)}
+                  />
+                ))}
+              </View>
+            ) : (
+              <EmptyBox text={tr('xizmatlar.browse.noDirectionsFound')} />
+            )
+          ) : categories.length > 0 ? (
+            <BentoGrid items={categories} onPress={onOpenCategory} />
           ) : (
             <EmptyBox text={tr('xizmatlar.browse.noDirectionsFound')} />
           )}

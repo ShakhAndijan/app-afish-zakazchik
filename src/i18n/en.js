@@ -445,6 +445,8 @@ export const en = {
       seasons: { winter: "Winter", spring: "Spring", summer: "Summer", autumn: "Autumn" },
       searchResults: 'Search results',
       allDirections: 'All directions',
+      allInDirection: 'All',
+      subDirections: 'Subcategories',
       noDirectionsFound: 'No matching directions found',
     },
     detail: {
@@ -725,6 +727,8 @@ export const en = {
     submitErrorTitle: 'Could not submit',
     requiredTitle: "Required fields",
     requiredMsg: "To send the order, please fill in:\n{fields}",
+    requiredSub: "To place the order, please fill in the following",
+    requiredOk: "Got it",
     extraTitle: "More details",
     extraSubtitle: "Optional: price, tools, requirements, payment method…",
     extraFilled: "{n} fields filled",
