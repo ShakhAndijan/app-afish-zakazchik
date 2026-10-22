@@ -18,7 +18,7 @@ import { WalletProvider } from '../context/WalletContext';
 // Ilova ildizi: providerlar va asosiy Stack. Marshrutlar `src/app/` papkasidagi fayllardan olinadi.
 //  - mehmon:   index (landing), login
 //  - mijoz:    (tabs) va undan ochiladigan ekranlar (hamyon, buyurtmalar, profil sahifalari ...)
-//  - hammaga:  usta/[id], work
+//  - hammaga:  usta/[id], work, listings, listing/[id], reels, workers, document
 export default function RootLayout() {
   return (
     <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
@@ -80,6 +80,14 @@ function RootNavigator() {
             <Stack.Screen name="edit-profile" />
             <Stack.Screen name="change-password" />
             <Stack.Screen name="change-phone" />
+            <Stack.Screen name="my-rating" />
+            <Stack.Screen name="verify-identity" />
+            <Stack.Screen name="verify-email" />
+            <Stack.Screen name="favorites" />
+            <Stack.Screen name="request/[id]" />
+            <Stack.Screen name="chat" />
+            <Stack.Screen name="support" />
+            <Stack.Screen name="support-chat" />
           </Stack.Protected>
           <Stack.Protected guard={!signedIn}>
             <Stack.Screen name="index" />
@@ -87,6 +95,11 @@ function RootNavigator() {
           </Stack.Protected>
           <Stack.Screen name="usta/[id]" />
           <Stack.Screen name="work" />
+          <Stack.Screen name="listings" />
+          <Stack.Screen name="listing/[id]" />
+          <Stack.Screen name="reels" options={{ animation: 'fade' }} />
+          <Stack.Screen name="workers" />
+          <Stack.Screen name="document" />
         </Stack>
         <AuthRedirect />
       </WalletProvider>

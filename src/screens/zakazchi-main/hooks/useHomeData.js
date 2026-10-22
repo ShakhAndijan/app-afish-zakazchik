@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { categoriesQuery } from '../../../queries/categories';
 import { getWorkers, getFavorites } from '../../../api/workers';
-import { getTopOrders, getTopComments } from '../../../api/reviews';
+import { getTopComments } from '../../../api/reviews';
 import { getSystemStats } from '../../../api/stats';
 import { getRecentOrders } from '../../../api/orders';
 
@@ -44,11 +44,6 @@ export default function useHomeData() {
     queryKey: ['workers', 'top', selectedCategoryId],
     queryFn: () => getWorkers({ page: 1, size: 5, categoryId: selectedCategoryId }),
   });
-  const works = useQuery({
-    queryKey: ['home', 'works'],
-    queryFn: () => getTopOrders({ limit: 10 }),
-    staleTime: 5 * MIN,
-  });
   const favorites = useQuery({
     queryKey: ['favorites', 'home'],
     queryFn: () => getFavorites({ page: 1, size: 10 }),
@@ -70,7 +65,7 @@ export default function useHomeData() {
     staleTime: 0,
   });
 
-  const queries = { categories, workers, works, favorites, stats, reviews, summary };
+  const queries = { categories, workers, favorites, stats, reviews, summary };
 
   // Pull-to-refresh: kesh yangi bo'lsa ham hamma bo'lim qayta olinadi.
   const refresh = useCallback(() => {
@@ -83,7 +78,6 @@ export default function useHomeData() {
   }, [
     categories.refetch,
     workers.refetch,
-    works.refetch,
     favorites.refetch,
     stats.refetch,
     reviews.refetch,
@@ -96,7 +90,6 @@ export default function useHomeData() {
   const sections = {
     categories: toSection(categories),
     workers: toSection(workers),
-    works: toSection(works),
     favorites: toSection(favorites),
     stats: toSection(stats),
     reviews: toSection(reviews),

@@ -8,7 +8,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useWallet } from '../context/WalletContext';
 import { FEATURES } from '../constants/config';
-import { ustaRoute, workRoute, newOrderRoute } from '../navigation/params';
+import { ustaRoute, newOrderRoute } from '../navigation/params';
 import useHomeData from './zakazchi-main/hooks/useHomeData';
 import HomeHeader from './zakazchi-main/components/HomeHeader';
 import QuickOrderCard from './zakazchi-main/components/QuickOrderCard';
@@ -21,7 +21,7 @@ import ServiceCategories from './zakazchi-main/components/ServiceCategories';
 import PromoBanners from './zakazchi-main/components/PromoBanners';
 import SeasonalJobs from './zakazchi-main/components/SeasonalJobs';
 import TopWorkers from './zakazchi-main/components/TopWorkers';
-import WorksCarousel from './zakazchi-main/components/WorksCarousel';
+import ListingsCarousel from './zakazchi-main/components/ListingsCarousel';
 import FavoriteWorkers from './zakazchi-main/components/FavoriteWorkers';
 import BenefitsSection from './zakazchi-main/components/BenefitsSection';
 import ReturningCustomerSection from './zakazchi-main/components/ReturningCustomerSection';
@@ -148,7 +148,8 @@ export default function ZakazchiMainScreen() {
             >
               <SectionHeader
                 title={tr('app.engZorUstalar.title')}
-                actionLabel={tr('app.engZorUstalar.rating')}
+                actionLabel={tr('app.engZorUstalar.all')}
+                onActionPress={() => router.push('/workers')}
               />
               <TopWorkers
                 state={home.workers}
@@ -157,27 +158,8 @@ export default function ZakazchiMainScreen() {
               />
             </View>
 
-            {/* ── Eng zo'r ishlar ── */}
-            <View style={{ marginTop: 24 }}>
-              <SectionHeader
-                title={tr('app.engZorIshlar.title')}
-                actionLabel={tr('app.engZorIshlar.gallery')}
-                style={{ paddingHorizontal: 20 }}
-              />
-              {home.works.loading ? (
-                <SectionLoader height={150} />
-              ) : home.works.error ? (
-                <SectionError
-                  style={{ marginHorizontal: 20 }}
-                  onRetry={() => home.retry('works')}
-                />
-              ) : (
-                <WorksCarousel
-                  works={home.works.data ?? []}
-                  onSelectWork={(work) => router.push(workRoute(work))}
-                />
-              )}
-            </View>
+            {/* ── Xizmat e'lonlari ── */}
+            <ListingsCarousel style={{ marginTop: 24 }} />
 
             {/* ── Reklama bannerlari ── */}
             <PromoBanners style={{ marginTop: 24 }} />

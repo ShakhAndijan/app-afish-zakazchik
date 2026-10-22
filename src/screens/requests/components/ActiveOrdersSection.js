@@ -1,7 +1,7 @@
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useLanguage } from '../../../context/LanguageContext';
-import { orderRoute } from '../../../navigation/params';
+import { orderOrRequestRoute } from '../../../navigation/params';
 import SectionHeader from '../../zakazchi-main/components/SectionHeader';
 import RequestCard from './RequestCard';
 
@@ -34,7 +34,7 @@ export default function ActiveOrdersSection({ orders = [], categories = [], styl
             key={order.id}
             order={order}
             title={titleOf(order)}
-            onPress={() => router.push(orderRoute(order))}
+            onPress={() => router.push(orderOrRequestRoute(order))}
           />
         ))}
       </View>

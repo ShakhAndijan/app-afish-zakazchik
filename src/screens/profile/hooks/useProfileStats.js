@@ -30,6 +30,11 @@ export default function useProfileStats(active) {
   return {
     orders: me.data?.total_orders ?? null,
     rating: toRating(me.data?.overall_rating),
+    badge: me.data?.reliability_badge ?? null,
+    email: me.data?.email ?? null,
+    emailVerified: !!me.data?.email && me.data?.is_email_verified !== false,
+    // Parol hali o'rnatilmagan (OTP bilan kirgan) hisobda false; noma'lum bo'lsa null.
+    hasPassword: me.data?.has_password ?? null,
     favorites: favorites.data ?? null,
   };
 }

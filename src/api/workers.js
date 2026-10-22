@@ -2,7 +2,15 @@ import { ENDPOINTS } from '../constants/config';
 import { request } from '../utils/request';
 import { devLog } from '../utils/log';
 
-const AVATAR_COLORS = ['#2fa37a', '#e87a45', '#3f7fd4', '#ec4899', '#8b5cf6', '#f5c451', '#06b6d4'];
+export const AVATAR_COLORS = [
+  '#2fa37a',
+  '#e87a45',
+  '#3f7fd4',
+  '#ec4899',
+  '#8b5cf6',
+  '#f5c451',
+  '#06b6d4',
+];
 
 const formatPrice = (price) =>
   String(Math.round(parseFloat(price))).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
@@ -26,13 +34,23 @@ export function mapWorker(w) {
     isIdentityVerified: !!w.is_identity_verified,
     reliability_badge: w.reliability_badge ?? 'none',
     vip_status: w.vip_status ?? 'none',
+    reviewCount: w.review_count ?? 0,
+    // Joylashuv kiritilmagan ustalar uchun null; `distanceKm` faqat near_lat/near_lon bilan so'ralganda keladi.
+    latitude: w.latitude != null ? Number(w.latitude) : null,
+    longitude: w.longitude != null ? Number(w.longitude) : null,
+    distanceKm: w.distance_km != null ? Number(w.distance_km) : null,
+    mainCategory: w.main_category?.name ?? '',
+    categoryId: w.main_category?.id ?? null,
+    skills: Array.isArray(w.skills) ? w.skills : [],
   };
 }
 
 /**
  * @param {{ page?: number, size?: number, categoryId?: number|string|null, sort?: string,
  *   regionId?: number|null, districtId?: number|null, minRating?: number|null,
- *   verifiedOnly?: boolean, q?: string }} params
+ *   verifiedOnly?: boolean, isOnline?: boolean, badge?: 'gold'|'silver'|'bronze'|null, q?: string,
+ *   nearLat?: number|null, nearLon?: number|null }} params
+ * `sort`: 'rating' | 'price' | 'newest' | 'experience' | 'distance' ('distance' faqat nearLat/nearLon bilan).
  * @returns {Promise<ReturnType<mapWorker>[]>}
  */
 export async function getWorkers(params) {
@@ -52,7 +70,12 @@ export async function getWorkersPage({
   districtId,
   minRating,
   verifiedOnly,
+  isOnline,
+  badge,
   q,
+  nearLat,
+  nearLon,
+  covers,
 } = {}) {
   const params = [`sort=${sort}`, `page=${page}`, `size=${size}`];
   if (q?.trim()) params.push(`q=${encodeURIComponent(q.trim().slice(0, 100))}`);
@@ -61,6 +84,11 @@ export async function getWorkersPage({
   if (districtId) params.push(`district_id=${districtId}`);
   if (minRating) params.push(`min_rating=${minRating}`);
   if (verifiedOnly) params.push('is_verified=true');
+  if (isOnline) params.push('is_online=true');
+  if (badge) params.push(`badge=${badge}`);
+  // `covers`: buyurtma yo'nalishlari (vergul bilan) — shularni bajaradigan ustalar.
+  if (covers) params.push(`covers=${covers}`);
+  if (nearLat != null && nearLon != null) params.push(`near_lat=${nearLat}`, `near_lon=${nearLon}`);
   const data = await request(`${ENDPOINTS.WORKERS}?${params.join('&')}`, {
     fallbackMessage: "Ustalar ro'yxati yuklanmadi",
   });
@@ -81,6 +109,17 @@ export async function getFavorites({ page = 1, size = 10 } = {}) {
   });
   devLog('[getFavorites] /customers/me/favorites response:', data);
   return (data?.items ?? []).map(mapWorker);
+}
+
+/** Sevimli ustalar (jami soni bilan): `{ items, total }`. */
+export async function getFavoritesPage({ page = 1, size = 20 } = {}) {
+  const data = await request(ENDPOINTS.CUSTOMER_FAVORITES(page, size), {
+    fallbackMessage: 'Sevimlilar yuklanmadi',
+  });
+  return {
+    items: (data?.items ?? []).map(mapWorker),
+    total: data?.pagination?.total ?? 0,
+  };
 }
 
 /** Sevimli ustalar soni (sahifalashdagi `total`, faqat 1 ta element so'raladi). */
@@ -193,6 +232,13 @@ export function mapWorkerDetail(w) {
     portfolio: (w.portfolio ?? []).map(mapPortfolioItem),
     certificates: (w.certificates ?? []).map(mapCertificate),
     schedule: mapSchedule(w.schedule),
+    registeredAt: w.registered_at ?? null,
+    // Ishlash hududi: radius (km) yoki alohida tumanlar ro'yxati.
+    workAreaMode: w.work_area_mode ?? null,
+    workRadiusKm: w.work_radius_km ?? null,
+    workDistricts: (w.work_districts ?? [])
+      .map((d) => (typeof d === 'string' ? d : d?.name))
+      .filter(Boolean),
   };
 }
 

@@ -1,17 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  Animated,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '../context/ThemeContext';
+import NotificationsList from './notifications/NotificationsList';
+import { useUnreadNotifications } from '../queries/notifications';
 import { useLanguage } from '../context/LanguageContext';
 
 function Toggle({ on, onPress, accent }) {
@@ -59,6 +54,8 @@ function ToggleRow({ iconName, iconColor, label, sub, on, onPress, border, t }) 
 export default function ZakazchiNotifScreen({ onBack }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
+  const [tab, setTab] = useState('list');
+  const unread = useUnreadNotifications();
   const [master, setMaster] = useState(true);
   const [tog, setTog] = useState({
     order: true,
@@ -96,112 +93,143 @@ export default function ZakazchiNotifScreen({ onBack }) {
         <Text style={[s.headerTitle, { color: t.text }]}>{tr('notif.headerTitle')}</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
-
-        {/* Master hero card */}
-        <TouchableOpacity
-          onPress={() => setMaster((m) => !m)}
-          activeOpacity={0.9}
-          style={[
-            s.masterCard,
-            {
-              backgroundColor: master ? t.orange : t.card,
-              borderWidth: master ? 0 : 1,
-              borderColor: t.border,
-            },
-          ]}
-        >
-          <View style={[s.masterIconBox, { backgroundColor: 'rgba(255,255,255,0.18)' }]}>
-            <Ionicons name={master ? 'notifications' : 'notifications-off'} size={24} color="#fff" />
-          </View>
-          <View style={s.masterTextBox}>
-            <Text style={s.masterTitle}>{tr('notif.allNotifications')}</Text>
-            <Text style={[s.masterSub, { color: master ? 'rgba(255,255,255,0.9)' : t.muted }]}>
-              {master ? tr('notif.enabled') : tr('notif.disabled')}
+      <View style={[s.tabs, { backgroundColor: t.card, borderColor: t.border }]}>
+        {['list', 'settings'].map((k) => (
+          <TouchableOpacity
+            key={k}
+            style={[s.tab, tab === k && { backgroundColor: t.orange }]}
+            activeOpacity={0.8}
+            onPress={() => setTab(k)}
+          >
+            <Text style={[s.tabText, { color: tab === k ? '#fff' : t.muted }]}>
+              {tr(k === 'list' ? 'notifList.tabList' : 'notifList.tabSettings')}
+              {k === 'list' && unread > 0 ? ` (${unread})` : ''}
             </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {tab === 'list' ? (
+        <NotificationsList />
+      ) : (
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
+          {/* Master hero card */}
+          <TouchableOpacity
+            onPress={() => setMaster((m) => !m)}
+            activeOpacity={0.9}
+            style={[
+              s.masterCard,
+              {
+                backgroundColor: master ? t.orange : t.card,
+                borderWidth: master ? 0 : 1,
+                borderColor: t.border,
+              },
+            ]}
+          >
+            <View style={[s.masterIconBox, { backgroundColor: 'rgba(255,255,255,0.18)' }]}>
+              <Ionicons
+                name={master ? 'notifications' : 'notifications-off'}
+                size={24}
+                color="#fff"
+              />
+            </View>
+            <View style={s.masterTextBox}>
+              <Text style={s.masterTitle}>{tr('notif.allNotifications')}</Text>
+              <Text style={[s.masterSub, { color: master ? 'rgba(255,255,255,0.9)' : t.muted }]}>
+                {master ? tr('notif.enabled') : tr('notif.disabled')}
+              </Text>
+            </View>
+            <Toggle on={master} onPress={() => setMaster((m) => !m)} accent="#1c8c5e" />
+          </TouchableOpacity>
+
+          {/* Categories */}
+          <View style={{ opacity: master ? 1 : 0.4 }} pointerEvents={master ? 'auto' : 'none'}>
+            <GroupTitle t={t}>{tr('notif.groups.orders')}</GroupTitle>
+            <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
+              <ToggleRow
+                iconName="shopping-outline"
+                iconColor={t.orange}
+                label={tr('notif.rows.orderStatus.label')}
+                sub={tr('notif.rows.orderStatus.sub')}
+                on={tog.order}
+                onPress={() => flip('order')}
+                t={t}
+              />
+              <ToggleRow
+                iconName="chat-processing-outline"
+                iconColor={t.blue}
+                label={tr('notif.rows.chatMessages.label')}
+                sub={tr('notif.rows.chatMessages.sub')}
+                on={tog.chat}
+                onPress={() => flip('chat')}
+                border
+                t={t}
+              />
+            </View>
+
+            <GroupTitle t={t}>{tr('notif.groups.marketing')}</GroupTitle>
+            <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
+              <ToggleRow
+                iconName="tag-outline"
+                iconColor={t.green}
+                label={tr('notif.rows.promos.label')}
+                sub={tr('notif.rows.promos.sub')}
+                on={tog.promo}
+                onPress={() => flip('promo')}
+                t={t}
+              />
+              <ToggleRow
+                iconName="message-text-outline"
+                iconColor={t.violet}
+                label={tr('notif.rows.news.label')}
+                sub={tr('notif.rows.news.sub')}
+                on={tog.news}
+                onPress={() => flip('news')}
+                border
+                t={t}
+              />
+            </View>
+
+            <GroupTitle t={t}>{tr('notif.groups.accountSecurity')}</GroupTitle>
+            <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
+              <ToggleRow
+                iconName="shield-check-outline"
+                iconColor={t.blue}
+                label={tr('notif.rows.loginSecurity.label')}
+                sub={tr('notif.rows.loginSecurity.sub')}
+                on={tog.login}
+                onPress={() => flip('login')}
+                t={t}
+              />
+              <ToggleRow
+                iconName="wallet-outline"
+                iconColor={t.gold}
+                label={tr('notif.rows.paymentAccount.label')}
+                sub={tr('notif.rows.paymentAccount.sub')}
+                on={tog.payment}
+                onPress={() => flip('payment')}
+                border
+                t={t}
+              />
+            </View>
           </View>
-          <Toggle on={master} onPress={() => setMaster((m) => !m)} accent="#1c8c5e" />
-        </TouchableOpacity>
-
-        {/* Categories */}
-        <View style={{ opacity: master ? 1 : 0.4 }} pointerEvents={master ? 'auto' : 'none'}>
-
-          <GroupTitle t={t}>{tr('notif.groups.orders')}</GroupTitle>
-          <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
-            <ToggleRow
-              iconName="shopping-outline"
-              iconColor={t.orange}
-              label={tr('notif.rows.orderStatus.label')}
-              sub={tr('notif.rows.orderStatus.sub')}
-              on={tog.order}
-              onPress={() => flip('order')}
-              t={t}
-            />
-            <ToggleRow
-              iconName="chat-processing-outline"
-              iconColor={t.blue}
-              label={tr('notif.rows.chatMessages.label')}
-              sub={tr('notif.rows.chatMessages.sub')}
-              on={tog.chat}
-              onPress={() => flip('chat')}
-              border
-              t={t}
-            />
-          </View>
-
-          <GroupTitle t={t}>{tr('notif.groups.marketing')}</GroupTitle>
-          <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
-            <ToggleRow
-              iconName="tag-outline"
-              iconColor={t.green}
-              label={tr('notif.rows.promos.label')}
-              sub={tr('notif.rows.promos.sub')}
-              on={tog.promo}
-              onPress={() => flip('promo')}
-              t={t}
-            />
-            <ToggleRow
-              iconName="message-text-outline"
-              iconColor={t.violet}
-              label={tr('notif.rows.news.label')}
-              sub={tr('notif.rows.news.sub')}
-              on={tog.news}
-              onPress={() => flip('news')}
-              border
-              t={t}
-            />
-          </View>
-
-          <GroupTitle t={t}>{tr('notif.groups.accountSecurity')}</GroupTitle>
-          <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
-            <ToggleRow
-              iconName="shield-check-outline"
-              iconColor={t.blue}
-              label={tr('notif.rows.loginSecurity.label')}
-              sub={tr('notif.rows.loginSecurity.sub')}
-              on={tog.login}
-              onPress={() => flip('login')}
-              t={t}
-            />
-            <ToggleRow
-              iconName="wallet-outline"
-              iconColor={t.gold}
-              label={tr('notif.rows.paymentAccount.label')}
-              sub={tr('notif.rows.paymentAccount.sub')}
-              on={tog.payment}
-              onPress={() => flip('payment')}
-              border
-              t={t}
-            />
-          </View>
-
-        </View>
-      </ScrollView>
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
+  tabs: {
+    flexDirection: 'row',
+    marginHorizontal: 20,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 4,
+  },
+  tab: { flex: 1, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  tabText: { fontSize: 13.5, fontWeight: '700' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

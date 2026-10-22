@@ -8,6 +8,7 @@ export default function getReviewTexts(
     whenDate,
     toolsOption,
     minRating,
+    minExperience,
     ageFrom,
     ageTo,
     pricingType,
@@ -47,6 +48,10 @@ export default function getReviewTexts(
 
   const ratingText = minRating === 0 ? tr('newOrder.requirements.allRatings') : `${minRating}+ ★`;
 
+  const experienceText = minExperience
+    ? tr('newOrder.requirements.experienceYears', { n: minExperience })
+    : tr('newOrder.requirements.allRatings');
+
   const ageText =
     ageFrom.trim() || ageTo.trim() ? `${ageFrom.trim() || '…'} – ${ageTo.trim() || '…'}` : notSet;
 
@@ -67,5 +72,15 @@ export default function getReviewTexts(
   const addressText =
     [addressTitle, addressSubtitle || addressDetails].filter(Boolean).join(' — ') || notSet;
 
-  return { notSet, whenText, toolsText, ratingText, ageText, pricingText, paymentText, addressText };
+  return {
+    notSet,
+    whenText,
+    toolsText,
+    ratingText,
+    experienceText,
+    ageText,
+    pricingText,
+    paymentText,
+    addressText,
+  };
 }

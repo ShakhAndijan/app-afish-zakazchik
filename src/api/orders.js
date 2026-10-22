@@ -101,6 +101,11 @@ export function mapOrder(o) {
     status: STATUS_GROUP[o.status] || 'active',
     task: taskNames.join(', ') || description.split('\n')[0].slice(0, 80),
     categoryId: o.category_id ?? o.category?.id ?? null,
+    categoryIds: o.task_category_ids?.length
+      ? o.task_category_ids
+      : (o.category_id ?? o.category?.id) != null
+        ? [o.category_id ?? o.category?.id]
+        : [],
     service: o.category?.name ?? null,
     master: workerName,
     workerId,
@@ -123,6 +128,12 @@ export function mapOrder(o) {
     beforePhotos: o.before_photos || [],
     afterPhotos: o.after_photos || [],
     cancelReason: o.cancel_reason ?? null,
+    // Kelishuv to'xtatilgach buyurtma mijozga qaytadi (PENDING + returned_at): boshqa ustaga yuborish yoki ommaga chiqarish mumkin.
+    returnedAt: o.returned_at ?? null,
+    returnedBy: o.returned_by ?? null,
+    returnedWorkerId: o.returned_worker_id ?? null,
+    returnedWorkerName: o.returned_worker_name ?? null,
+    returnedRecalled: !!o.returned_recalled,
   };
 }
 
@@ -227,6 +238,18 @@ export const offerOrderPrice = (orderId, price) =>
 /** Ustaning taklifini qabul qiladi: ACCEPTED → ACTIVE. */
 export const agreeOrder = (orderId) =>
   postJson(ENDPOINTS.ORDER_AGREE(orderId), undefined, 'Kelishuv amalga oshmadi');
+
+/** Kelishuvni rad etadi (sabab bilan): kelishuv to'xtaydi, buyurtma mijozga qaytadi. */
+export const declineOrder = (orderId, reason) =>
+  postJson(ENDPOINTS.ORDER_DECLINE(orderId), { reason }, 'Kelishuv rad etilmadi');
+
+/** Qaytgan buyurtmani boshqa mutaxassisga yuboradi. */
+export const sendOrderTo = (orderId, workerId) =>
+  postJson(ENDPOINTS.ORDER_SEND_TO(orderId), { worker_id: workerId }, 'Buyurtma yuborilmadi');
+
+/** Qaytgan buyurtmani umumiy ro'yxatga chiqaradi (mos ustalar narx taklif qiladi). */
+export const publishOrder = (orderId) =>
+  postJson(ENDPOINTS.ORDER_PUBLISH(orderId), undefined, "Buyurtma ro'yxatga chiqarilmadi");
 
 export const cancelOrderByCustomer = (orderId, reason) =>
   postJson(ENDPOINTS.ORDER_CANCEL(orderId), { reason }, 'Buyurtma bekor qilinmadi');

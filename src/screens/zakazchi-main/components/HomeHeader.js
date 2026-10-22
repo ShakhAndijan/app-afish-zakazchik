@@ -7,6 +7,7 @@ import { useTheme } from '../../../context/ThemeContext';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useUser } from '../../../context/UserContext';
 import Avatar from '../../../components/Avatar';
+import { useUnreadNotifications } from '../../../queries/notifications';
 
 const AVATAR = 46;
 const RING = 2;
@@ -26,6 +27,7 @@ export default function HomeHeader() {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
   const { user } = useUser();
+  const unread = useUnreadNotifications();
 
   const name = user?.first_name || user?.last_name || '';
   const location = user?.district || user?.region || '';
@@ -76,6 +78,21 @@ export default function HomeHeader() {
             </View>
           )}
         </View>
+
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => router.push('/notifications')}
+          accessibilityRole="button"
+          accessibilityLabel={tr('notifList.title')}
+          style={s.iconBtn}
+        >
+          <Feather name="bell" size={19} color="#fff" />
+          {unread > 0 && (
+            <View style={s.badge}>
+              <Text style={s.badgeTxt}>{unread > 99 ? '99+' : unread}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
 
         <TouchableOpacity
           activeOpacity={0.8}
@@ -132,6 +149,21 @@ const s = StyleSheet.create({
     maxWidth: '100%',
   },
   chipTxt: { fontSize: 11.5, fontWeight: '700', color: '#fff', flexShrink: 1 },
+  badge: {
+    position: 'absolute',
+    top: -3,
+    right: -3,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 4,
+    backgroundColor: '#e0473a',
+    borderWidth: 1.5,
+    borderColor: '#e87a45',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeTxt: { color: '#fff', fontSize: 10, fontWeight: '800' },
   iconBtn: {
     width: 42,
     height: 42,

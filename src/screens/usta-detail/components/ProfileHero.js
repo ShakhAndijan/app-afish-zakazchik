@@ -6,6 +6,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import AfishLoader from '../../../components/AfishLoader';
 import { useUstaStyles } from '../styles';
 import UstaAvatar from './UstaAvatar';
+import { formatDuration } from '../utils';
 
 const HERO_GRADIENT = ['#f28d56', '#e87a45', '#c9552a'];
 
@@ -83,7 +84,10 @@ export default function ProfileHero({
             <View style={st.heroPill}>
               <Ionicons name="flash-outline" size={13} color="#fff" />
               <Text style={st.heroPillTxt}>
-                {tr('ustaDetail.avgResponse', { min: avgResponseMin }).replace(/^·\s*/, '')}
+                {tr('ustaDetail.avgResponse', { time: formatDuration(tr, avgResponseMin) }).replace(
+                  /^·\s*/,
+                  ''
+                )}
               </Text>
             </View>
           )}

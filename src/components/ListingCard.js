@@ -16,7 +16,9 @@ function formatPrice(n) {
   return n.toLocaleString('ru-RU');
 }
 
-export default function ListingCard({ listing, accent, onPress, colors }) {
+// `listing.reviewCount` va `listing.tags` ixtiyoriy (reyting yonida sharhlar soni, kategoriya teglari);
+// `onContact` berilsa pastda "Bog'lanish" tugmasi chiqadi.
+export default function ListingCard({ listing, accent, onPress, onContact, colors }) {
   const { t } = useLanguage();
   const c = { ...DEFAULT_COLORS, ...colors };
   const [photoFailed, setPhotoFailed] = useState(false);
@@ -58,7 +60,10 @@ export default function ListingCard({ listing, accent, onPress, colors }) {
           </View>
         </View>
         <View style={[styles.ratingPill, { backgroundColor: c.ratingBg }]}>
-          <Text style={[styles.ratingText, { color: c.gold }]}>★ {listing.rating.toFixed(1)}</Text>
+          <Text style={[styles.ratingText, { color: c.gold }]}>
+            ★ {listing.rating.toFixed(1)}
+            {listing.reviewCount > 0 ? ` (${listing.reviewCount})` : ''}
+          </Text>
         </View>
       </View>
 
@@ -67,6 +72,18 @@ export default function ListingCard({ listing, accent, onPress, colors }) {
         {listing.desc}
       </Text>
 
+      {listing.tags?.length > 0 && (
+        <View style={styles.tags}>
+          {listing.tags.map((tag) => (
+            <View key={tag} style={[styles.tag, { borderColor: c.border }]}>
+              <Text style={[styles.tagText, { color: c.muted }]} numberOfLines={1}>
+                {tag}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+
       <View style={[styles.footer, { borderTopColor: c.border }]}>
         <View>
           <Text style={[styles.price, { color: c.text }]}>
@@ -74,10 +91,30 @@ export default function ListingCard({ listing, accent, onPress, colors }) {
           </Text>
           <Text style={[styles.priceSub, { color: c.muted }]}>{t('listingCard.priceCaption')}</Text>
         </View>
-        <View style={[styles.viewProfileBtn, { backgroundColor: accent }]}>
-          <Text style={styles.viewProfileText}>{t('listingCard.viewProfile')}</Text>
-          <Feather name="chevron-right" size={13} color="#fff" />
-        </View>
+        {onContact ? (
+          <View style={styles.actions}>
+            <TouchableOpacity
+              onPress={onContact}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              style={[styles.viewProfileBtn, { backgroundColor: accent }]}
+            >
+              <Feather name="message-circle" size={13} color="#fff" />
+              <Text style={styles.viewProfileText}>{t('listingCard.contact')}</Text>
+            </TouchableOpacity>
+            <View
+              style={[styles.profileArrow, { borderColor: c.border }]}
+              accessibilityLabel={t('listingCard.viewProfile')}
+            >
+              <Feather name="chevron-right" size={16} color={c.text} />
+            </View>
+          </View>
+        ) : (
+          <View style={[styles.viewProfileBtn, { backgroundColor: accent }]}>
+            <Text style={styles.viewProfileText}>{t('listingCard.viewProfile')}</Text>
+            <Feather name="chevron-right" size={13} color="#fff" />
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -125,6 +162,24 @@ const styles = StyleSheet.create({
   ratingText: { fontSize: 12, fontWeight: '700' },
   title: { fontSize: 15, fontWeight: '800', marginTop: 12 },
   desc: { fontSize: 12, marginTop: 4, lineHeight: 17 },
+  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
+  tag: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    maxWidth: 150,
+  },
+  tagText: { fontSize: 10.5, fontWeight: '600' },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  profileArrow: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',

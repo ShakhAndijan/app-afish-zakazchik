@@ -19,10 +19,7 @@ export default function CategorySection({
   return (
     <>
       {/* ── Xizmat turi (ko'p tanlovli) ── */}
-      <Text style={[common.label, { color: t.text }]}>
-        {tr('newOrder.categoryLabel')}
-        <Text style={{ color: t.red }}> *</Text>
-      </Text>
+      <Text style={[common.label, { color: t.text }]}>{tr('newOrder.categoryLabel')}</Text>
 
       {selectedCategories.length === 0 ? (
         <TouchableOpacity

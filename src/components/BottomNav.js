@@ -7,7 +7,7 @@ import { useLanguage } from '../context/LanguageContext';
 const NAV = [
   { key: 'home',     labelKey: 'bottomNav.home',     on: 'home',            off: 'home-outline' },
   { key: 'newOrder', labelKey: 'bottomNav.newOrder', on: 'add-circle',      off: 'add-circle-outline' },
-  { key: 'services', labelKey: 'bottomNav.services', on: 'grid',            off: 'grid-outline' },
+  { key: 'ads',      labelKey: 'bottomNav.listings', on: 'images',          off: 'images-outline' },
   { key: 'profile',  labelKey: 'bottomNav.profile',  on: 'person',          off: 'person-outline' },
 ];
 

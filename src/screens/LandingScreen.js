@@ -10,6 +10,7 @@ import ServiceCategories from './landing/components/ServiceCategories';
 import SeasonalSection from './landing/components/SeasonalSection';
 import TopWorkers from './landing/components/TopWorkers';
 import TopWorks from './landing/components/TopWorks';
+import ListingsCarousel from './zakazchi-main/components/ListingsCarousel';
 import SectionHead from './landing/components/SectionHead';
 import HowItWorks from './landing/components/HowItWorks';
 import ReviewsCarousel from './landing/components/ReviewsCarousel';
@@ -42,6 +43,9 @@ export default function LandingScreen({ onLogin, onSelectUsta }) {
           <HowItWorks />
 
           <TopWorkers onSelectUsta={onSelectUsta} />
+          {/* Mehmon uchun e'lonlar ochiq; "Barchasi" kirish oynasiga olib boradi */}
+          <ListingsCarousel style={{ marginTop: 28 }} onSeeAll={onLogin} />
+
           <TopWorks />
 
           {/* Mehmon uchun hamma slayd kirish oynasiga olib boradi */}

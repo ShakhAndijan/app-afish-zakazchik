@@ -47,6 +47,9 @@ export default function ReviewModal({
   paymentMethod,
   phone,
   backupPhone,
+  requireVerified,
+  minExperience,
+  extraRequirements,
 }) {
   // "Qo'shimcha ma'lumotlar" yopiq turadi, bosilganda ochiladi.
   const [extraOpen, setExtraOpen] = useState(false);
@@ -60,29 +63,39 @@ export default function ReviewModal({
     setExtraOpen((v) => !v);
   };
 
-  const { notSet, whenText, toolsText, ratingText, ageText, pricingText, addressText } =
-    getReviewTexts(
-      {
-        when,
-        whenDate,
-        toolsOption,
-        minRating,
-        ageFrom,
-        ageTo,
-        pricingType,
-        hourlyRate,
-        estimatedHours,
-        fixedPrice,
-        paymentMethod,
-        street,
-        entrance,
-        floor,
-        addressTitle,
-        addressSubtitle,
-      },
-      tr
-    );
+  const {
+    notSet,
+    whenText,
+    toolsText,
+    ratingText,
+    experienceText,
+    ageText,
+    pricingText,
+    addressText,
+  } = getReviewTexts(
+    {
+      when,
+      whenDate,
+      toolsOption,
+      minRating,
+      minExperience,
+      ageFrom,
+      ageTo,
+      pricingType,
+      hourlyRate,
+      estimatedHours,
+      fixedPrice,
+      paymentMethod,
+      street,
+      entrance,
+      floor,
+      addressTitle,
+      addressSubtitle,
+    },
+    tr
+  );
 
+  // 1) Tafsilotlar: tavsif, narx, sana, rasm.
   const rows = [
     !!orderWorker && {
       icon: 'account-star-outline',
@@ -90,50 +103,78 @@ export default function ReviewModal({
       value: [orderWorker.name, orderWorker.trade].filter(Boolean).join(' — '),
     },
     {
-      icon: 'briefcase-outline',
-      label: tr('newOrder.categoryLabel'),
-      value: selectedCategories.map((c) => c.name).join(', ') || notSet,
-    },
-    {
       icon: 'text-long',
       label: tr('newOrder.descriptionLabel'),
       value: description.trim() || notSet,
     },
+    { icon: 'cash-multiple', label: tr('newOrder.pricingLabel'), value: pricingText },
+    { icon: 'calendar-clock', label: tr('newOrder.whenLabel'), value: whenText },
     {
       icon: 'image-multiple-outline',
       label: tr('newOrder.photosLabel'),
       value: tr('newOrder.review.photosCount', { n: photos.length }),
     },
+  ].filter(Boolean);
+
+  // 2) Manzil va aloqa: manzil, telefon, zaxira telefon.
+  const placeRows = [
     { icon: 'map-marker-outline', label: tr('newOrder.locationLabel'), value: addressText },
-    { icon: 'calendar-clock', label: tr('newOrder.whenLabel'), value: whenText },
-    { icon: 'cash-multiple', label: tr('newOrder.pricingLabel'), value: pricingText },
     {
       icon: 'phone-outline',
       label: tr('newOrder.phoneLabel'),
       value: `+998 ${formatPhone(phone)}`,
     },
-  ].filter(Boolean);
-
-  // Ixtiyoriy maydonlar: formadagi "Qo'shimcha ma'lumotlar" bloki
-  const extraRows = [
-    { icon: 'toolbox-outline', label: tr('newOrder.toolsLabel'), value: toolsText },
-    {
-      icon: 'account-group-outline',
-      label: tr('newOrder.workerCountLabel'),
-      value: String(workerCount),
-    },
-    {
-      icon: 'shield-check-outline',
-      label: tr('newOrder.requirements.photoRequired'),
-      value: requirePhoto ? tr('common.yes') : tr('common.no'),
-    },
-    { icon: 'star-outline', label: tr('newOrder.requirements.ratingLabel'), value: ratingText },
-    { icon: 'account-outline', label: tr('newOrder.requirements.ageLabel'), value: ageText },
     !!backupPhone.trim() && {
       icon: 'phone-plus-outline',
       label: tr('newOrder.backupPhoneLabel'),
       value: `+998 ${formatPhone(backupPhone)}`,
     },
+  ].filter(Boolean);
+
+  // 3) Ixtiyoriy: kategoriya, necha kishi, talablar (+ ilovaga xos asboblar).
+  const extraRows = [
+    {
+      icon: 'briefcase-outline',
+      label: tr('newOrder.categoryLabel'),
+      value: selectedCategories.map((c) => c.name).join(', ') || notSet,
+    },
+    {
+      icon: 'account-group-outline',
+      label: tr('newOrder.workerCountLabel'),
+      value: String(workerCount),
+    },
+    // Aniq ustaga buyurtmada ishchiga talablar yuborilmaydi — faqat "boshqa talablar".
+    !orderWorker && {
+      icon: 'shield-check-outline',
+      label: tr('newOrder.requirements.photoRequired'),
+      value: requirePhoto ? tr('common.yes') : tr('common.no'),
+    },
+    !orderWorker && {
+      icon: 'check-decagram-outline',
+      label: tr('newOrder.requirements.verifiedRequired'),
+      value: requireVerified ? tr('common.yes') : tr('common.no'),
+    },
+    !orderWorker && {
+      icon: 'star-outline',
+      label: tr('newOrder.requirements.ratingLabel'),
+      value: ratingText,
+    },
+    !orderWorker && {
+      icon: 'briefcase-clock-outline',
+      label: tr('newOrder.requirements.experienceLabel'),
+      value: experienceText,
+    },
+    !orderWorker && {
+      icon: 'account-outline',
+      label: tr('newOrder.requirements.ageLabel'),
+      value: ageText,
+    },
+    !!extraRequirements?.trim() && {
+      icon: 'text-box-outline',
+      label: tr('newOrder.requirements.otherLabel'),
+      value: extraRequirements.trim(),
+    },
+    { icon: 'toolbox-outline', label: tr('newOrder.toolsLabel'), value: toolsText },
   ].filter(Boolean);
 
   const renderRows = (list) =>
@@ -165,10 +206,18 @@ export default function ReviewModal({
           contentContainerStyle={{ padding: 20, paddingBottom: 24 }}
           showsVerticalScrollIndicator={false}
         >
+          <Text style={[s.groupTitle, { color: t.muted }]}>{tr('newOrder.step1Title')}</Text>
           <View
             style={[common.requirementsBox, { backgroundColor: t.card, borderColor: t.border }]}
           >
             {renderRows(rows)}
+          </View>
+
+          <Text style={[s.groupTitle, { color: t.muted }]}>{tr('newOrder.step2Title')}</Text>
+          <View
+            style={[common.requirementsBox, { backgroundColor: t.card, borderColor: t.border }]}
+          >
+            {renderRows(placeRows)}
           </View>
 
           <TouchableOpacity
@@ -179,7 +228,7 @@ export default function ReviewModal({
             style={[s.extraHeader, { backgroundColor: t.card, borderColor: t.border }]}
           >
             <MaterialCommunityIcons name="tune-variant" size={18} color={t.orange} />
-            <Text style={[s.extraTitle, { color: t.text }]}>{tr('newOrder.extraTitle')}</Text>
+            <Text style={[s.extraTitle, { color: t.text }]}>{tr('newOrder.step3Title')}</Text>
             <MaterialCommunityIcons
               name={extraOpen ? 'chevron-up' : 'chevron-down'}
               size={22}
@@ -252,6 +301,7 @@ const s = StyleSheet.create({
     paddingVertical: 14,
     marginTop: 14,
   },
+  groupTitle: { fontSize: 12.5, fontWeight: '800', marginTop: 14, marginBottom: 8 },
   extraTitle: { flex: 1, fontSize: 14.5, fontWeight: '800' },
   reviewFooter: {
     flexDirection: 'row',

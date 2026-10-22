@@ -15,6 +15,16 @@ export const FEATURES = {
   walletBalance: false,
   // "Barcha xizmatlar" tepasidagi umumiy statistika: ma'lumotlar yetarli bo'lgach yoqiladi.
   overallStats: false,
+  // Profildagi "Manzillarim" (saqlangan manzillar ro'yxati): hozircha yashirin, ekran saqlab qo'yilgan.
+  savedAddresses: false,
+};
+
+// Qo'llab-quvvatlash aloqa ma'lumotlari — saytdagi (dev.afish.uz/config.json) bilan bir xil.
+// Telegram/Instagram saytda hozircha bo'sh: bo'sh qiymat ilovada ham ko'rsatilmaydi.
+export const SUPPORT_CONTACT = {
+  phone: '+998942599590',
+  email: 'support@afish.uz',
+  telegram: '',
 };
 
 export const ENDPOINTS = {
@@ -27,6 +37,27 @@ export const ENDPOINTS = {
   AUTH_REFRESH: `${API_BASE_URL}/api/v1/auth/refresh`,
   AUTH_LOGOUT: `${API_BASE_URL}/api/v1/auth/logout`,
   AUTH_SET_PASSWORD: `${API_BASE_URL}/api/v1/auth/set-password`,
+  NOTIFICATIONS: (page = 1, size = 15) =>
+    `${API_BASE_URL}/api/v1/notifications?page=${page}&size=${size}`,
+  NOTIFICATIONS_UNREAD: `${API_BASE_URL}/api/v1/notifications/unread-count`,
+  NOTIFICATIONS_READ_ALL: `${API_BASE_URL}/api/v1/notifications/read-all`,
+  NOTIFICATION_READ: (id) => `${API_BASE_URL}/api/v1/notifications/${id}/read`,
+  FAQ: `${API_BASE_URL}/api/v1/faq`,
+  SUPPORT_MESSAGES: `${API_BASE_URL}/api/v1/support/messages`,
+  SUPPORT_CONVERSATION: `${API_BASE_URL}/api/v1/support/conversation`,
+  SUPPORT_CONVERSATION_READ: `${API_BASE_URL}/api/v1/support/conversation/read`,
+  SUPPORT_ITEMS: (kind) => `${API_BASE_URL}/api/v1/support/items?kind=${kind}`,
+  BADGE_LEVELS: `${API_BASE_URL}/api/v1/badges/levels`,
+  CUSTOMER_REVIEWS: (customerId, limit = 20) =>
+    `${API_BASE_URL}/api/v1/reviews/customers/${customerId}?limit=${limit}`,
+  VERIFY_EMAIL_REQUEST_OTP: `${API_BASE_URL}/api/v1/auth/verify-email/request-otp`,
+  VERIFY_EMAIL_VERIFY_OTP: `${API_BASE_URL}/api/v1/auth/verify-email/verify-otp`,
+  VERIFY_STATUS: `${API_BASE_URL}/api/v1/auth/verify/status`,
+  VERIFY_UPLOAD_URL: `${API_BASE_URL}/api/v1/auth/verify/manual/upload-url`,
+  VERIFY_SUBMIT: `${API_BASE_URL}/api/v1/auth/verify/manual/submit`,
+  VERIFY_START: `${API_BASE_URL}/api/v1/auth/verify/start`,
+  TELEGRAM_LINK_STATUS: `${API_BASE_URL}/api/v1/auth/telegram/status`,
+  TELEGRAM_LINK: `${API_BASE_URL}/api/v1/auth/telegram/link`,
   AUTH_CHANGE_PHONE_REQUEST_OTP: `${API_BASE_URL}/api/v1/auth/change-phone/request-otp`,
   AUTH_CHANGE_PHONE_VERIFY_OTP: `${API_BASE_URL}/api/v1/auth/change-phone/verify-otp`,
   RESET_PASSWORD_REQUEST_OTP: `${API_BASE_URL}/api/v1/auth/reset-password/request-otp`,
@@ -63,7 +94,22 @@ export const ENDPOINTS = {
   ORDER_CHAT_READ: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/chat/read`,
   ORDER_OFFER: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/offer`,
   ORDER_AGREE: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/agree`,
+  ORDER_DECLINE: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/decline`,
+  ORDER_SEND_TO: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/send-to`,
+  ORDER_PUBLISH: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/publish`,
   ORDER_CANCEL: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/cancel-by-customer`,
+
+  // Usta xizmat e'lonlari. `browse` sahifalangan ({ items, pagination }) va barcha filtrlarni biladi.
+  LISTINGS_BROWSE: `${API_BASE_URL}/api/v1/listings/browse`,
+  LISTING_DETAIL: (listingId) => `${API_BASE_URL}/api/v1/listings/${listingId}`,
+  LISTING_COMMENTS: (listingId) => `${API_BASE_URL}/api/v1/listings/${listingId}/comments`,
+  LISTING_COMMENT: (listingId, commentId) =>
+    `${API_BASE_URL}/api/v1/listings/${listingId}/comments/${commentId}`,
+  LISTING_FAVORITES: (page = 1, size = 12) =>
+    `${API_BASE_URL}/api/v1/customers/me/listing-favorites?page=${page}&size=${size}`,
+  LISTING_FAVORITE: (listingId) =>
+    `${API_BASE_URL}/api/v1/customers/me/listing-favorites/${listingId}`,
+  LISTING_LIKE: (listingId) => `${API_BASE_URL}/api/v1/listings/${listingId}/like`,
 };
 // https://engraver-garnet-scalded.ngrok-free.dev
 // http://10.240.8.109:9494

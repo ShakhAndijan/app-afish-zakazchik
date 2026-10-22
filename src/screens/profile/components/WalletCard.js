@@ -13,21 +13,31 @@ export default function WalletCard({ balance, onPress }) {
 
   return (
     <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
-      <TouchableOpacity style={[styles.card, { overflow: 'hidden' }]} activeOpacity={0.9} onPress={onPress}>
+      <TouchableOpacity
+        style={[styles.card, { overflow: 'hidden' }]}
+        activeOpacity={0.9}
+        onPress={onPress}
+      >
         <View style={styles.circle} />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
           <View style={styles.icon}>
             <MaterialCommunityIcons name="wallet" size={22} color="#fff" />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.9)' }}>{tr('profile.wallet.title')}</Text>
+            <Text style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.9)' }}>
+              {tr('profile.wallet.title')}
+            </Text>
             <Text style={{ fontWeight: '800', fontSize: 20, color: '#fff', marginTop: 2 }}>
               {formatNumber(balance)}{' '}
-              <Text style={{ fontSize: 12, fontWeight: '600', opacity: 0.85 }}>{tr('common.currencySom')}</Text>
+              <Text style={{ fontSize: 12, fontWeight: '600', opacity: 0.85 }}>
+                {tr('common.currencySom')}
+              </Text>
             </Text>
           </View>
           <TouchableOpacity style={styles.topupBtn} activeOpacity={0.8} onPress={onPress}>
-            <Text style={{ color: t.orangeD, fontWeight: '700', fontSize: 12.5 }}>{tr('profile.wallet.topup')}</Text>
+            <Text style={{ color: t.orangeD, fontWeight: '700', fontSize: 12.5 }}>
+              {tr('profile.wallet.topup')}
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -40,7 +50,9 @@ export default function WalletCard({ balance, onPress }) {
                 {tr('profile.loyalty.silverCustomer')}
               </Text>
             </View>
-            <Text style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.9)' }}>{tr('profile.loyalty.toNextLevel')}</Text>
+            <Text style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.9)' }}>
+              {tr('profile.loyalty.toNextLevel')}
+            </Text>
           </View>
           <View style={styles.progressTrack}>
             <View style={[styles.progressFill, { width: '70%' }]} />

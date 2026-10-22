@@ -7,7 +7,9 @@ function SettingsRow({ icon, label, value, danger, color, onPress }) {
 
   return (
     <TouchableOpacity style={styles.row} activeOpacity={0.7} onPress={onPress}>
-      <View style={[styles.rowIcon, { backgroundColor: danger ? 'rgba(224,71,58,0.13)' : t.rowIconBg }]}>
+      <View
+        style={[styles.rowIcon, { backgroundColor: danger ? 'rgba(224,71,58,0.13)' : t.rowIconBg }]}
+      >
         <MaterialCommunityIcons name={icon} size={19} color={danger ? t.red : color || t.muted} />
       </View>
       <Text style={[styles.rowLabel, { color: danger ? t.red : t.text }]}>{label}</Text>

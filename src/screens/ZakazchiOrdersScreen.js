@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
-import { orderRoute } from '../navigation/params';
+import { orderOrRequestRoute } from '../navigation/params';
 import AfishLoader from '../components/AfishLoader';
 import SectionError from './zakazchi-main/components/SectionError';
 import useMyOrders from './orders/hooks/useMyOrders';
@@ -55,7 +55,12 @@ export default function ZakazchiOrdersScreen({ onBack }) {
               <OrdersEmpty />
             ) : (
               list.map((order) => (
-                <OrderCard key={order.id} order={order} onPress={() => router.push(orderRoute(order))} t={t} />
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  onPress={() => router.push(orderOrRequestRoute(order))}
+                  t={t}
+                />
               ))
             )}
           </View>

@@ -7,7 +7,7 @@ export const toMs = (value) => (typeof value === 'number' ? value : new Date(val
 export function orderState(order) {
   switch (order.rawStatus) {
     case 'pending':
-      return 'pending';
+      return order.returnedAt ? 'returned' : 'pending';
     case 'accepted':
       return order.offerBy === 'worker' && order.offerPrice != null ? 'offer' : 'negotiating';
     case 'active':
@@ -23,7 +23,8 @@ export function orderState(order) {
 
 export const isOpenOrder = (order) => ['pending', 'accepted', 'active'].includes(order.rawStatus);
 
-export const formatPrice = (tr, value) => `${formatNumber(Math.round(value))} ${tr('common.currencySom')}`;
+export const formatPrice = (tr, value) =>
+  `${formatNumber(Math.round(value))} ${tr('common.currencySom')}`;
 
 // Karta va banner uchun matnlar. `tone` — theme rangi nomi.
 export function describeOrder(order, tr) {
@@ -48,6 +49,20 @@ export function describeOrder(order, tr) {
         title: tr('requests.statusNegotiatingTitle', { name }),
         sub: tr('requests.statusNegotiatingSub'),
         short: tr('requests.cardNegotiating', { name }),
+      };
+    case 'returned':
+      return {
+        state,
+        tone: 'red',
+        icon: 'undo-variant',
+        title:
+          order.returnedBy === 'customer'
+            ? tr('requests.statusReturnedByYouTitle')
+            : tr('requests.statusReturnedTitle', {
+                name: order.returnedWorkerName ?? tr('requests.workerFallback'),
+              }),
+        sub: tr('requests.statusReturnedSub'),
+        short: tr('requests.cardReturned'),
       };
     case 'active':
       return {

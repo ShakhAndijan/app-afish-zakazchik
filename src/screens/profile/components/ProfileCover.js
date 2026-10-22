@@ -17,6 +17,10 @@ export default function ProfileCover({
   stats,
   onEdit,
   onOrdersPress,
+  identityStatus,
+  rating,
+  onIdentityPress,
+  onRatingPress,
 }) {
   const { theme: t } = useTheme();
 
@@ -30,7 +34,16 @@ export default function ProfileCover({
             uploading={avatarUploading}
             onPress={onAvatarPress}
           />
-          <ProfileInfo name={name} phone={phone} location={location} onEdit={onEdit} />
+          <ProfileInfo
+            name={name}
+            phone={phone}
+            location={location}
+            onEdit={onEdit}
+            identityStatus={identityStatus}
+            rating={rating}
+            onIdentityPress={onIdentityPress}
+            onRatingPress={onRatingPress}
+          />
           <ThemeToggleButton />
         </View>
       </View>

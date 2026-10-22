@@ -6,7 +6,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 
 // "Qo'shimcha ma'lumotlar": ixtiyoriy maydonlar (asboblar, talablar, narx va h.k.) yopiq turadi,
 // bosilganda ochiladi. `filled` — ichida nechta maydon to'ldirilgani (nishon sifatida ko'rsatiladi).
-export default function ExtraSection({ filled = 0, children }) {
+export default function ExtraSection({ no, filled = 0, children }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
   const [open, setOpen] = useState(false);
@@ -26,10 +26,14 @@ export default function ExtraSection({ filled = 0, children }) {
         style={[s.header, { backgroundColor: t.card, borderColor: open ? t.orange : t.border }]}
       >
         <View style={[s.icon, { backgroundColor: t.orange + '1f' }]}>
-          <MaterialCommunityIcons name="tune-variant" size={20} color={t.orange} />
+          {no != null ? (
+            <Text style={[s.no, { color: t.orange }]}>{no}</Text>
+          ) : (
+            <MaterialCommunityIcons name="tune-variant" size={20} color={t.orange} />
+          )}
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={[s.title, { color: t.text }]}>{tr('newOrder.extraTitle')}</Text>
+          <Text style={[s.title, { color: t.text }]}>{tr('newOrder.step3Title')}</Text>
           <Text style={[s.sub, { color: t.muted }]} numberOfLines={2}>
             {filled > 0 ? tr('newOrder.extraFilled', { n: filled }) : tr('newOrder.extraSubtitle')}
           </Text>
@@ -64,6 +68,7 @@ const s = StyleSheet.create({
   icon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   title: { fontSize: 14.5, fontWeight: '800' },
   sub: { fontSize: 12, marginTop: 2, lineHeight: 16 },
+  no: { fontSize: 18, fontWeight: '800' },
   badge: {
     minWidth: 22,
     height: 22,

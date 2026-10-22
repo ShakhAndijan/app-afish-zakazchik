@@ -2,11 +2,18 @@ import { useState, useCallback } from 'react';
 import { Alert } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLanguage } from '../../../context/LanguageContext';
-import { agreeOrder, offerOrderPrice, cancelOrderByCustomer } from '../../../api/orders';
+import {
+  agreeOrder,
+  offerOrderPrice,
+  cancelOrderByCustomer,
+  declineOrder,
+  sendOrderTo,
+  publishOrder,
+} from '../../../api/orders';
 import { formatNumber } from '../../../utils/format';
 import { getErrorMessage } from '../../../utils/errors';
 
-// Buyurtma ustidagi amallar: ustaning taklifini qabul qilish, narx taklif qilish, bekor qilish.
+// Buyurtma ustidagi amallar: ustaning taklifini qabul qilish yoki rad etish, narx taklif qilish, bekor qilish.
 // Har biri tugagach `onDone` (odatda buyurtmani qayta yuklash) chaqiriladi, xato bo'lsa ogohlantirish.
 export default function useOrderActions(orderId, onDone) {
   const { t: tr } = useLanguage();
@@ -50,6 +57,25 @@ export default function useOrderActions(orderId, onDone) {
     [orderId, run, tr]
   );
 
+  // Kelishuvni rad etish (saytdagi "Rad etish"): sabab majburiy; kelishuv to'xtaydi, buyurtma mijozga qaytadi.
+  const decline = useCallback((reason) => run(() => declineOrder(orderId, reason)), [orderId, run]);
+
+  // Qaytgan buyurtmani boshqa ustaga yuborish.
+  const sendTo = useCallback(
+    (workerId) => run(() => sendOrderTo(orderId, workerId)),
+    [orderId, run]
+  );
+
+  // Qaytgan buyurtmani umumiy ro'yxatga chiqarish (tasdiqlashdan keyin).
+  const confirmPublish = useCallback(
+    () =>
+      Alert.alert(tr('requests.publishTitle'), tr('requests.publishHint'), [
+        { text: tr('requests.close'), style: 'cancel' },
+        { text: tr('requests.publish'), onPress: () => run(() => publishOrder(orderId)) },
+      ]),
+    [orderId, run, tr]
+  );
+
   const offerPrice = useCallback(
     (price) => run(() => offerOrderPrice(orderId, price)),
     [orderId, run]
@@ -59,7 +85,7 @@ export default function useOrderActions(orderId, onDone) {
     [orderId, run]
   );
 
-  return { busy, confirmAgree, offerPrice, cancel };
+  return { busy, confirmAgree, decline, sendTo, confirmPublish, offerPrice, cancel };
 }
 
 // "150 000" / "150000" → 150000 (yaroqsiz bo'lsa null).

@@ -10,11 +10,13 @@ import {
   Image,
 } from 'react-native';
 import { Feather, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import PhoneInput from '../../components/login/PhoneInput';
 import ThemeSwitch from '../../components/ThemeSwitch';
 import EmailInput from '../../components/login/EmailInput';
+import { documentRoute } from '../../navigation/params';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -32,6 +34,7 @@ export default function PhoneStep({
   onBack,
   actorType = 'customer',
 }) {
+  const router = useRouter();
   const { theme } = useTheme();
   const { t } = useLanguage();
   const isDark = theme.isDark !== false;
@@ -242,11 +245,17 @@ export default function PhoneStep({
           <View style={s.footer}>
             <Text style={[s.terms, { color: theme.muted }]}>
               {t('login.phoneStep.termsPrefix')}{' '}
-              <Text style={{ color: theme.text, fontWeight: '700' }}>
+              <Text
+                style={{ color: theme.text, fontWeight: '700' }}
+                onPress={() => router.push(documentRoute('terms'))}
+              >
                 {t('login.phoneStep.termsLink')}
               </Text>
               {' ' + t('login.phoneStep.termsAnd') + ' '}
-              <Text style={{ color: theme.text, fontWeight: '700' }}>
+              <Text
+                style={{ color: theme.text, fontWeight: '700' }}
+                onPress={() => router.push(documentRoute('privacy'))}
+              >
                 {t('login.phoneStep.privacyLink')}
               </Text>
               {t('login.phoneStep.termsSuffix')}

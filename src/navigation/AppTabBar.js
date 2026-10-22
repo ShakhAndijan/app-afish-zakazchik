@@ -4,14 +4,16 @@ import { useKeyboardState } from 'react-native-keyboard-controller';
 import BottomNav from '../components/BottomNav';
 import { useTheme } from '../context/ThemeContext';
 
-// Marshrut nomi ↔ BottomNav kaliti.
+// Marshrut nomi ↔ BottomNav kaliti. `services` menyuda yo'q — u bosh sahifadan ochiladi, shuning uchun
+// uning ustida "Asosiy" belgilanib turadi.
 const ROUTE_TO_KEY = {
   home: 'home',
   'new-order': 'newOrder',
-  services: 'services',
+  ads: 'ads',
+  services: 'home',
   profile: 'profile',
 };
-const KEY_TO_ROUTE = Object.fromEntries(Object.entries(ROUTE_TO_KEY).map(([r, k]) => [k, r]));
+const KEY_TO_ROUTE = { home: 'home', newOrder: 'new-order', ads: 'ads', profile: 'profile' };
 
 // Mavjud suzuvchi BottomNav dizayni Tabs navigatoriga `tabBar` sifatida ulanadi.
 // O'ram oynasi ixtiyoriy balandlikda: Android o'ram chegarasidan tashqaridagi bosishlarni o'tkazmaydi.

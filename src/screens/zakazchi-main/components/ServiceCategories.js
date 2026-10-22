@@ -2,6 +2,7 @@ import { useMemo, useCallback, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../../../context/ThemeContext';
+import { useLanguage } from '../../../context/LanguageContext';
 
 const GAP = 10;
 const H_PAD = 20;
@@ -23,6 +24,7 @@ export default function ServiceCategories({
   autoScroll = true,
 }) {
   const { theme: t } = useTheme();
+  const { t: tr } = useLanguage();
 
   // Ikki qatorga navbatma-navbat bo'linadi, shunda qatorlar uzunligi taxminan teng bo'ladi.
   const rows = useMemo(() => {
@@ -50,11 +52,18 @@ export default function ServiceCategories({
           activeOpacity={0.8}
           accessibilityRole="button"
           accessibilityLabel={item.name}
+          accessibilityHint={isActive ? tr('workersList.clear') : undefined}
           accessibilityState={{ selected: isActive }}
         >
           <Text style={[s.name, { color: t.text }]} numberOfLines={2}>
             {item.name}
           </Text>
+          {isActive && (
+            // Tanlovni bekor qilish: tanlangan kategoriya ichidagi kichik ✕ (pillning o'zi ham bosilsa bekor bo'ladi).
+            <View style={[s.clearDot, { backgroundColor: color }]} pointerEvents="none">
+              <MaterialCommunityIcons name="close" size={13} color="#fff" />
+            </View>
+          )}
           <View style={s.iconWrap} pointerEvents="none">
             {item.icon ? (
               <Text style={s.emoji} allowFontScaling={false}>
@@ -67,7 +76,7 @@ export default function ServiceCategories({
         </TouchableOpacity>
       );
     },
-    [selectedId, t, onSelect]
+    [selectedId, t, tr, onSelect]
   );
 
   if (!categories || categories.length === 0) return null;
@@ -145,6 +154,16 @@ function PillRow({ children, paddingHorizontal, auto, reverse, interval }) {
 }
 
 const s = StyleSheet.create({
+  clearDot: {
+    position: 'absolute',
+    top: 7,
+    right: 8,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   pill: {
     height: PILL_H,
     minWidth: 104,

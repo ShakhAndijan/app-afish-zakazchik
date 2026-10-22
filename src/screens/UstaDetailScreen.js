@@ -10,12 +10,14 @@ import DetailHeader from './usta-detail/components/DetailHeader';
 import ProfileHero from './usta-detail/components/ProfileHero';
 import StatCards from './usta-detail/components/StatCards';
 import BadgeRow from './usta-detail/components/BadgeRow';
+import TrustSection from './usta-detail/components/TrustSection';
 import LanguagesSection from './usta-detail/components/LanguagesSection';
 import SpecializationSection from './usta-detail/components/SpecializationSection';
 import ServicePricesSection from './usta-detail/components/ServicePricesSection';
 import ScheduleSection from './usta-detail/components/ScheduleSection';
 import CertificatesSection from './usta-detail/components/CertificatesSection';
 import WorksSection from './usta-detail/components/WorksSection';
+import ListingsSection from './usta-detail/components/ListingsSection';
 import RatingSection from './usta-detail/components/RatingSection';
 import ReviewsSection from './usta-detail/components/ReviewsSection';
 import BottomCta from './usta-detail/components/BottomCta';
@@ -111,6 +113,7 @@ function UstaDetailContent({
           />
           <StatCards items={buildStatItems({ d, experience, detail, portfolio, tr, C })} />
           <BadgeRow badges={buildBadges(d, tr, C)} />
+          <TrustSection detail={detail} />
           <LanguagesSection languages={profile.languages} />
           <SpecializationSection
             categories={categories}
@@ -134,6 +137,8 @@ function UstaDetailContent({
           loading={loadingDetail}
           onSelectWork={(work) => onSelectWork?.({ ...work, worker: name })}
         />
+
+        <ListingsSection workerId={usta?.id ?? detail?.id} />
 
         <View style={st.pad}>
           <RatingSection

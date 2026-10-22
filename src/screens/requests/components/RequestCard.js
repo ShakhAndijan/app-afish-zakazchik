@@ -6,7 +6,7 @@ import Avatar from '../../../components/Avatar';
 import { describeOrder, formatPrice } from '../utils';
 
 const STEP_KEYS = ['requests.stepSearch', 'requests.stepTalk', 'requests.stepWork'];
-const STEP_OF = { pending: 0, negotiating: 1, offer: 1, active: 2 };
+const STEP_OF = { pending: 0, returned: 0, negotiating: 1, offer: 1, active: 2 };
 
 // Buyurtma bosqichlari: qidiruv → kelishuv → ish. Joriy bosqich holat rangida ajratiladi.
 function Progress({ current, color, t, tr }) {

@@ -10,7 +10,12 @@ export default function ProfileAvatar({ letter, uri, uploading, onPress }) {
   const { theme: t } = useTheme();
 
   return (
-    <TouchableOpacity style={styles.wrap} activeOpacity={0.85} onPress={onPress} disabled={uploading}>
+    <TouchableOpacity
+      style={styles.wrap}
+      activeOpacity={0.85}
+      onPress={onPress}
+      disabled={uploading}
+    >
       <Avatar letter={letter} size={SIZE} bgColor={t.orange} uri={uri} />
       {uploading && (
         <View style={[styles.overlay, { borderRadius: SIZE * 0.32 }]}>

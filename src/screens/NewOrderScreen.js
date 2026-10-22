@@ -27,8 +27,10 @@ import PhotosSection from './new-order/sections/PhotosSection';
 import ToolsSection from './new-order/sections/ToolsSection';
 import WorkerCountSection from './new-order/sections/WorkerCountSection';
 import RequirementsSection from './new-order/sections/RequirementsSection';
+import OrderProgressCard from './new-order/sections/OrderProgressCard';
 import PricingSection from './new-order/sections/PricingSection';
 import ContactSection, { BackupPhoneSection } from './new-order/sections/ContactSection';
+import StepHeader from './new-order/components/StepHeader';
 import ExtraSection from './new-order/sections/ExtraSection';
 import SubmitButton from './new-order/sections/SubmitButton';
 import useOrderPhotos from './new-order/hooks/useOrderPhotos';
@@ -64,7 +66,10 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
   const [toolsOption, setToolsOption] = useState(null);
   const [workerCount, setWorkerCount] = useState(1);
   const [requirePhoto, setRequirePhoto] = useState(false);
+  const [requireVerified, setRequireVerified] = useState(false);
   const [minRating, setMinRating] = useState(0);
+  const [minExperience, setMinExperience] = useState(0);
+  const [extraRequirements, setExtraRequirements] = useState('');
   const [ageFrom, setAgeFrom] = useState('');
   const [ageTo, setAgeTo] = useState('');
   const [pricingType, setPricingType] = useState('fixed');
@@ -111,25 +116,31 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
     tr('newOrder.addressModalTitle');
   const addressSubtitle = selectedDistrict?.name || selectedRegion?.name ? street.trim() : '';
 
-  // Majburiy maydonlar: xizmat, tavsif, manzil, qachon (sana tanlangan bo'lsa — sana ham), narx
-  // ("Ish uchun" — ish narxi, "Soatbay" — soat narxi), telefon.
+  // Majburiy maydonlar: tavsif, narx ("Ish uchun" — ish narxi, "Soatbay" — soat narxi), qachon
+  // (sana tanlangan bo'lsa — sana ham), manzil, telefon. Kategoriya ixtiyoriy (saytdagidek).
   const addressReady = !!districtId || (gpsLat != null && gpsLng != null);
   const whenReady = !!when && (when !== 'date' || !!whenDate);
   const priceReady = pricingType === 'hourly' ? !!hourlyRate.trim() : !!fixedPrice.trim();
+  // Tartib saytdagi bilan bir xil: tavsif, narx, sana, manzil, telefon (kategoriya ixtiyoriy).
   const missing = [
-    categoryIds.length === 0 && 'newOrder.categoryLabel',
     description.trim().length === 0 && 'newOrder.descriptionLabel',
-    !addressReady && 'newOrder.locationLabel',
-    !whenReady && 'newOrder.whenLabel',
     !priceReady && 'newOrder.pricingLabel',
+    !whenReady && 'newOrder.whenLabel',
+    !addressReady && 'newOrder.locationLabel',
     phone.trim().length === 0 && 'newOrder.phoneLabel',
   ].filter(Boolean);
   const ready = missing.length === 0;
   const extraFilled = [
-    !!toolsOption,
+    categoryIds.length > 0,
     workerCount > 1,
-    requirePhoto || minRating > 0 || !!ageFrom.trim() || !!ageTo.trim(),
-    !!backupPhone.trim(),
+    requirePhoto ||
+      requireVerified ||
+      minRating > 0 ||
+      minExperience > 0 ||
+      !!ageFrom.trim() ||
+      !!ageTo.trim() ||
+      !!extraRequirements.trim(),
+    !!toolsOption,
   ].filter(Boolean).length;
 
   // Payload va tasdiqlash oynasi uchun umumiy forma qiymatlari.
@@ -151,7 +162,10 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
     toolsOption,
     workerCount,
     requirePhoto,
+    requireVerified,
     minRating,
+    minExperience,
+    extraRequirements,
     ageFrom,
     ageTo,
     pricingType,
@@ -251,29 +265,17 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
         <Text style={[s.subtitle, { color: t.muted }]}>{tr('newOrder.headerSubtitle')}</Text>
 
         <TargetWorkerCard orderWorker={orderWorker} setOrderWorker={setOrderWorker} />
-        <CategorySection
-          selectedCategories={selectedCategories}
-          toggleCategory={toggleCategory}
-          setCategoryPickerOpen={setCategoryPickerOpen}
-        />
+
+        {/* Tartib saytdagi (dev.afish.uz/buyurtma) bilan bir xil:
+            1) tafsilotlar — tavsif, narx, sana, rasm;
+            2) manzil va aloqa — manzil, telefon, zaxira telefon;
+            3) ixtiyoriy qo'shimcha — kategoriya, necha kishi, talablar. */}
+        <StepHeader no={1} title={tr('newOrder.step1Title')} />
         <DescriptionSection
           selectedCategories={selectedCategories}
           description={description}
           setDescription={setDescription}
         />
-        <PhotosSection
-          photos={photos}
-          pickPhotos={pickPhotos}
-          removePhoto={removePhoto}
-          setPreviewIndex={setPreviewIndex}
-        />
-        <AddressSection
-          hasAddress={hasAddress}
-          setAddressModalOpen={setAddressModalOpen}
-          addressTitle={addressTitle}
-          addressSubtitle={addressSubtitle}
-        />
-        <WhenSection when={when} setWhen={setWhen} whenDate={whenDate} setWhenDate={setWhenDate} />
         <PricingSection
           pricingType={pricingType}
           setPricingType={setPricingType}
@@ -284,25 +286,53 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
           fixedPrice={fixedPrice}
           setFixedPrice={setFixedPrice}
         />
+        <WhenSection when={when} setWhen={setWhen} whenDate={whenDate} setWhenDate={setWhenDate} />
+        <PhotosSection
+          photos={photos}
+          pickPhotos={pickPhotos}
+          removePhoto={removePhoto}
+          setPreviewIndex={setPreviewIndex}
+        />
+
+        <StepHeader no={2} title={tr('newOrder.step2Title')} />
+        <AddressSection
+          hasAddress={hasAddress}
+          setAddressModalOpen={setAddressModalOpen}
+          addressTitle={addressTitle}
+          addressSubtitle={addressSubtitle}
+        />
+        <ContactSection phone={phone} setPhone={setPhone} />
+        <BackupPhoneSection backupPhone={backupPhone} setBackupPhone={setBackupPhone} />
 
         {/* Ixtiyoriy maydonlar yig'ilgan holda turadi */}
-        <ExtraSection filled={extraFilled}>
-          <ToolsSection toolsOption={toolsOption} setToolsOption={setToolsOption} />
+        <ExtraSection no={3} filled={extraFilled}>
+          <CategorySection
+            selectedCategories={selectedCategories}
+            toggleCategory={toggleCategory}
+            setCategoryPickerOpen={setCategoryPickerOpen}
+          />
           <WorkerCountSection workerCount={workerCount} setWorkerCount={setWorkerCount} />
           <RequirementsSection
+            targeted={!!orderWorker}
             requirePhoto={requirePhoto}
             setRequirePhoto={setRequirePhoto}
+            requireVerified={requireVerified}
+            setRequireVerified={setRequireVerified}
             minRating={minRating}
             setMinRating={setMinRating}
+            minExperience={minExperience}
+            setMinExperience={setMinExperience}
+            extraRequirements={extraRequirements}
+            setExtraRequirements={setExtraRequirements}
             ageFrom={ageFrom}
             setAgeFrom={setAgeFrom}
             ageTo={ageTo}
             setAgeTo={setAgeTo}
           />
-          <BackupPhoneSection backupPhone={backupPhone} setBackupPhone={setBackupPhone} />
+          <ToolsSection toolsOption={toolsOption} setToolsOption={setToolsOption} />
         </ExtraSection>
 
-        <ContactSection phone={phone} setPhone={setPhone} />
+        <OrderProgressCard missing={missing} />
 
         <SubmitButton ready={ready} missing={missing} onPress={openReview} />
       </KeyboardAwareScrollView>

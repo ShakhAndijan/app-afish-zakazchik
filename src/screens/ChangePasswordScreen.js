@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   View,
   Text,
@@ -15,7 +16,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Feather from '@expo/vector-icons/Feather';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
-import { setPassword } from '../api/user';
+import { getCustomerMe, setPassword } from '../api/user';
 import SuccessModal from '../components/SuccessModal';
 import { getErrorMessage } from '../utils/errors';
 
@@ -82,6 +83,14 @@ function PasswordRules({ password, t }) {
 export default function ChangePasswordScreen({ onBack }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
+  const queryClient = useQueryClient();
+  const me = useQuery({
+    queryKey: ['customer', 'me'],
+    queryFn: getCustomerMe,
+    staleTime: 30 * 1000,
+  });
+  // has_password === false: parol hali o'rnatilmagan — joriy parol so'ralmaydi.
+  const needsCurrent = me.data?.has_password !== false;
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
@@ -91,15 +100,17 @@ export default function ChangePasswordScreen({ onBack }) {
 
   const passwordOk = PASSWORD_RULES.every((r) => r.test(newPw));
   const matchOk = confirmPw.length > 0 && confirmPw === newPw;
-  const sameAsOld = newPw.length > 0 && newPw === currentPw;
-  const isReady = currentPw.length >= 4 && passwordOk && matchOk && !sameAsOld && !loading;
+  const sameAsOld = needsCurrent && newPw.length > 0 && newPw === currentPw;
+  const isReady =
+    (!needsCurrent || currentPw.length >= 4) && passwordOk && matchOk && !sameAsOld && !loading;
 
   const handleSubmit = async () => {
     if (!isReady) return;
     setCurrentPwError('');
     setLoading(true);
     try {
-      await setPassword(currentPw, newPw);
+      await setPassword(needsCurrent ? currentPw : undefined, newPw);
+      queryClient.invalidateQueries({ queryKey: ['customer', 'me'] });
       setShowSuccess(true);
     } catch (e) {
       if (e.status === 400 || e.status === 401 || e.status === 403) {
@@ -124,7 +135,9 @@ export default function ChangePasswordScreen({ onBack }) {
         >
           <MaterialCommunityIcons name="chevron-left" size={24} color={t.text} />
         </TouchableOpacity>
-        <Text style={[s.headerTitle, { color: t.text }]}>{tr('changePassword.headerTitle')}</Text>
+        <Text style={[s.headerTitle, { color: t.text }]}>
+          {tr(needsCurrent ? 'changePassword.headerTitle' : 'changePassword.createTitle')}
+        </Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
@@ -136,17 +149,19 @@ export default function ChangePasswordScreen({ onBack }) {
         </View>
 
         <View style={{ gap: 18, marginTop: 20 }}>
-          <PasswordField
-            label={tr('changePassword.currentPwLabel')}
-            value={currentPw}
-            onChangeText={(v) => {
-              setCurrentPw(v);
-              if (currentPwError) setCurrentPwError('');
-            }}
-            placeholder={tr('changePassword.currentPwPlaceholder')}
-            t={t}
-            error={currentPwError}
-          />
+          {needsCurrent && (
+            <PasswordField
+              label={tr('changePassword.currentPwLabel')}
+              value={currentPw}
+              onChangeText={(v) => {
+                setCurrentPw(v);
+                if (currentPwError) setCurrentPwError('');
+              }}
+              placeholder={tr('changePassword.currentPwPlaceholder')}
+              t={t}
+              error={currentPwError}
+            />
+          )}
 
           <View style={{ gap: 8 }}>
             <PasswordField
@@ -179,7 +194,9 @@ export default function ChangePasswordScreen({ onBack }) {
           {loading ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <Text style={s.submitText}>{tr('changePassword.submitBtn')}</Text>
+            <Text style={s.submitText}>
+              {tr(needsCurrent ? 'changePassword.submitBtn' : 'changePassword.createBtn')}
+            </Text>
           )}
         </TouchableOpacity>
       </ScrollView>
@@ -191,7 +208,9 @@ export default function ChangePasswordScreen({ onBack }) {
           onBack();
         }}
         t={t}
-        message={tr('changePassword.successMessage')}
+        message={tr(
+          needsCurrent ? 'changePassword.successMessage' : 'changePassword.createdMessage'
+        )}
       />
     </SafeAreaView>
   );

@@ -28,10 +28,57 @@ export const orderRoute = (order) => ({
   params: { id: String(order?.id ?? 'buyurtma'), data: encodeParam(order) },
 });
 
+// Murojaatlar / takliflar (saytdagi kabinet "Murojaatlarim" va "Takliflarim").
+export const supportRoute = (kind = 'question') => ({
+  pathname: '/support',
+  params: { kind: kind === 'suggestion' ? 'suggestion' : 'question' },
+});
+
+// Hujjat sahifasi: 'about' | 'privacy' | 'terms'.
+export const documentRoute = (key) => ({ pathname: '/document', params: { key } });
+
+// Ochiq buyurtma (kutilmoqda / kelishilmoqda / jarayonda) jonli kuzatuv ekranida ochiladi,
+// yopilgani (bajarilgan / bekor qilingan) — tafsilot ekranida.
+export const requestRoute = (order) => ({
+  pathname: '/request/[id]',
+  params: { id: String(order?.id ?? '') },
+});
+
+const OPEN_STATUSES = ['pending', 'accepted', 'active'];
+export const orderOrRequestRoute = (order) =>
+  OPEN_STATUSES.includes(order?.rawStatus) ? requestRoute(order) : orderRoute(order);
+
 // Usta profilidan "Chaqirish": ustaga buyurtma berish oynasi (profil ustida ochiladi).
 export const orderWorkerRoute = (worker) => ({
   pathname: '/order-worker',
   params: { worker: encodeParam(worker) },
+});
+
+// E'lonlar ro'yxati. `saved` — "Saqlanganlar" bo'limi ochiq holda; `workerId` — faqat shu usta e'lonlari.
+export const listingsRoute = ({ saved, workerId, workerName } = {}) => ({
+  pathname: '/listings',
+  params: {
+    ...(saved ? { saved: '1' } : {}),
+    ...(workerId ? { workerId: String(workerId), workerName: workerName ?? '' } : {}),
+  },
+});
+
+// Bitta e'lon. `data` (kartadagi tayyor ma'lumot) berilsa, to'liq javob kelguncha o'sha ko'rsatiladi.
+export const listingRoute = (listing) => ({
+  pathname: '/listing/[id]',
+  params: { id: String(listing?.id ?? ''), data: encodeParam(listing) },
+});
+
+// E'lonlarni to'liq ekranda (Reels ko'rinishida) ochish. `listing` — bosilgani; `filters`/`saved` — u chiqqan ro'yxat,
+// shu ro'yxat bo'yicha keyingi e'lonlarga surib o'tiladi.
+export const reelsRoute = (listing, { filters, saved } = {}) => ({
+  pathname: '/reels',
+  params: {
+    id: String(listing?.id ?? ''),
+    data: encodeParam(listing),
+    ...(filters ? { filters: encodeParam(filters) } : {}),
+    ...(saved ? { saved: '1' } : {}),
+  },
 });
 
 export const newOrderRoute = (worker) => ({

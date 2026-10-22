@@ -37,6 +37,7 @@ export default function RequestChatScreen({ orderId, onBack }) {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [priceOpen, setPriceOpen] = useState(false);
+  const [declineOpen, setDeclineOpen] = useState(false);
   const scrollRef = useRef(null);
 
   const loadChat = useCallback(async () => {
@@ -134,6 +135,14 @@ export default function RequestChatScreen({ orderId, onBack }) {
           >
             <Text style={[s.smallBtnText, { color: t.text }]}>{tr('requests.counter')}</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[s.smallBtn, { borderColor: t.red + '66', borderWidth: 1.5 }]}
+            activeOpacity={0.8}
+            disabled={actions.busy}
+            onPress={() => setDeclineOpen(true)}
+          >
+            <Text style={[s.smallBtnText, { color: t.red }]}>{tr('requests.decline')}</Text>
+          </TouchableOpacity>
           {workerOffer && (
             <TouchableOpacity
               style={[s.smallBtn, { backgroundColor: t.orange, opacity: actions.busy ? 0.6 : 1 }]}
@@ -196,6 +205,19 @@ export default function RequestChatScreen({ orderId, onBack }) {
         )}
       </KeyboardAvoidingView>
 
+      <PromptModal
+        visible={declineOpen}
+        title={tr('requests.declineConfirmTitle')}
+        placeholder={tr('requests.declineReasonPlaceholder')}
+        confirmLabel={tr('requests.decline')}
+        multiline
+        destructive
+        busy={actions.busy}
+        onClose={() => setDeclineOpen(false)}
+        onSubmit={async (reason) => {
+          if (await actions.decline(reason)) setDeclineOpen(false);
+        }}
+      />
       <PromptModal
         visible={priceOpen}
         title={tr('requests.priceTitle')}

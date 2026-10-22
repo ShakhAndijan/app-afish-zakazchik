@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -12,6 +12,7 @@ import AfishLoader from '../components/AfishLoader';
 import SectionError from './zakazchi-main/components/SectionError';
 import StatusBanner from './requests/components/StatusBanner';
 import PromptModal from './requests/components/PromptModal';
+import SendToModal from './requests/components/SendToModal';
 import useLiveOrder from './requests/hooks/useLiveOrder';
 import useOrderActions, { parsePrice } from './requests/hooks/useOrderActions';
 import { describeOrder, formatPrice, isOpenOrder, timeLabel } from './requests/utils';
@@ -26,6 +27,8 @@ export default function RequestScreen({ orderId, onBack }) {
   const actions = useOrderActions(orderId, refresh);
   const [priceOpen, setPriceOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [declineOpen, setDeclineOpen] = useState(false);
+  const [sendOpen, setSendOpen] = useState(false);
 
   const header = (
     <View style={s.header}>
@@ -36,7 +39,9 @@ export default function RequestScreen({ orderId, onBack }) {
       >
         <MaterialCommunityIcons name="chevron-left" size={24} color={t.text} />
       </TouchableOpacity>
-      <Text style={[s.title, { color: t.text }]}>{tr('requests.headerTitle', { id: orderId })}</Text>
+      <Text style={[s.title, { color: t.text }]}>
+        {tr('requests.headerTitle', { id: orderId })}
+      </Text>
     </View>
   );
 
@@ -81,11 +86,21 @@ export default function RequestScreen({ orderId, onBack }) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32, gap: 16 }}
       >
-        <StatusBanner info={info} pulsing={order.rawStatus === 'pending' || negotiating} />
+        <StatusBanner info={info} pulsing={info.state === 'pending' || negotiating} />
 
         <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
-          <SummaryRow icon="wrench-outline" label={tr('requests.summaryTitle')} value={order.service ?? order.task} t={t} />
-          <SummaryRow icon="map-marker-outline" label={tr('requests.summaryAddress')} value={order.address} t={t} />
+          <SummaryRow
+            icon="wrench-outline"
+            label={tr('requests.summaryTitle')}
+            value={order.service ?? order.task}
+            t={t}
+          />
+          <SummaryRow
+            icon="map-marker-outline"
+            label={tr('requests.summaryAddress')}
+            value={order.address}
+            t={t}
+          />
           <SummaryRow
             icon="clock-outline"
             label={tr('requests.summaryCreated')}
@@ -103,13 +118,20 @@ export default function RequestScreen({ orderId, onBack }) {
               activeOpacity={0.85}
               onPress={order.workerId ? openProfile : undefined}
             >
-              <Avatar letter={order.letter} bgColor={order.color} uri={order.masterPhoto} size={48} />
+              <Avatar
+                letter={order.letter}
+                bgColor={order.color}
+                uri={order.masterPhoto}
+                size={48}
+              />
               <View style={{ flex: 1 }}>
                 <Text style={[s.workerName, { color: t.text }]} numberOfLines={1}>
                   {order.master}
                 </Text>
                 {!!order.workerId && (
-                  <Text style={[s.workerLink, { color: t.orange }]}>{tr('requests.viewProfile')}</Text>
+                  <Text style={[s.workerLink, { color: t.orange }]}>
+                    {tr('requests.viewProfile')}
+                  </Text>
                 )}
               </View>
               <MaterialCommunityIcons name="chevron-right" size={22} color={t.faint} />
@@ -130,11 +152,15 @@ export default function RequestScreen({ orderId, onBack }) {
                     </Text>
                   </>
                 ) : (
-                  <Text style={[s.priceLabel, { color: t.muted }]}>{tr('requests.noOfferYet')}</Text>
+                  <Text style={[s.priceLabel, { color: t.muted }]}>
+                    {tr('requests.noOfferYet')}
+                  </Text>
                 )
               ) : (
                 <>
-                  <Text style={[s.priceLabel, { color: t.muted }]}>{tr('requests.agreedLabel')}</Text>
+                  <Text style={[s.priceLabel, { color: t.muted }]}>
+                    {tr('requests.agreedLabel')}
+                  </Text>
                   <Text style={[s.priceValue, { color: t.green }]}>
                     {order.agreedPrice != null ? formatPrice(tr, order.agreedPrice) : '—'}
                   </Text>
@@ -145,7 +171,10 @@ export default function RequestScreen({ orderId, onBack }) {
                 <View style={s.actions}>
                   {info.state === 'offer' && (
                     <TouchableOpacity
-                      style={[s.btn, { backgroundColor: t.orange, opacity: actions.busy ? 0.6 : 1 }]}
+                      style={[
+                        s.btn,
+                        { backgroundColor: t.orange, opacity: actions.busy ? 0.6 : 1 },
+                      ]}
                       activeOpacity={0.85}
                       disabled={actions.busy}
                       onPress={() => actions.confirmAgree(order)}
@@ -165,8 +194,42 @@ export default function RequestScreen({ orderId, onBack }) {
                   </TouchableOpacity>
                 </View>
               )}
+              {negotiating && (
+                <TouchableOpacity
+                  style={[s.declineBtn, { borderColor: t.red + '66' }]}
+                  activeOpacity={0.8}
+                  disabled={actions.busy}
+                  onPress={() => setDeclineOpen(true)}
+                >
+                  <MaterialCommunityIcons name="close" size={18} color={t.red} />
+                  <Text style={[s.btnText, { color: t.red }]}>{tr('requests.decline')}</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </>
+        )}
+
+        {info.state === 'returned' && (
+          <View style={{ gap: 10 }}>
+            <TouchableOpacity
+              style={[s.wideBtn, { backgroundColor: t.orange, opacity: actions.busy ? 0.6 : 1 }]}
+              activeOpacity={0.85}
+              disabled={actions.busy}
+              onPress={() => setSendOpen(true)}
+            >
+              <MaterialCommunityIcons name="account-arrow-right-outline" size={19} color="#fff" />
+              <Text style={[s.btnText, { color: '#fff' }]}>{tr('requests.sendToOther')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[s.wideBtn, { borderColor: t.line2, borderWidth: 1.5 }]}
+              activeOpacity={0.8}
+              disabled={actions.busy}
+              onPress={actions.confirmPublish}
+            >
+              <MaterialCommunityIcons name="bullhorn-outline" size={19} color={t.text} />
+              <Text style={[s.btnText, { color: t.text }]}>{tr('requests.publish')}</Text>
+            </TouchableOpacity>
+          </View>
         )}
 
         {canChat && (
@@ -202,6 +265,32 @@ export default function RequestScreen({ orderId, onBack }) {
         onSubmit={async (text) => {
           const price = parsePrice(text);
           if (price && (await actions.offerPrice(price))) setPriceOpen(false);
+        }}
+      />
+      <PromptModal
+        visible={declineOpen}
+        title={tr('requests.declineConfirmTitle')}
+        placeholder={tr('requests.declineReasonPlaceholder')}
+        confirmLabel={tr('requests.decline')}
+        multiline
+        destructive
+        busy={actions.busy}
+        onClose={() => setDeclineOpen(false)}
+        onSubmit={async (reason) => {
+          if (await actions.decline(reason)) setDeclineOpen(false);
+        }}
+      />
+      <SendToModal
+        visible={sendOpen}
+        categoryIds={order.categoryIds}
+        excludeId={order.returnedWorkerId}
+        busy={actions.busy}
+        onClose={() => setSendOpen(false)}
+        onPick={async (worker) => {
+          if (await actions.sendTo(worker.id)) {
+            setSendOpen(false);
+            Alert.alert(tr('requests.sentTo', { name: worker.name }));
+          }
         }}
       />
       <PromptModal
@@ -281,6 +370,24 @@ const s = StyleSheet.create({
     gap: 7,
   },
   btnText: { fontWeight: '700', fontSize: 14 },
+  wideBtn: {
+    height: 48,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  declineBtn: {
+    height: 44,
+    borderRadius: 13,
+    borderWidth: 1.5,
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+  },
   chatBtn: {
     height: 52,
     borderRadius: 15,
