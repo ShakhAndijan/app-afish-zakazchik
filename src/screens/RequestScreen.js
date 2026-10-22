@@ -13,9 +13,21 @@ import SectionError from './zakazchi-main/components/SectionError';
 import StatusBanner from './requests/components/StatusBanner';
 import PromptModal from './requests/components/PromptModal';
 import SendToModal from './requests/components/SendToModal';
+import OfferModal from './requests/components/OfferModal';
+import RepostModal from './requests/components/RepostModal';
+import OffersSection from './requests/components/OffersSection';
 import useLiveOrder from './requests/hooks/useLiveOrder';
-import useOrderActions, { parsePrice } from './requests/hooks/useOrderActions';
-import { describeOrder, formatPrice, isOpenOrder, timeLabel } from './requests/utils';
+import useOrderActions from './requests/hooks/useOrderActions';
+import {
+  deadlineNote,
+  describeOrder,
+  formatDay,
+  formatPrice,
+  isDayValid,
+  isOpenOrder,
+  offerDay,
+  timeLabel,
+} from './requests/utils';
 
 // Buyurtma kuzatuv ekrani (backenddan jonli): holat banneri, xulosa, usta va narx kelishuvi.
 // Usta buyurtmani qabul qilgach (ACCEPTED) chat ochiladi, narx taklif/qabul qilinadi (ACTIVE).
@@ -27,8 +39,20 @@ export default function RequestScreen({ orderId, onBack }) {
   const actions = useOrderActions(orderId, refresh);
   const [priceOpen, setPriceOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
-  const [declineOpen, setDeclineOpen] = useState(false);
   const [sendOpen, setSendOpen] = useState(false);
+  const [completeOpen, setCompleteOpen] = useState(false);
+  const [repostOpen, setRepostOpen] = useState(false);
+
+  // Saytdagidek: sababsiz, faqat tasdiqlash (suhbat tugaydi, buyurtma qolgan takliflarga qaytadi).
+  const confirmDecline = () =>
+    Alert.alert(tr('orderFlow.stage.declineTitle'), tr('orderFlow.stage.declineHint'), [
+      { text: tr('requests.close'), style: 'cancel' },
+      {
+        text: tr('orderFlow.stage.decline'),
+        style: 'destructive',
+        onPress: () => actions.decline(),
+      },
+    ]);
 
   const header = (
     <View style={s.header}>
@@ -62,9 +86,28 @@ export default function RequestScreen({ orderId, onBack }) {
   }
 
   const info = describeOrder(order, tr);
+  const note = deadlineNote(order, tr);
   const negotiating = order.rawStatus === 'accepted';
   const hasWorker = !!order.master && order.rawStatus !== 'pending';
   const canChat = order.rawStatus === 'accepted' || order.rawStatus === 'active';
+  const isActive = order.rawStatus === 'active';
+  // Ustaga yuborilgan, hali javob bermagan buyurtmani qaytarib olish mumkin.
+  const canRecall = order.rawStatus === 'pending' && order.workerId != null && !order.returnedAt;
+  // Ommaviy buyurtma: takliflar ro'yxatidan usta tanlanadi.
+  const showOffers = order.rawStatus === 'pending' && order.workerId == null && !order.returnedAt;
+  const canRepost = order.rawStatus === 'cancelled' && !order.reposted;
+  // Kelishish uchun taklifdagi sana yaroqli (bugun yoki keyin) bo'lishi kerak.
+  const agreeDay = offerDay(order);
+  const agreeDayOk = isDayValid(agreeDay);
+  let agreeBlocked = null;
+  if (!agreeDayOk) {
+    agreeBlocked = agreeDay
+      ? tr('orderFlow.order.takeDayGone')
+      : tr('orderFlow.order.takeNeedsDay');
+  }
+  let whenText = '';
+  if (order.scheduledDate) whenText = formatDay(tr, order.scheduledDate);
+  else if (order.timingKind) whenText = tr(`orderFlow.timing.${order.timingKind}`);
   const openChat = () => router.push({ pathname: '/chat', params: { orderId: String(order.id) } });
   const openProfile = () =>
     router.push(
@@ -88,6 +131,13 @@ export default function RequestScreen({ orderId, onBack }) {
       >
         <StatusBanner info={info} pulsing={info.state === 'pending' || negotiating} />
 
+        {!!note && (
+          <View style={[s.note, { backgroundColor: t.gold + '1f', borderColor: t.gold + '55' }]}>
+            <MaterialCommunityIcons name="timer-sand" size={18} color={t.gold} />
+            <Text style={[s.noteTxt, { color: t.text }]}>{note}</Text>
+          </View>
+        )}
+
         <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
           <SummaryRow
             icon="wrench-outline"
@@ -101,6 +151,14 @@ export default function RequestScreen({ orderId, onBack }) {
             value={order.address}
             t={t}
           />
+          {!!whenText && (
+            <SummaryRow
+              icon="calendar-clock"
+              label={tr('orderFlow.stage.repostWhen')}
+              value={whenText}
+              t={t}
+            />
+          )}
           <SummaryRow
             icon="clock-outline"
             label={tr('requests.summaryCreated')}
@@ -150,6 +208,11 @@ export default function RequestScreen({ orderId, onBack }) {
                     <Text style={[s.priceValue, { color: t.orange }]}>
                       {formatPrice(tr, order.offerPrice)}
                     </Text>
+                    {!!agreeDay && (
+                      <Text style={[s.priceLabel, { color: t.muted }]}>
+                        {tr('orderFlow.match.offerDay', { date: formatDay(tr, agreeDay) })}
+                      </Text>
+                    )}
                   </>
                 ) : (
                   <Text style={[s.priceLabel, { color: t.muted }]}>
@@ -164,6 +227,11 @@ export default function RequestScreen({ orderId, onBack }) {
                   <Text style={[s.priceValue, { color: t.green }]}>
                     {order.agreedPrice != null ? formatPrice(tr, order.agreedPrice) : '—'}
                   </Text>
+                  {!!order.scheduledDate && (
+                    <Text style={[s.priceLabel, { color: t.muted }]}>
+                      {tr('orderFlow.match.offerDay', { date: formatDay(tr, order.scheduledDate) })}
+                    </Text>
+                  )}
                 </>
               )}
 
@@ -173,14 +241,19 @@ export default function RequestScreen({ orderId, onBack }) {
                     <TouchableOpacity
                       style={[
                         s.btn,
-                        { backgroundColor: t.orange, opacity: actions.busy ? 0.6 : 1 },
+                        {
+                          backgroundColor: t.orange,
+                          opacity: actions.busy || !agreeDayOk ? 0.5 : 1,
+                        },
                       ]}
                       activeOpacity={0.85}
-                      disabled={actions.busy}
+                      disabled={actions.busy || !agreeDayOk}
                       onPress={() => actions.confirmAgree(order)}
                     >
                       <MaterialCommunityIcons name="check" size={18} color="#fff" />
-                      <Text style={[s.btnText, { color: '#fff' }]}>{tr('requests.agree')}</Text>
+                      <Text style={[s.btnText, { color: '#fff' }]}>
+                        {tr('orderFlow.stage.agree')}
+                      </Text>
                     </TouchableOpacity>
                   )}
                   <TouchableOpacity
@@ -190,19 +263,26 @@ export default function RequestScreen({ orderId, onBack }) {
                     onPress={() => setPriceOpen(true)}
                   >
                     <MaterialCommunityIcons name="cash-edit" size={18} color={t.text} />
-                    <Text style={[s.btnText, { color: t.text }]}>{tr('requests.counter')}</Text>
+                    <Text style={[s.btnText, { color: t.text }]} numberOfLines={1}>
+                      {order.offerPrice != null
+                        ? tr('orderFlow.stage.counter')
+                        : tr('orderFlow.stage.offer')}
+                    </Text>
                   </TouchableOpacity>
                 </View>
+              )}
+              {negotiating && info.state === 'offer' && !!agreeBlocked && (
+                <Text style={[s.blocked, { color: t.red }]}>{agreeBlocked}</Text>
               )}
               {negotiating && (
                 <TouchableOpacity
                   style={[s.declineBtn, { borderColor: t.red + '66' }]}
                   activeOpacity={0.8}
                   disabled={actions.busy}
-                  onPress={() => setDeclineOpen(true)}
+                  onPress={confirmDecline}
                 >
                   <MaterialCommunityIcons name="close" size={18} color={t.red} />
-                  <Text style={[s.btnText, { color: t.red }]}>{tr('requests.decline')}</Text>
+                  <Text style={[s.btnText, { color: t.red }]}>{tr('orderFlow.stage.decline')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -232,6 +312,62 @@ export default function RequestScreen({ orderId, onBack }) {
           </View>
         )}
 
+        {showOffers && (
+          <OffersSection orderId={orderId} chooseUntil={order.chooseUntil} onChanged={refresh} />
+        )}
+
+        {canRecall && (
+          <TouchableOpacity
+            style={[s.wideBtn, { borderColor: t.line2, borderWidth: 1.5 }]}
+            activeOpacity={0.8}
+            disabled={actions.busy}
+            onPress={actions.confirmRecall}
+          >
+            <MaterialCommunityIcons name="undo-variant" size={19} color={t.text} />
+            <Text style={[s.btnText, { color: t.text }]}>{tr('orderFlow.order.recall')}</Text>
+          </TouchableOpacity>
+        )}
+
+        {canRepost && (
+          <TouchableOpacity
+            style={[s.wideBtn, { backgroundColor: t.orange, opacity: actions.busy ? 0.6 : 1 }]}
+            activeOpacity={0.85}
+            disabled={actions.busy}
+            onPress={() => setRepostOpen(true)}
+          >
+            <MaterialCommunityIcons name="bullhorn-outline" size={19} color="#fff" />
+            <Text style={[s.btnText, { color: '#fff' }]}>{tr('orderFlow.stage.repost')}</Text>
+          </TouchableOpacity>
+        )}
+
+        {isActive && (
+          <View style={{ gap: 10 }}>
+            <TouchableOpacity
+              style={[s.wideBtn, { backgroundColor: t.green, opacity: actions.busy ? 0.6 : 1 }]}
+              activeOpacity={0.85}
+              disabled={actions.busy}
+              onPress={() => setCompleteOpen(true)}
+            >
+              <MaterialCommunityIcons name="check-circle-outline" size={19} color="#fff" />
+              <Text style={[s.btnText, { color: '#fff' }]}>{tr('orderFlow.stage.completeOk')}</Text>
+            </TouchableOpacity>
+            {info.state === 'workDone' &&
+              (order.workNotDoneLeft == null || order.workNotDoneLeft > 0) && (
+                <TouchableOpacity
+                  style={[s.wideBtn, { borderColor: t.line2, borderWidth: 1.5 }]}
+                  activeOpacity={0.8}
+                  disabled={actions.busy}
+                  onPress={() => actions.confirmNotDone(order.workNotDoneLeft)}
+                >
+                  <MaterialCommunityIcons name="progress-wrench" size={19} color={t.text} />
+                  <Text style={[s.btnText, { color: t.text }]}>
+                    {tr('orderFlow.stage.notDone')}
+                  </Text>
+                </TouchableOpacity>
+              )}
+          </View>
+        )}
+
         {canChat && (
           <TouchableOpacity
             style={[s.chatBtn, { backgroundColor: t.blue }]}
@@ -254,30 +390,40 @@ export default function RequestScreen({ orderId, onBack }) {
         )}
       </ScrollView>
 
-      <PromptModal
+      <OfferModal
         visible={priceOpen}
-        title={tr('requests.priceTitle')}
-        placeholder={tr('requests.pricePlaceholder', { currency: tr('common.currencySom') })}
-        confirmLabel={tr('requests.send')}
-        keyboardType="number-pad"
+        order={order}
         busy={actions.busy}
         onClose={() => setPriceOpen(false)}
-        onSubmit={async (text) => {
-          const price = parsePrice(text);
-          if (price && (await actions.offerPrice(price))) setPriceOpen(false);
+        onSubmit={async (price, day) => {
+          if (await actions.offerPrice(price, day)) setPriceOpen(false);
+        }}
+      />
+      <RepostModal
+        visible={repostOpen}
+        order={order}
+        busy={actions.busy}
+        onClose={() => setRepostOpen(false)}
+        onSubmit={async (payload) => {
+          if (await actions.repost(payload)) {
+            setRepostOpen(false);
+            Alert.alert(tr('orderFlow.stage.reposted'));
+          }
         }}
       />
       <PromptModal
-        visible={declineOpen}
-        title={tr('requests.declineConfirmTitle')}
-        placeholder={tr('requests.declineReasonPlaceholder')}
-        confirmLabel={tr('requests.decline')}
+        visible={completeOpen}
+        title={tr('orderFlow.stage.completeTitle')}
+        hint={`${tr('orderFlow.stage.completeHint')} ${tr('orderFlow.final.once')}`}
+        placeholder={tr('orderFlow.final.placeholder')}
+        confirmLabel={tr('orderFlow.stage.completeOk')}
         multiline
-        destructive
+        optional
+        maxLength={1000}
         busy={actions.busy}
-        onClose={() => setDeclineOpen(false)}
-        onSubmit={async (reason) => {
-          if (await actions.decline(reason)) setDeclineOpen(false);
+        onClose={() => setCompleteOpen(false)}
+        onSubmit={async (comment) => {
+          if (await actions.complete(comment)) setCompleteOpen(false);
         }}
       />
       <SendToModal
@@ -296,9 +442,13 @@ export default function RequestScreen({ orderId, onBack }) {
       <PromptModal
         visible={cancelOpen}
         title={tr('requests.cancelTitle')}
+        hint={
+          isActive ? tr('orderFlow.stage.cancelNotice') : tr('orderFlow.stage.cancelNoticeEarly')
+        }
         placeholder={tr('requests.cancelReasonPlaceholder')}
         confirmLabel={tr('requests.cancelConfirm')}
         multiline
+        minLength={5}
         destructive
         busy={actions.busy}
         onClose={() => setCancelOpen(false)}
@@ -342,6 +492,16 @@ const s = StyleSheet.create({
   },
   title: { fontWeight: '700', fontSize: 20 },
   card: { borderRadius: 18, borderWidth: 1, paddingHorizontal: 14 },
+  note: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 12,
+  },
+  noteTxt: { flex: 1, fontSize: 12.5, lineHeight: 18 },
+  blocked: { fontSize: 12.5, lineHeight: 18, marginTop: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 13 },
   rowLabel: { fontSize: 12.5, width: 74 },
   rowValue: { flex: 1, fontSize: 13.5, fontWeight: '600', textAlign: 'right' },

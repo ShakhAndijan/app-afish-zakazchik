@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, Share } from 'react-native';
+import { Alert, ScrollView, Share } from 'react-native';
 import * as Linking from 'expo-linking';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -19,6 +19,7 @@ import PhotoGallery from './orders/components/PhotoGallery';
 import { MasterNoteCard, CustomerReviewCard } from './orders/components/NoteCard';
 import OrderActions from './orders/components/OrderActions';
 import PromptModal from './requests/components/PromptModal';
+import RepostModal from './requests/components/RepostModal';
 import useOrderActions from './requests/hooks/useOrderActions';
 import { isOpenOrder } from './requests/utils';
 
@@ -30,6 +31,7 @@ export default function OrderDetailScreen({ order: listOrder, onBack, onSelectUs
   const { order, extras, refresh } = useOrderDetail(listOrder);
   const actions = useOrderActions(listOrder.id, refresh);
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [repostOpen, setRepostOpen] = useState(false);
 
   const [beforeIndex, setBeforeIndex] = useState(0);
   const [afterIndex, setAfterIndex] = useState(0);
@@ -84,7 +86,12 @@ export default function OrderDetailScreen({ order: listOrder, onBack, onSelectUs
             <SectionLabel t={t} mock={extras.masterRating != null}>
               {tr('orderDetail.selectedMaster')}
             </SectionLabel>
-            <MasterCard order={order} rating={extras.masterRating} onPress={openUstaProfile} t={t} />
+            <MasterCard
+              order={order}
+              rating={extras.masterRating}
+              onPress={openUstaProfile}
+              t={t}
+            />
           </>
         )}
 
@@ -107,16 +114,30 @@ export default function OrderDetailScreen({ order: listOrder, onBack, onSelectUs
 
         {beforePhotos.length > 0 && (
           <>
-            <SectionLabel t={t}>{tr('orderDetail.beforePhotos', { n: beforePhotos.length })}</SectionLabel>
-            <PhotoGallery photos={beforePhotos} index={beforeIndex} onIndexChange={setBeforeIndex} t={t} />
+            <SectionLabel t={t}>
+              {tr('orderDetail.beforePhotos', { n: beforePhotos.length })}
+            </SectionLabel>
+            <PhotoGallery
+              photos={beforePhotos}
+              index={beforeIndex}
+              onIndexChange={setBeforeIndex}
+              t={t}
+            />
           </>
         )}
 
         {/* "Keyin" suratlari faqat bajarilgan buyurtmalarda bo'ladi */}
         {afterPhotos.length > 0 && (
           <>
-            <SectionLabel t={t}>{tr('orderDetail.afterPhotos', { n: afterPhotos.length })}</SectionLabel>
-            <PhotoGallery photos={afterPhotos} index={afterIndex} onIndexChange={setAfterIndex} t={t} />
+            <SectionLabel t={t}>
+              {tr('orderDetail.afterPhotos', { n: afterPhotos.length })}
+            </SectionLabel>
+            <PhotoGallery
+              photos={afterPhotos}
+              index={afterIndex}
+              onIndexChange={setAfterIndex}
+              t={t}
+            />
           </>
         )}
 
@@ -126,7 +147,12 @@ export default function OrderDetailScreen({ order: listOrder, onBack, onSelectUs
             <SectionLabel t={t} mock>
               {tr('orderDetail.masterNoteTitle')}
             </SectionLabel>
-            <MasterNoteCard order={order} text={extras.masterNote} onPressMaster={openUstaProfile} t={t} />
+            <MasterNoteCard
+              order={order}
+              text={extras.masterNote}
+              onPressMaster={openUstaProfile}
+              t={t}
+            />
           </>
         )}
 
@@ -144,9 +170,22 @@ export default function OrderDetailScreen({ order: listOrder, onBack, onSelectUs
           isOpen={isOpenOrder(order)}
           onCancel={() => setCancelOpen(true)}
           onReorder={() => onReorder?.(order)}
+          onRepost={isCancelled && !order.reposted ? () => setRepostOpen(true) : undefined}
         />
       </ScrollView>
 
+      <RepostModal
+        visible={repostOpen}
+        order={order}
+        busy={actions.busy}
+        onClose={() => setRepostOpen(false)}
+        onSubmit={async (payload) => {
+          if (await actions.repost(payload)) {
+            setRepostOpen(false);
+            Alert.alert(tr('orderFlow.stage.reposted'));
+          }
+        }}
+      />
       <PromptModal
         visible={cancelOpen}
         title={tr('requests.cancelTitle')}

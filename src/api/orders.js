@@ -134,6 +134,20 @@ export function mapOrder(o) {
     returnedWorkerId: o.returned_worker_id ?? null,
     returnedWorkerName: o.returned_worker_name ?? null,
     returnedRecalled: !!o.returned_recalled,
+    // Saytdagi kelishuv jarayoni uchun: kelib chiqishi, muddatlar, sana va takliflar.
+    origin: o.origin ?? null,
+    offersCount: o.offers_count ?? 0,
+    chooseUntil: o.choose_until ?? null,
+    confirmUntil: o.confirm_until ?? null,
+    completeUntil: o.complete_until ?? null,
+    workerDoneAt: o.worker_done_at ?? null,
+    workNotDoneLeft: o.work_not_done_left ?? null,
+    offerDate: o.offer_date ?? null,
+    scheduledDate: o.scheduled_date ?? null,
+    timingKind: o.timing_kind ?? null,
+    budget,
+    reposted: !!o.reposted,
+    customerRated: !!o.customer_rated,
   };
 }
 
@@ -231,13 +245,84 @@ export async function sendOrderChat(orderId, body) {
 export const markOrderChatRead = (orderId) =>
   postJson(ENDPOINTS.ORDER_CHAT_READ(orderId), undefined, "Chat o'qilmadi");
 
-/** Narx taklif qiladi yoki qarshi narx aytadi (buyurtma ACCEPTED bosqichida). */
-export const offerOrderPrice = (orderId, price) =>
-  postJson(ENDPOINTS.ORDER_OFFER(orderId), { price }, 'Narx yuborilmadi');
+/** Narx (va ish sanasi, "YYYY-MM-DD") taklif qiladi yoki qarshi narx aytadi (ACCEPTED bosqichida). */
+export const offerOrderPrice = (orderId, price, scheduledDate) =>
+  postJson(
+    ENDPOINTS.ORDER_OFFER(orderId),
+    scheduledDate ? { price, scheduled_date: scheduledDate } : { price },
+    'Narx yuborilmadi'
+  );
 
 /** Ustaning taklifini qabul qiladi: ACCEPTED → ACTIVE. */
-export const agreeOrder = (orderId) =>
-  postJson(ENDPOINTS.ORDER_AGREE(orderId), undefined, 'Kelishuv amalga oshmadi');
+export const agreeOrder = (orderId, scheduledDate) =>
+  postJson(
+    ENDPOINTS.ORDER_AGREE(orderId),
+    scheduledDate ? { scheduled_date: scheduledDate } : undefined,
+    'Kelishuv amalga oshmadi'
+  );
+
+/** Javob bermagan ustaga yuborilgan buyurtmani qaytarib oladi (PENDING). */
+export const recallOrder = (orderId) =>
+  postJson(ENDPOINTS.ORDER_RECALL(orderId), undefined, 'Buyurtma qaytarib olinmadi');
+
+/**
+ * Bekor qilingan buyurtmani qayta e'lon qiladi. `payload`: { timing_kind?, scheduled_date?, budget? }.
+ */
+export const repostOrder = (orderId, payload) =>
+  postJson(ENDPOINTS.ORDER_REPOST(orderId), payload ?? {}, "Buyurtma qayta e'lon qilinmadi");
+
+/** Ish bajarilganini tasdiqlaydi (ACTIVE → COMPLETED); yakuniy izoh ixtiyoriy. */
+export const completeOrder = (orderId, comment) =>
+  postJson(
+    ENDPOINTS.ORDER_COMPLETE(orderId),
+    { agreed_price: null, comment: comment || null },
+    'Buyurtma yakunlanmadi'
+  );
+
+/** "Ish hali bajarilmadi": ustaga xabar boradi, buyurtma o'z-o'zidan yakunlanmaydi. */
+export const workNotDone = (orderId) =>
+  postJson(ENDPOINTS.ORDER_WORK_NOT_DONE(orderId), undefined, 'Amal bajarilmadi');
+
+// Ommaviy buyurtmaga kelgan takliflar (faqat PENDING, ustasiz buyurtma uchun).
+function mapOffer(o) {
+  const w = o.worker ?? {};
+  return {
+    id: o.id,
+    status: o.status,
+    price: toNumber(o.price),
+    priceBy: o.price_by ?? null,
+    offerDate: o.offer_date ?? null,
+    arrival: o.arrival ?? null,
+    comment: o.comment ?? null,
+    createdAt: o.created_at,
+    worker: {
+      id: w.id ?? null,
+      name: w.full_name ?? '',
+      photo: w.profile_photo ?? null,
+      verified: !!w.is_identity_verified,
+      rating: toNumber(w.overall_rating),
+      reviews: w.review_count ?? 0,
+      jobs: w.completed_jobs ?? 0,
+      experience: w.experience_years ?? 0,
+    },
+  };
+}
+
+export async function getOrderOffers(orderId) {
+  const list = await getJson(ENDPOINTS.ORDER_OFFERS(orderId), 'Takliflar yuklanmadi');
+  return (list || []).map(mapOffer);
+}
+
+/** Taklifni tanlaydi — usta kelishuvni tasdiqlashi kutiladi (buyurtma ACCEPTED bo'ladi). */
+export const chooseOrderOffer = (orderId, offerId) =>
+  postJson(ENDPOINTS.ORDER_OFFER_CHOOSE(orderId, offerId), undefined, 'Taklif tanlanmadi');
+
+/** Ustaning taklifiga qarshi narx aytadi; usta shu taklifni tasdiqlasa, kelishuv tuziladi. */
+export const repriceOrderOffer = (orderId, offerId, price) =>
+  postJson(ENDPOINTS.ORDER_OFFER_PRICE(orderId, offerId), { price }, 'Narx yuborilmadi');
+
+export const rejectOrderOffer = (orderId, offerId) =>
+  postJson(ENDPOINTS.ORDER_OFFER_REJECT(orderId, offerId), undefined, 'Taklif rad etilmadi');
 
 /** Kelishuvni rad etadi (sabab bilan): kelishuv to'xtaydi, buyurtma mijozga qaytadi. */
 export const declineOrder = (orderId, reason) =>

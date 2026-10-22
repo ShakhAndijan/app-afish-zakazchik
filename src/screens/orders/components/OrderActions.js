@@ -5,8 +5,9 @@ import { useTheme } from '../../../context/ThemeContext';
 import { useLanguage } from '../../../context/LanguageContext';
 
 // Pastki tugma: faol buyurtmada (kutilmoqda / kelishilmoqda / jarayonda) — bekor qilish,
-// yakunlangan yoki bekor qilingan buyurtmada — qayta buyurtma berish.
-export default function OrderActions({ isOpen, onCancel, onReorder }) {
+// yakunlangan yoki bekor qilingan buyurtmada — qayta buyurtma berish. Bekor qilingan buyurtmada
+// (`onRepost` berilsa) saytdagidek "Qayta e'lon qilish" ham chiqadi: o'sha buyurtmaning o'zi ommaga chiqadi.
+export default function OrderActions({ isOpen, onCancel, onReorder, onRepost }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
 
@@ -25,15 +26,35 @@ export default function OrderActions({ isOpen, onCancel, onReorder }) {
   }
 
   return (
-    <TouchableOpacity
-      style={[s.reorder, { backgroundColor: t.orange }]}
-      activeOpacity={0.85}
-      onPress={onReorder}
-      accessibilityRole="button"
-    >
-      <Feather name="repeat" size={15} color="#fff" />
-      <Text style={s.reorderText}>{tr('orderDetail.reorder')}</Text>
-    </TouchableOpacity>
+    <>
+      {!!onRepost && (
+        <TouchableOpacity
+          style={[s.reorder, { backgroundColor: t.orange }]}
+          activeOpacity={0.85}
+          onPress={onRepost}
+          accessibilityRole="button"
+        >
+          <MaterialCommunityIcons name="bullhorn-outline" size={17} color="#fff" />
+          <Text style={s.reorderText}>{tr('orderFlow.stage.repost')}</Text>
+        </TouchableOpacity>
+      )}
+      <TouchableOpacity
+        style={[
+          s.reorder,
+          onRepost
+            ? { backgroundColor: t.card, borderWidth: 1.5, borderColor: t.border, marginTop: 12 }
+            : { backgroundColor: t.orange },
+        ]}
+        activeOpacity={0.85}
+        onPress={onReorder}
+        accessibilityRole="button"
+      >
+        <Feather name="repeat" size={15} color={onRepost ? t.text : '#fff'} />
+        <Text style={[s.reorderText, onRepost && { color: t.text }]}>
+          {tr('orderDetail.reorder')}
+        </Text>
+      </TouchableOpacity>
+    </>
   );
 }
 

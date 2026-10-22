@@ -17,10 +17,14 @@ import { useLanguage } from '../../../context/LanguageContext';
 export default function PromptModal({
   visible,
   title,
+  hint,
   placeholder,
   confirmLabel,
   keyboardType = 'default',
   multiline = false,
+  optional = false,
+  maxLength,
+  minLength = 1,
   busy = false,
   destructive = false,
   onSubmit,
@@ -34,7 +38,7 @@ export default function PromptModal({
     if (visible) setValue('');
   }, [visible]);
 
-  const canSubmit = value.trim().length > 0 && !busy;
+  const canSubmit = (optional || value.trim().length >= minLength) && !busy;
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -44,6 +48,7 @@ export default function PromptModal({
       >
         <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
           <Text style={[s.title, { color: t.text }]}>{title}</Text>
+          {!!hint && <Text style={[s.hint, { color: t.muted }]}>{hint}</Text>}
           <TextInput
             style={[
               s.input,
@@ -57,7 +62,7 @@ export default function PromptModal({
             keyboardType={keyboardType}
             multiline={multiline}
             autoFocus
-            maxLength={multiline ? 300 : 12}
+            maxLength={maxLength ?? (multiline ? 300 : 12)}
           />
           <View style={s.actions}>
             <TouchableOpacity
@@ -96,6 +101,7 @@ const s = StyleSheet.create({
   },
   card: { width: '100%', maxWidth: 380, borderRadius: 20, borderWidth: 1, padding: 18, gap: 14 },
   title: { fontWeight: '800', fontSize: 17 },
+  hint: { fontSize: 13, lineHeight: 19, marginTop: -6 },
   input: {
     borderRadius: 14,
     borderWidth: 1,

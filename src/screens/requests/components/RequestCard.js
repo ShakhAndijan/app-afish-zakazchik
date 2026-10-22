@@ -6,7 +6,7 @@ import Avatar from '../../../components/Avatar';
 import { describeOrder, formatPrice } from '../utils';
 
 const STEP_KEYS = ['requests.stepSearch', 'requests.stepTalk', 'requests.stepWork'];
-const STEP_OF = { pending: 0, returned: 0, negotiating: 1, offer: 1, active: 2 };
+const STEP_OF = { pending: 0, returned: 0, negotiating: 1, offer: 1, active: 2, workDone: 2 };
 
 // Buyurtma bosqichlari: qidiruv → kelishuv → ish. Joriy bosqich holat rangida ajratiladi.
 function Progress({ current, color, t, tr }) {
@@ -63,10 +63,14 @@ export default function RequestCard({ order, title, onPress }) {
   const { t: tr } = useLanguage();
   const info = describeOrder(order, tr);
   const color = t[info.tone] ?? t.orange;
-  const needsReply = info.state === 'offer';
+  // Javobingiz/tanlovingiz/tasdiqingiz kutilayotgan buyurtmalar to'q sariq ramkada ("shoshilinch").
+  const needsReply =
+    info.state === 'offer' ||
+    info.state === 'workDone' ||
+    (info.state === 'pending' && !order.master && order.offersCount > 0);
   let price = null;
   if (info.state === 'offer') price = order.offerPrice;
-  else if (info.state === 'active') price = order.agreedPrice;
+  else if (info.state === 'active' || info.state === 'workDone') price = order.agreedPrice;
   const subtitle = order.task && order.task !== title ? order.task : '';
 
   return (

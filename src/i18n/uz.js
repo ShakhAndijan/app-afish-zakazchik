@@ -1,6 +1,9 @@
 // Uzbek (lotin) tarjimalari. Kalitlar ekran/bo'lim nomlari bo'yicha guruhlangan.
 
+import { ORDER_FLOW } from './orderFlowTexts';
+
 export const uz = {
+  orderFlow: ORDER_FLOW.uz,
   common: {
     years: '{n} yil',
     currencySom: "so'm",
@@ -1445,6 +1448,8 @@ export const uz = {
     shareMessage: '"{title}" — {byline}reyting {rating} ★. Ilovada ko\'ring!',
   },
   requests: {
+    statusWorkDoneTitle: 'Ish bajarildi — tasdiqlang',
+    cardWorkDone: 'Tasdiqlashingiz kutilmoqda',
     stepSearch: 'Qidiruv',
     stepTalk: 'Kelishuv',
     stepWork: 'Ish',

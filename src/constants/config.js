@@ -98,6 +98,17 @@ export const ENDPOINTS = {
   ORDER_SEND_TO: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/send-to`,
   ORDER_PUBLISH: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/publish`,
   ORDER_CANCEL: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/cancel-by-customer`,
+  ORDER_RECALL: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/recall`,
+  ORDER_REPOST: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/repost`,
+  ORDER_COMPLETE: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/complete`,
+  ORDER_WORK_NOT_DONE: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/work-not-done`,
+  ORDER_OFFERS: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/offers`,
+  ORDER_OFFER_CHOOSE: (orderId, offerId) =>
+    `${API_BASE_URL}/api/v1/orders/${orderId}/offers/${offerId}/choose`,
+  ORDER_OFFER_PRICE: (orderId, offerId) =>
+    `${API_BASE_URL}/api/v1/orders/${orderId}/offers/${offerId}/price`,
+  ORDER_OFFER_REJECT: (orderId, offerId) =>
+    `${API_BASE_URL}/api/v1/orders/${orderId}/offers/${offerId}/reject`,
 
   // Usta xizmat e'lonlari. `browse` sahifalangan ({ items, pagination }) va barcha filtrlarni biladi.
   LISTINGS_BROWSE: `${API_BASE_URL}/api/v1/listings/browse`,

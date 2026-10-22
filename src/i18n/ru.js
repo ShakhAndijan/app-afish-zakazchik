@@ -1,6 +1,9 @@
 // Rus tili tarjimalari. Kalitlar ekran/bo'lim nomlari bo'yicha guruhlangan.
 
+import { ORDER_FLOW } from './orderFlowTexts';
+
 export const ru = {
+  orderFlow: ORDER_FLOW.ru,
   common: {
     years: ['{n} год', '{n} года', '{n} лет'],
     currencySom: 'сум',
@@ -1430,6 +1433,8 @@ export const ru = {
     shareMessage: '"{title}" — {byline}рейтинг {rating} ★. Смотрите в приложении!',
   },
   requests: {
+    statusWorkDoneTitle: 'Работа выполнена — подтвердите',
+    cardWorkDone: 'Ждём вашего подтверждения',
     stepSearch: 'Поиск',
     stepTalk: 'Согласование',
     stepWork: 'Работа',

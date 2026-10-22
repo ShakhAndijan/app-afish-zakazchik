@@ -17,11 +17,11 @@ import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { getOrderChat, sendOrderChat, markOrderChatRead } from '../api/orders';
 import Avatar from '../components/Avatar';
-import PromptModal from './requests/components/PromptModal';
+import OfferModal from './requests/components/OfferModal';
 import usePolling from './requests/hooks/usePolling';
 import useLiveOrder from './requests/hooks/useLiveOrder';
-import useOrderActions, { parsePrice } from './requests/hooks/useOrderActions';
-import { clockLabel, formatPrice } from './requests/utils';
+import useOrderActions from './requests/hooks/useOrderActions';
+import { clockLabel, formatDay, formatPrice, isDayValid, offerDay } from './requests/utils';
 import { getErrorMessage } from '../utils/errors';
 
 const CHAT_POLL_MS = 5000;
@@ -37,7 +37,6 @@ export default function RequestChatScreen({ orderId, onBack }) {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [priceOpen, setPriceOpen] = useState(false);
-  const [declineOpen, setDeclineOpen] = useState(false);
   const scrollRef = useRef(null);
 
   const loadChat = useCallback(async () => {
@@ -77,8 +76,24 @@ export default function RequestChatScreen({ orderId, onBack }) {
   };
 
   const negotiating = order?.rawStatus === 'accepted';
-  const workerOffer = negotiating && order.offerBy === 'worker' && order.offerPrice != null;
+  const workerOffer = negotiating && order.offerBy !== 'customer' && order.offerPrice != null;
   const canSend = chat ? chat.canSend : true;
+  // Kelishish uchun taklifdagi sana yaroqli bo'lishi kerak (saytdagidek).
+  const offerDayValue = negotiating ? offerDay(order) : null;
+  const agreeDayOk = isDayValid(offerDayValue);
+
+  // Saytdagidek: sababsiz, faqat tasdiqlash.
+  const confirmDecline = () =>
+    Alert.alert(tr('orderFlow.stage.declineTitle'), tr('orderFlow.stage.declineHint'), [
+      { text: tr('requests.close'), style: 'cancel' },
+      {
+        text: tr('orderFlow.stage.decline'),
+        style: 'destructive',
+        onPress: async () => {
+          if (await actions.decline()) loadChat();
+        },
+      },
+    ]);
 
   return (
     <SafeAreaView
@@ -124,6 +139,11 @@ export default function RequestChatScreen({ orderId, onBack }) {
             {order.offerPrice != null && (
               <Text style={[s.priceValue, { color: t.orange }]}>
                 {formatPrice(tr, order.offerPrice)}
+                {!!offerDayValue && (
+                  <Text style={[s.priceLabel, { color: t.muted }]}>
+                    {`  ·  ${formatDay(tr, offerDayValue)}`}
+                  </Text>
+                )}
               </Text>
             )}
           </View>
@@ -133,24 +153,31 @@ export default function RequestChatScreen({ orderId, onBack }) {
             disabled={actions.busy}
             onPress={() => setPriceOpen(true)}
           >
-            <Text style={[s.smallBtnText, { color: t.text }]}>{tr('requests.counter')}</Text>
+            <Text style={[s.smallBtnText, { color: t.text }]}>
+              {order.offerPrice != null
+                ? tr('orderFlow.stage.counter')
+                : tr('orderFlow.stage.offer')}
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[s.smallBtn, { borderColor: t.red + '66', borderWidth: 1.5 }]}
             activeOpacity={0.8}
             disabled={actions.busy}
-            onPress={() => setDeclineOpen(true)}
+            onPress={confirmDecline}
           >
-            <Text style={[s.smallBtnText, { color: t.red }]}>{tr('requests.decline')}</Text>
+            <Text style={[s.smallBtnText, { color: t.red }]}>{tr('orderFlow.stage.decline')}</Text>
           </TouchableOpacity>
           {workerOffer && (
             <TouchableOpacity
-              style={[s.smallBtn, { backgroundColor: t.orange, opacity: actions.busy ? 0.6 : 1 }]}
+              style={[
+                s.smallBtn,
+                { backgroundColor: t.orange, opacity: actions.busy || !agreeDayOk ? 0.5 : 1 },
+              ]}
               activeOpacity={0.85}
-              disabled={actions.busy}
+              disabled={actions.busy || !agreeDayOk}
               onPress={() => actions.confirmAgree(order)}
             >
-              <Text style={[s.smallBtnText, { color: '#fff' }]}>{tr('requests.agree')}</Text>
+              <Text style={[s.smallBtnText, { color: '#fff' }]}>{tr('orderFlow.stage.agree')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -205,30 +232,13 @@ export default function RequestChatScreen({ orderId, onBack }) {
         )}
       </KeyboardAvoidingView>
 
-      <PromptModal
-        visible={declineOpen}
-        title={tr('requests.declineConfirmTitle')}
-        placeholder={tr('requests.declineReasonPlaceholder')}
-        confirmLabel={tr('requests.decline')}
-        multiline
-        destructive
-        busy={actions.busy}
-        onClose={() => setDeclineOpen(false)}
-        onSubmit={async (reason) => {
-          if (await actions.decline(reason)) setDeclineOpen(false);
-        }}
-      />
-      <PromptModal
+      <OfferModal
         visible={priceOpen}
-        title={tr('requests.priceTitle')}
-        placeholder={tr('requests.pricePlaceholder', { currency: tr('common.currencySom') })}
-        confirmLabel={tr('requests.send')}
-        keyboardType="number-pad"
+        order={order}
         busy={actions.busy}
         onClose={() => setPriceOpen(false)}
-        onSubmit={async (value) => {
-          const price = parsePrice(value);
-          if (price && (await actions.offerPrice(price))) {
+        onSubmit={async (price, day) => {
+          if (await actions.offerPrice(price, day)) {
             setPriceOpen(false);
             loadChat();
           }

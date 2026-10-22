@@ -1,6 +1,9 @@
 // Ingliz tili tarjimalari. Kalitlar ekran/bo'lim nomlari bo'yicha guruhlangan.
 
+import { ORDER_FLOW } from './orderFlowTexts';
+
 export const en = {
+  orderFlow: ORDER_FLOW.en,
   common: {
     years: ['{n} year', '{n} years'],
     currencySom: 'UZS',
@@ -1428,6 +1431,8 @@ export const en = {
     shareMessage: '"{title}" — {byline}rating {rating} ★. Check it out in the app!',
   },
   requests: {
+    statusWorkDoneTitle: 'Work done — please confirm',
+    cardWorkDone: 'Waiting for your confirmation',
     stepSearch: 'Search',
     stepTalk: 'Agreement',
     stepWork: 'Work',

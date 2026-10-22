@@ -9,9 +9,14 @@ import {
   declineOrder,
   sendOrderTo,
   publishOrder,
+  recallOrder,
+  repostOrder,
+  completeOrder,
+  workNotDone,
 } from '../../../api/orders';
 import { formatNumber } from '../../../utils/format';
 import { getErrorMessage } from '../../../utils/errors';
+import { formatDay, offerDay } from '../utils';
 
 // Buyurtma ustidagi amallar: ustaning taklifini qabul qilish yoki rad etish, narx taklif qilish, bekor qilish.
 // Har biri tugagach `onDone` (odatda buyurtmani qayta yuklash) chaqiriladi, xato bo'lsa ogohlantirish.
@@ -40,18 +45,60 @@ export default function useOrderActions(orderId, onDone) {
     [onDone, tr, queryClient]
   );
 
-  // Tasdiqlashdan keyin: ACCEPTED → ACTIVE.
+  // Tasdiqlashdan keyin: ACCEPTED → ACTIVE. Matn saytdagidek: narx, sana va telefonlar ochilishi.
   const confirmAgree = useCallback(
     (order) =>
       Alert.alert(
-        tr('requests.agreeConfirmTitle', {
-          price: formatNumber(Math.round(order.offerPrice)),
-          currency: tr('common.currencySom'),
+        tr('orderFlow.stage.agreeTitle'),
+        tr('orderFlow.order.takeBody', {
+          price: `${formatNumber(Math.round(order.offerPrice))} ${tr('common.currencySom')}`,
+          day: formatDay(tr, offerDay(order)),
         }),
-        tr('requests.agreeConfirmText'),
         [
           { text: tr('requests.close'), style: 'cancel' },
-          { text: tr('requests.agree'), onPress: () => run(() => agreeOrder(orderId)) },
+          { text: tr('orderFlow.stage.agree'), onPress: () => run(() => agreeOrder(orderId)) },
+        ]
+      ),
+    [orderId, run, tr]
+  );
+
+  // Javob bermagan ustaga yuborilgan buyurtmani qaytarib olish.
+  const confirmRecall = useCallback(
+    () =>
+      Alert.alert(tr('orderFlow.order.recallTitle'), tr('orderFlow.order.recallHint'), [
+        { text: tr('requests.close'), style: 'cancel' },
+        { text: tr('orderFlow.order.recall'), onPress: () => run(() => recallOrder(orderId)) },
+      ]),
+    [orderId, run, tr]
+  );
+
+  // Bekor qilingan buyurtmani qayta e'lon qilish.
+  const repost = useCallback((payload) => run(() => repostOrder(orderId, payload)), [orderId, run]);
+
+  // Ish bajarilganini tasdiqlash (yakuniy izoh ixtiyoriy).
+  const complete = useCallback(
+    (comment) => run(() => completeOrder(orderId, comment)),
+    [orderId, run]
+  );
+
+  // "Ish hali bajarilmadi": ustaga xabar boradi. `left === 1` — oxirgi imkoniyat.
+  const confirmNotDone = useCallback(
+    (left) =>
+      Alert.alert(
+        tr('orderFlow.stage.notDoneTitle'),
+        [tr('orderFlow.stage.notDoneHint'), left === 1 ? tr('orderFlow.stage.notDoneLast') : null]
+          .filter(Boolean)
+          .join(' '),
+        [
+          { text: tr('requests.close'), style: 'cancel' },
+          {
+            text: tr('orderFlow.stage.notDone'),
+            onPress: async () => {
+              if (await run(() => workNotDone(orderId))) {
+                Alert.alert(tr('orderFlow.stage.notDoneSent'));
+              }
+            },
+          },
         ]
       ),
     [orderId, run, tr]
@@ -77,7 +124,7 @@ export default function useOrderActions(orderId, onDone) {
   );
 
   const offerPrice = useCallback(
-    (price) => run(() => offerOrderPrice(orderId, price)),
+    (price, day) => run(() => offerOrderPrice(orderId, price, day)),
     [orderId, run]
   );
   const cancel = useCallback(
@@ -85,7 +132,19 @@ export default function useOrderActions(orderId, onDone) {
     [orderId, run]
   );
 
-  return { busy, confirmAgree, decline, sendTo, confirmPublish, offerPrice, cancel };
+  return {
+    busy,
+    confirmAgree,
+    confirmRecall,
+    confirmNotDone,
+    repost,
+    complete,
+    decline,
+    sendTo,
+    confirmPublish,
+    offerPrice,
+    cancel,
+  };
 }
 
 // "150 000" / "150000" → 150000 (yaroqsiz bo'lsa null).

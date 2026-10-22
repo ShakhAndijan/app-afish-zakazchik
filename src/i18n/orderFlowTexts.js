@@ -1,0 +1,458 @@
+// Buyurtma kelishuvi matnlari (sayt tarjimalaridan: orderStage / profileOrder / matching / offerTalk / finalComment).
+// Kalitlar `orderFlow.*` ostida: stage, order, match, talk, final, timing.
+export const ORDER_FLOW = {
+  uz: {
+    stage: {
+      agree: 'Kelishildi',
+      agreedAt: 'Kelishilgan: {amount}',
+      cancelNotice:
+        "Bekor qilish sababini operator ko'rib chiqadi. Aybdor tomon aniqlansa, unga vaqtinchalik cheklov qo'yilishi mumkin.",
+      cancelReason: 'Sabab',
+      counter: 'Boshqa narx taklif qilish',
+      decline: 'Kelishilmadi',
+      offer: 'Narx taklif qilish',
+      offerHint:
+        "Taklif suhbatga yoziladi. Ikkinchi tomon tasdiqlasa, buyurtma kelishilgan bosqichiga o'tadi.",
+      offerTitle: 'Narx taklif qilish',
+      priceRequired: 'Narxni kiriting',
+      reasonRequired: 'Sababni yozing',
+      reasonTooShort: 'Kamida 5 ta belgi',
+      send: 'Yuborish',
+      theirOffer: '{amount} taklif qilindi',
+      yourOffer: 'Siz {amount} taklif qildingiz — javob kutilmoqda',
+      priceRange: "1 – {max} so'm",
+      completeTitle: 'Buyurtmani yakunlash',
+      completeHint:
+        "Ish bajarilganini tasdiqlaysiz. Xohlasangiz, ish haqida yakuniy izoh qoldiring: uni mutaxassis ham ko'radi.",
+      completeOk: 'Yakunlash',
+      workDone: 'Ish bajarildi',
+      workDoneTitle: 'Ish bajarildimi?',
+      workDoneHint:
+        "Mijozdan tasdiq so'raymiz. U tasdiqlagach buyurtma yakunlanadi va mijozni baholay olasiz.",
+      workDoneOk: 'Ha, ish bajarildi',
+      workDoneSent: 'Mijozga tasdiqlash uchun yuborildi',
+      workDoneWaiting: "Mijoz tasdig'i kutilmoqda",
+      workDoneByWorker:
+        'Mutaxassis ish bajarilganini bildirdi. Tasdiqlasangiz, buyurtma yakunlanadi.',
+      cancelOrder: 'Buyurtmani bekor qilish',
+      chosenWaits: 'Mutaxassis {amount} narxni tasdiqlashi kutilmoqda',
+      confirmBy: 'javob muddati: {when}',
+      answerBy: 'Javob bering: {when} gacha. Javob bermasangiz, buyurtma mijozga qaytadi.',
+      waitsWorker:
+        'Mutaxassis javobi kutilmoqda — {when} gacha. Javob bermasa, buyurtma sizga qaytadi.',
+      priceBy: 'Narx va sanani taklif qiling: {when} gacha. Aks holda buyurtma mijozga qaytadi.',
+      waitsPrice: 'Mutaxassis narx taklif qilishi kutilmoqda — {when} gacha.',
+      completeBy: "{when} gacha tasdiqlamasangiz, buyurtma o'z-o'zidan yakunlanadi.",
+      autoCompleteAt: "Mijoz {when} gacha tasdiqlamasa, buyurtma o'z-o'zidan yakunlanadi.",
+      agreeDayHint: 'Mijoz sanani sizga qoldirgan. Ish shu kunga belgilanadi.',
+      repost: "Qayta e'lon qilish",
+      repostTitle: "Buyurtmani qayta e'lon qilasizmi?",
+      repostHint:
+        "Yangi buyurtma umumiy ro'yxatga chiqadi — mos mutaxassislar taklif yuboradi. Tavsif, manzil va rasmlar o'zgarmaydi; qachon kerakligi va narxni shu yerda o'zgartirishingiz mumkin.",
+      reposted: "Buyurtma qayta e'lon qilindi",
+      cancelNoticeEarly:
+        "Kelishuv hali tuzilmagan — bekor qilish operatorga yuborilmaydi va hech kimga cheklov qo'yilmaydi.",
+      agreeDayToday: "Mijoz ishni bugunga so'ragan — ish shu kunga belgilanadi.",
+      agreeDayUrgent:
+        "Mijoz shoshilinch so'ragan — bugun yoki ertaga. Ish tanlangan kunga belgilanadi.",
+      agreeDayGone:
+        "Mijoz so'ragan kun o'tib ketgan — yangi sanani belgilab narx taklif qiling, mijoz tasdiqlaydi",
+      notDone: 'Ish hali bajarilmadi',
+      notDoneTitle: 'Ish hali bajarilmadimi?',
+      notDoneHint:
+        "Mutaxassisga xabar beramiz. Buyurtma o'z-o'zidan yakunlanmaydi — ish tugagach, u «Ish bajarildi»ni qayta bosadi.",
+      notDoneSent: 'Mutaxassisga xabar berildi',
+      notDoneNote: "Ish tugamagan bo'lsa, «Ish hali bajarilmadi»ni bosing.",
+      workDoneNotYet: 'Ish kuni — {day}. «Ish bajarildi» shu kundan boshlab bosiladi.',
+      workDoneNotYetShort: 'Ish kuni hali kelmagan',
+      agreeTitle: 'Kelishdingizmi?',
+      declineTitle: "Bu mutaxassis bilan kelishuvni to'xtatasizmi?",
+      declineHint:
+        'Suhbat tugaydi, hech kim jarimaga tortilmaydi. Buyurtma qolgan takliflar orasidan tanlashga qaytadi; bu mutaxassis unga qayta taklif yubora olmaydi.',
+      notDoneSpent:
+        "«Ish hali bajarilmadi»ni boshqa bosib bo'lmaydi. Ish tugamagan bo'lsa, buyurtmani bekor qiling — operator ko'rib chiqadi.",
+      notDoneLast:
+        "Bu oxirgi imkoniyat: keyin buni bosib bo'lmaydi, kelishmovchilik haqida operatorga xabar beriladi.",
+      repostDayGone:
+        "Oldingi sana ({date}) o'tib ketgan. Yangisini tanlang — yoki bo'sh qoldiring, mutaxassis sanani narx bilan taklif qiladi.",
+      repostWhen: 'Qachon kerak?',
+      repostBudget: 'Narx (ixtiyoriy)',
+      repostBudgetKeep: "Bo'sh qoldirsangiz, oldingi narx qoladi: {price}",
+      repostBudgetNone: "Bo'sh qoldirsangiz, narxni mutaxassislar taklif qiladi",
+    },
+    order: {
+      takeBody:
+        "Narx: {price}, sana: {day}. Qabul qilingach buyurtma faol bo'ladi va telefon raqamlar ochiladi.",
+      take: 'Qabul qilish',
+      takeNeedsOffer: 'Avval narx va sana taklif qilinishi kerak',
+      takeWaits: 'Taklifingizga javob kutilmoqda',
+      takeNeedsDay: "Taklifda sana yo'q — sanani belgilab narx taklif qiling",
+      takeDayGone: "Taklifdagi sana o'tib ketgan — yangi sanani belgilab narx taklif qiling",
+      offerDay: 'Ish sanasi',
+      offerDayHint: 'Narx shu kun uchun. Qabul qilinsa, buyurtma shu sanaga belgilanadi.',
+      dayRequired: 'Sanani tanlang',
+      recall: 'Qaytarib olish',
+      recallTitle: 'Buyurtmani qaytarib olasizmi?',
+      recallHint:
+        "Mutaxassis hali javob bermagan. Qaytarib olsangiz, uni boshqa mutaxassisga yuborishingiz yoki umumiy ro'yxatga chiqarishingiz mumkin.",
+      recalled: 'Buyurtma qaytarib olindi',
+      dayGoneNote:
+        "Buyurtma sanasi ({date}) o'tib ketgan — u sanasiz yuboriladi, mutaxassis sanani narx bilan taklif qiladi.",
+      returnedRecalled: 'Buyurtmani qaytarib oldingiz',
+      returnedLapsedByYou: 'Mutaxassis aytgan narxga belgilangan vaqtda javob bermadingiz',
+      returnedLapsedBy: '{name} belgilangan vaqtda javob bermadi',
+    },
+    match: {
+      offersTitle: 'Takliflar',
+      seeOffers: 'Takliflar ({n})',
+      chooseUntil: '{when} gacha tanlang',
+      noOffers:
+        "Hali taklif yo'q. Mutaxassislar taklif yuborishi bilan shu yerda ko'rinadi — sizga xabar beramiz.",
+      verified: 'Shaxsi tasdiqlangan',
+      choose: 'Tanlash',
+      chooseTitle: '{name}ni tanlaysizmi?',
+      chooseBody:
+        'Mutaxassisga xabar boradi: u kelishuvni tasdiqlasa, telefon raqamlaringiz bir-biriga ochiladi. Rad etsa yoki belgilangan vaqtda javob bermasa, boshqa taklifni tanlashingiz mumkin — shu paytgacha boshqa takliflar yopilmaydi.',
+      choosePrice: 'Taklif qilingan narx: {price}. Mutaxassis uni tasdiqlasa, kelishuv tuziladi.',
+      chosen: 'Tanlandi — mutaxassis kelishuvni tasdiqlashi kutilmoqda',
+      chooseHint:
+        "Telefon raqamlar mutaxassis kelishuvni tasdiqlagach ochiladi. Tanlanmasa, buyurtma belgilangan vaqtda o'zi yopiladi.",
+      offerRejected: 'Taklif rad etildi',
+      rejectOfferTitle: 'Bu taklifni rad etasizmi?',
+      rejectOfferBody: 'Mutaxassisga xabar boradi va u bu buyurtmaga qayta taklif yubora olmaydi.',
+      chooseDay: 'Ish sanasi: {date}. Mutaxassis tasdiqlasa, ish shu kunga belgilanadi.',
+      autoClosed: "Hech kim tanlanmadi — muddat tugab, buyurtma o'zi yopildi",
+      autoClosedDate: "Buyurtma sanasi o'tib ketdi — buyurtma o'zi yopildi",
+      autoClosedStale: "Uzoq vaqt taklif kelmadi — buyurtma o'zi yopildi",
+      jobsDone: '{count} ta ish',
+      experience: '{count} yil tajriba',
+      offerDay: 'Ish sanasi: {date}',
+    },
+    talk: {
+      price: 'Narx taklif qilish',
+      priceLabel: 'Narx',
+      priceTitleCustomer: '{name}ga narx taklif qilish',
+      priceHintCustomer:
+        'Narx mutaxassis bilan suhbatga yoziladi. Shu taklifni tanlasangiz, mutaxassis uni tasdiqlaydi.',
+      priceSend: 'Yuborish',
+      priceSent: 'Narx taklifi yuborildi',
+      byYou: 'Siz taklif qilgan narx',
+      choosePriceMine:
+        'Siz taklif qilgan narx: {price}. Mutaxassis uni tasdiqlasa, kelishuv tuziladi.',
+    },
+    final: {
+      label: 'Yakuniy izoh (ixtiyoriy)',
+      placeholder: "Ish qanday o'tdi? Masalan: ikkala kran almashtirildi, kafolat 6 oy.",
+      once: "Izoh bir marta yoziladi, keyin uni o'zgartirib bo'lmaydi.",
+    },
+    timing: {
+      flexible: 'Muddat muhim emas',
+      on_date: 'Belgilangan kunda',
+      today: 'Bugun',
+      urgent: 'Shoshilinch',
+    },
+  },
+  ru: {
+    stage: {
+      agree: 'Согласен',
+      agreedAt: 'Согласовано: {amount}',
+      cancelNotice:
+        'Причину отмены рассмотрит оператор. Если будет установлена вина одной из сторон, ей могут временно ограничить доступ.',
+      cancelReason: 'Причина',
+      counter: 'Предложить другую цену',
+      decline: 'Не договорились',
+      offer: 'Предложить цену',
+      offerHint:
+        'Предложение появится в переписке. Как только вторая сторона подтвердит, заказ перейдёт в согласованный этап.',
+      offerTitle: 'Предложить цену',
+      priceRequired: 'Укажите цену',
+      reasonRequired: 'Укажите причину',
+      reasonTooShort: 'Минимум 5 символов',
+      send: 'Отправить',
+      theirOffer: 'Предложена цена {amount}',
+      yourOffer: 'Вы предложили {amount} — ждём ответа',
+      priceRange: '1 – {max} сум',
+      completeTitle: 'Завершение заказа',
+      completeHint:
+        'Вы подтверждаете, что работа выполнена. При желании оставьте итоговый комментарий — его увидит и специалист.',
+      completeOk: 'Завершить',
+      workDone: 'Работа выполнена',
+      workDoneTitle: 'Работа выполнена?',
+      workDoneHint:
+        'Попросим клиента подтвердить. После подтверждения заказ будет завершён, и вы сможете оценить клиента.',
+      workDoneOk: 'Да, работа выполнена',
+      workDoneSent: 'Отправили клиенту на подтверждение',
+      workDoneWaiting: 'Ждём подтверждения клиента',
+      workDoneByWorker:
+        'Специалист сообщил, что работа выполнена. Подтвердите — и заказ будет завершён.',
+      cancelOrder: 'Отменить заказ',
+      chosenWaits: 'Ждём, когда специалист подтвердит цену {amount}',
+      confirmBy: 'срок ответа: {when}',
+      answerBy: 'Ответьте до {when}. Без ответа заказ вернётся к заказчику.',
+      waitsWorker: 'Ждём ответа специалиста — до {when}. Если он не ответит, заказ вернётся к вам.',
+      priceBy: 'Предложите цену и дату до {when}, иначе заказ вернётся к заказчику.',
+      waitsPrice: 'Ждём, когда специалист предложит цену — до {when}.',
+      completeBy: 'Если не подтвердите до {when}, заказ завершится автоматически.',
+      autoCompleteAt: 'Если заказчик не подтвердит до {when}, заказ завершится автоматически.',
+      agreeDayHint:
+        'Заказчик оставил дату на ваше усмотрение. Работа будет назначена на этот день.',
+      repost: 'Опубликовать снова',
+      repostTitle: 'Опубликовать заказ снова?',
+      repostHint:
+        'Новый заказ появится в общем списке — подходящие специалисты пришлют предложения. Описание, адрес и фото не меняются; когда нужно и цену можно изменить здесь.',
+      reposted: 'Заказ опубликован снова',
+      cancelNoticeEarly:
+        'Договорённости ещё нет — отмена не передаётся оператору и ни к кому не ведёт к ограничениям.',
+      agreeDayToday: 'Заказчик просил на сегодня — работа будет назначена на этот день.',
+      agreeDayUrgent:
+        'Заказчик просил срочно — сегодня или завтра. Работа будет назначена на выбранный день.',
+      agreeDayGone:
+        'День, который просил заказчик, прошёл — предложите цену с новой датой, заказчик подтвердит',
+      notDone: 'Работа ещё не выполнена',
+      notDoneTitle: 'Работа ещё не выполнена?',
+      notDoneHint:
+        'Мы сообщим специалисту. Заказ не завершится сам — когда работа будет готова, он снова нажмёт «Работа выполнена».',
+      notDoneSent: 'Специалисту сообщено',
+      notDoneNote: 'Если работа не закончена, нажмите «Работа ещё не выполнена».',
+      workDoneNotYet: 'День работы — {day}. «Работа выполнена» можно нажать с этого дня.',
+      workDoneNotYetShort: 'День работы ещё не наступил',
+      agreeTitle: 'Договорились?',
+      declineTitle: 'Прекратить переговоры с этим специалистом?',
+      declineHint:
+        'Разговор закончится, никого не штрафуют. Заказ вернётся к выбору среди оставшихся предложений; этот специалист не сможет откликнуться на него снова.',
+      notDoneSpent:
+        '«Работа ещё не выполнена» больше нажать нельзя. Если работа не закончена, отмените заказ — оператор рассмотрит.',
+      notDoneLast:
+        'Это последняя возможность: потом нажать нельзя будет, оператор узнает о разногласии.',
+      repostDayGone:
+        'Прежняя дата ({date}) прошла. Выберите новую — или оставьте пустым, специалист предложит дату вместе с ценой.',
+      repostWhen: 'Когда нужно?',
+      repostBudget: 'Цена (необязательно)',
+      repostBudgetKeep: 'Если оставить пустым, останется прежняя цена: {price}',
+      repostBudgetNone: 'Если оставить пустым, цену предложат специалисты',
+    },
+    order: {
+      takeBody:
+        'Цена: {price}, дата: {day}. После принятия заказ станет активным, а номера телефонов откроются.',
+      take: 'Принять',
+      takeNeedsOffer: 'Сначала нужно предложить цену и дату',
+      takeWaits: 'Ожидается ответ на ваше предложение',
+      takeNeedsDay: 'В предложении нет даты — предложите цену вместе с датой',
+      takeDayGone: 'Дата в предложении уже прошла — предложите цену с новой датой',
+      offerDay: 'Дата работы',
+      offerDayHint: 'Цена — на этот день. Если её примут, заказ назначат на эту дату.',
+      dayRequired: 'Выберите дату',
+      recall: 'Забрать заказ',
+      recallTitle: 'Забрать заказ?',
+      recallHint:
+        'Специалист ещё не ответил. Заберите заказ — и сможете отправить его другому специалисту или опубликовать для всех.',
+      recalled: 'Заказ возвращён вам',
+      dayGoneNote:
+        'Дата заказа ({date}) прошла — он уйдёт без даты, специалист предложит дату вместе с ценой.',
+      returnedRecalled: 'Вы забрали заказ',
+      returnedLapsedByYou: 'Вы не ответили вовремя на цену специалиста',
+      returnedLapsedBy: '{name} не ответил(а) вовремя',
+    },
+    match: {
+      offersTitle: 'Предложения',
+      seeOffers: 'Предложения ({n})',
+      chooseUntil: 'Выберите до {when}',
+      noOffers:
+        'Предложений пока нет. Они появятся здесь, как только специалисты ответят, — мы сообщим.',
+      verified: 'Личность подтверждена',
+      choose: 'Выбрать',
+      chooseTitle: 'Выбрать: {name}?',
+      chooseBody:
+        'Специалист получит уведомление: если он подтвердит договорённость, вы увидите номера друг друга. Если откажется или не ответит вовремя, можно выбрать другое предложение — до тех пор остальные предложения не закрываются.',
+      choosePrice:
+        'Предложенная цена: {price}. Если специалист её подтвердит, договорённость заключена.',
+      chosen: 'Выбрано — ждём, когда специалист подтвердит договорённость',
+      chooseHint:
+        'Номера откроются, когда специалист подтвердит договорённость. Если никого не выбрать, заказ закроется сам в указанное время.',
+      offerRejected: 'Предложение отклонено',
+      rejectOfferTitle: 'Отклонить это предложение?',
+      rejectOfferBody:
+        'Специалист получит уведомление и не сможет снова предложить цену по этому заказу.',
+      chooseDay:
+        'Дата работы: {date}. Если специалист подтвердит, работа будет назначена на этот день.',
+      autoClosed: 'Никто не выбран — срок истёк, заказ закрылся сам',
+      autoClosedDate: 'Дата заказа прошла — заказ закрылся сам',
+      autoClosedStale: 'Долго не было предложений — заказ закрылся сам',
+      jobsDone: '{count} работы',
+      experience: 'опыт {count} года',
+      offerDay: 'Дата работы: {date}',
+    },
+    talk: {
+      price: 'Предложить цену',
+      priceLabel: 'Цена',
+      priceTitleCustomer: 'Предложить цену: {name}',
+      priceHintCustomer:
+        'Цена появится в переписке со специалистом. Если вы выберете это предложение, специалист её подтвердит.',
+      priceSend: 'Отправить',
+      priceSent: 'Предложение цены отправлено',
+      byYou: 'Ваша цена',
+      choosePriceMine:
+        'Ваша цена: {price}. Когда специалист её подтвердит, договорённость состоится.',
+    },
+    final: {
+      label: 'Итоговый комментарий (необязательно)',
+      placeholder: 'Как прошла работа? Например: заменены оба крана, гарантия 6 месяцев.',
+      once: 'Комментарий оставляется один раз, изменить его потом нельзя.',
+    },
+    timing: {
+      flexible: 'Срок не важен',
+      on_date: 'В указанный день',
+      today: 'Сегодня',
+      urgent: 'Срочно',
+    },
+  },
+  en: {
+    stage: {
+      agree: 'Agree',
+      agreedAt: 'Agreed: {amount}',
+      cancelNotice:
+        'An operator reads the reason for every cancellation. If one side is found at fault, they may be temporarily restricted.',
+      cancelReason: 'Reason',
+      counter: 'Offer a different price',
+      decline: 'No deal',
+      offer: 'Offer a price',
+      offerHint:
+        'The offer is written into the conversation. Once the other side confirms it, the order moves to the agreed stage.',
+      offerTitle: 'Offer a price',
+      priceRequired: 'Enter a price',
+      reasonRequired: 'Write a reason',
+      reasonTooShort: 'At least 5 characters',
+      send: 'Send',
+      theirOffer: '{amount} offered',
+      yourOffer: 'You offered {amount} — waiting for a reply',
+      priceRange: "1 – {max} so'm",
+      completeTitle: 'Complete the order',
+      completeHint:
+        'You confirm the work is done. If you like, leave a final comment about the job; the professional sees it too.',
+      completeOk: 'Complete',
+      workDone: 'Job done',
+      workDoneTitle: 'Is the job done?',
+      workDoneHint:
+        'We will ask the customer to confirm. Once they do, the order is complete and you can rate the customer.',
+      workDoneOk: 'Yes, the job is done',
+      workDoneSent: 'Sent to the customer to confirm',
+      workDoneWaiting: 'Waiting for the customer to confirm',
+      workDoneByWorker:
+        'The professional says the job is done. Confirm it and the order is complete.',
+      cancelOrder: 'Cancel the order',
+      chosenWaits: 'Waiting for the professional to confirm {amount}',
+      confirmBy: 'answer by {when}',
+      answerBy: 'Answer by {when}. Without an answer the order goes back to the customer.',
+      waitsWorker:
+        'Waiting for the professional — until {when}. If they do not answer, the order comes back to you.',
+      priceBy: 'Offer a price and a day by {when}, or the order goes back to the customer.',
+      waitsPrice: 'Waiting for the professional to offer a price — until {when}.',
+      completeBy: 'If you do not confirm by {when}, the order completes on its own.',
+      autoCompleteAt: 'If the customer does not confirm by {when}, the order completes on its own.',
+      agreeDayHint: 'The customer left the day to you. The job is booked for it.',
+      repost: 'Post again',
+      repostTitle: 'Post the order again?',
+      repostHint:
+        'A new order goes out to everyone — matching professionals will send offers. The description, address and photos stay; when it is needed and the price can be changed here.',
+      reposted: 'Order posted again',
+      cancelNoticeEarly:
+        'There is no deal yet — the cancellation does not go to an operator and restricts nobody.',
+      agreeDayToday: 'The customer asked for today — the job is booked for it.',
+      agreeDayUrgent:
+        'The customer asked for it urgently — today or tomorrow. The job is booked for the day you pick.',
+      agreeDayGone:
+        'The day the customer asked for has passed — offer a price with a new date for them to agree to',
+      notDone: 'Not done yet',
+      notDoneTitle: 'Is the work not done yet?',
+      notDoneHint:
+        'We will tell the professional. The order will not complete on its own — once the work is finished, they press “Work done” again.',
+      notDoneSent: 'The professional has been told',
+      notDoneNote: 'If the work is not finished, press “Not done yet”.',
+      workDoneNotYet: "The job's day is {day}. “Work done” can be pressed from that day on.",
+      workDoneNotYetShort: "The job's day has not come yet",
+      agreeTitle: 'Agreed?',
+      declineTitle: 'End the talk with this professional?',
+      declineHint:
+        'The conversation ends and nobody is penalised. The order goes back to choosing among the remaining offers; this professional cannot offer on it again.',
+      notDoneSpent:
+        '“Not done yet” cannot be pressed again. If the work is not finished, cancel the order — an operator will review it.',
+      notDoneLast:
+        'This is the last time: after it the button goes, and an operator is told of the disagreement.',
+      repostDayGone:
+        'The old date ({date}) has passed. Pick a new one — or leave it empty, and the professional proposes a date with the price.',
+      repostWhen: 'When is it needed?',
+      repostBudget: 'Price (optional)',
+      repostBudgetKeep: 'Left empty, the old price stays: {price}',
+      repostBudgetNone: 'Left empty, professionals propose the price',
+    },
+    order: {
+      takeBody:
+        'Price: {price}, date: {day}. Once taken, the order goes active and the phone numbers open.',
+      take: 'Take the order',
+      takeNeedsOffer: 'A price and a date have to be offered first',
+      takeWaits: 'Waiting for an answer to your offer',
+      takeNeedsDay: 'The offer has no date — offer a price with a date',
+      takeDayGone: "The offer's date has passed — offer a price with a new date",
+      offerDay: 'Job date',
+      offerDayHint: 'The price is for this day. Once taken, the order is booked for it.',
+      dayRequired: 'Pick a date',
+      recall: 'Take back',
+      recallTitle: 'Take the order back?',
+      recallHint:
+        'The professional has not answered yet. Take it back to send it to someone else or post it for everyone.',
+      recalled: 'Order taken back',
+      dayGoneNote:
+        "The order's date ({date}) has passed — it goes out without one, and the professional proposes a date with the price.",
+      returnedRecalled: 'You took the order back',
+      returnedLapsedByYou: "You did not answer the professional's price in time",
+      returnedLapsedBy: '{name} did not answer in time',
+    },
+    match: {
+      offersTitle: 'Offers',
+      seeOffers: 'Offers ({n})',
+      chooseUntil: 'Choose by {when}',
+      noOffers: 'No offers yet. They appear here as professionals answer — we will let you know.',
+      verified: 'Identity verified',
+      choose: 'Choose',
+      chooseTitle: 'Choose {name}?',
+      chooseBody:
+        "The professional is notified: once they confirm the deal, you see each other's numbers. If they turn it down or do not answer in time, you can choose another offer — until then the other offers stay open.",
+      choosePrice: 'Offered price: {price}. Once the professional confirms it, the deal is made.',
+      chosen: 'Chosen — waiting for the professional to confirm the deal',
+      chooseHint:
+        'Numbers open once the professional confirms the deal. If nobody is chosen, the order closes by itself at the time shown.',
+      offerRejected: 'Offer declined',
+      rejectOfferTitle: 'Decline this offer?',
+      rejectOfferBody: 'The professional is told, and cannot offer on this order again.',
+      chooseDay: 'Job date: {date}. If the professional confirms, the job is booked for that day.',
+      autoClosed: 'Nobody was chosen — the time ran out and the order closed itself',
+      autoClosedDate: "The order's date passed — it closed itself",
+      autoClosedStale: 'No offers came for a long time — the order closed itself',
+      jobsDone: '{count} jobs',
+      experience: "{count} years' experience",
+      offerDay: 'Job date: {date}',
+    },
+    talk: {
+      price: 'Offer a price',
+      priceLabel: 'Price',
+      priceTitleCustomer: 'Offer {name} a price',
+      priceHintCustomer:
+        'The price goes into your chat with the specialist. If you choose this offer, the specialist confirms it.',
+      priceSend: 'Send',
+      priceSent: 'Price offer sent',
+      byYou: 'Your price',
+      choosePriceMine: 'Your price: {price}. Once the specialist confirms it, the deal is made.',
+    },
+    final: {
+      label: 'Final comment (optional)',
+      placeholder: "How did the job go? For example: both taps replaced, six months' warranty.",
+      once: 'You can leave it once; it cannot be changed afterwards.',
+    },
+    timing: {
+      flexible: 'Timing is flexible',
+      on_date: 'On a set day',
+      today: 'Today',
+      urgent: 'Urgent',
+    },
+  },
+};
