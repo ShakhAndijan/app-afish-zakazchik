@@ -5,6 +5,8 @@ import { ORDER_FLOW } from './orderFlowTexts';
 export const uz = {
   orderFlow: ORDER_FLOW.uz,
   common: {
+    ok: 'OK',
+    close: 'Yopish',
     years: '{n} yil',
     currencySom: "so'm",
     loading: 'Yuklanmoqda...',
@@ -1072,6 +1074,7 @@ export const uz = {
       date: 'Sanaga',
       flexible: 'Erkin',
       flexibleSubtitle: 'Bir hafta ichida',
+      change: "O'zgartirish",
     },
     photosLabel: 'Ish namunalari',
     photosHint: "Ko'pi bilan 10 ta rasm qo'shishingiz mumkin",
@@ -1132,7 +1135,7 @@ export const uz = {
     requiredSub: "Buyurtma berish uchun quyidagilarni to'ldiring",
     requiredOk: 'Tushunarli',
     extraTitle: "Qo'shimcha ma'lumotlar",
-    extraSubtitle: 'Ixtiyoriy: kategoriya, necha kishi, talablar, ish anjomlari…',
+    extraSubtitle: 'Ixtiyoriy: necha kishi, talablar, ish anjomlari…',
     step1Title: 'Buyurtma tafsilotlari',
     step2Title: 'Manzil va aloqa',
     step3Title: "Qo'shimcha ma'lumotlar va talablar",

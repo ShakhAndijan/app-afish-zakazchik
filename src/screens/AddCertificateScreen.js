@@ -11,10 +11,10 @@ import {
   TouchableWithoutFeedback,
   FlatList,
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { appAlert } from '../components/AppAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -257,7 +257,7 @@ export default function AddCertificateScreen({ onBack, onSave }) {
     setShowPhotoSheet(false);
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert(tr('avatarPicker.permissionTitle'), tr('addCertificate.galleryPermission'));
+      appAlert(tr('avatarPicker.permissionTitle'), tr('addCertificate.galleryPermission'));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -273,7 +273,7 @@ export default function AddCertificateScreen({ onBack, onSave }) {
     setShowPhotoSheet(false);
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert(tr('avatarPicker.permissionTitle'), tr('addCertificate.cameraPermission'));
+      appAlert(tr('avatarPicker.permissionTitle'), tr('addCertificate.cameraPermission'));
       return;
     }
     const result = await ImagePicker.launchCameraAsync({

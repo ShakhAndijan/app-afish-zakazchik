@@ -1,18 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  Alert,
   View,
   Text,
   TextInput,
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  KeyboardAvoidingView,
   Linking,
-  Platform,
   StyleSheet,
 } from 'react-native';
+import { appAlert } from '../components/AppAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import useBottomInset from '../hooks/useBottomInset';
 import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../context/ThemeContext';
@@ -30,6 +30,7 @@ import { getErrorMessage } from '../utils/errors';
 // javob ish vaqtida keladi (ekranda shu haqda ogohlantirish bor), yangi javoblar o'zi yangilanadi.
 export default function SupportChatScreen({ onBack }) {
   const { theme: t } = useTheme();
+  const bottomInset = useBottomInset();
   const { t: tr } = useLanguage();
   const { user } = useUser();
   const scrollRef = useRef(null);
@@ -51,12 +52,12 @@ export default function SupportChatScreen({ onBack }) {
   const submit = () => {
     const body = text.trim();
     if (body.length < SUPPORT_MIN_LENGTH) {
-      Alert.alert(tr('common.errorTitle'), tr('supportChat.tooShort', { n: SUPPORT_MIN_LENGTH }));
+      appAlert(tr('common.errorTitle'), tr('supportChat.tooShort', { n: SUPPORT_MIN_LENGTH }));
       return;
     }
     const contact = parseContact(needContact ? contactInput : profileContact);
     if (name.length < 2 || !contact) {
-      Alert.alert(
+      appAlert(
         tr('common.errorTitle'),
         tr(
           contactInput.trim() || !needContact ? 'supportChat.badContact' : 'supportChat.needContact'
@@ -68,7 +69,7 @@ export default function SupportChatScreen({ onBack }) {
       { name, contact: contact.value, body },
       {
         onSuccess: () => setText(''),
-        onError: (e) => Alert.alert(tr('common.errorTitle'), getErrorMessage(e, tr)),
+        onError: (e) => appAlert(tr('common.errorTitle'), getErrorMessage(e, tr)),
       }
     );
   };
@@ -94,10 +95,7 @@ export default function SupportChatScreen({ onBack }) {
         </View>
       </View>
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         {conversation.isPending ? (
           <View style={s.center}>
             <AfishLoader size={110} />
@@ -150,7 +148,12 @@ export default function SupportChatScreen({ onBack }) {
           </ScrollView>
         )}
 
-        <View style={[s.footer, { borderTopColor: t.border, backgroundColor: t.bg }]}>
+        <View
+          style={[
+            s.footer,
+            { borderTopColor: t.border, backgroundColor: t.bg, paddingBottom: 10 + bottomInset },
+          ]}
+        >
           {needContact && (
             <TextInput
               style={[

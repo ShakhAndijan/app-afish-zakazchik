@@ -1,4 +1,5 @@
-import { Alert, View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { appAlert } from '../components/AppAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
@@ -40,11 +41,11 @@ export default function FavoritesScreen({ onBack }) {
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
       queryClient.invalidateQueries({ queryKey: ['workers'] });
     },
-    onError: (e) => Alert.alert(tr('common.errorTitle'), getErrorMessage(e, tr)),
+    onError: (e) => appAlert(tr('common.errorTitle'), getErrorMessage(e, tr)),
   });
 
   const confirmRemove = (w) =>
-    Alert.alert(tr('favorites.removeConfirm'), w.name, [
+    appAlert(tr('favorites.removeConfirm'), w.name, [
       { text: tr('common.cancel'), style: 'cancel' },
       { text: tr('favorites.remove'), style: 'destructive', onPress: () => remove.mutate(w.id) },
     ]);

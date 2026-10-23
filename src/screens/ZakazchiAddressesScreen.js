@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { appAlert } from '../components/AppAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -31,9 +32,13 @@ export default function ZakazchiAddressesScreen({ onBack }) {
   };
 
   const confirmDelete = (address) => {
-    Alert.alert(tr('addresses.deleteTitle'), tr('addresses.deleteMessage'), [
+    appAlert(tr('addresses.deleteTitle'), tr('addresses.deleteMessage'), [
       { text: tr('addresses.cancel'), style: 'cancel' },
-      { text: tr('addresses.delete'), style: 'destructive', onPress: () => removeExtra(address.id) },
+      {
+        text: tr('addresses.delete'),
+        style: 'destructive',
+        onPress: () => removeExtra(address.id),
+      },
     ]);
   };
 

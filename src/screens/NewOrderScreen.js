@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
-import { View, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { appAlert } from '../components/AppAlert';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { StatusBar } from 'expo-status-bar';
@@ -20,6 +21,7 @@ import ReviewModal from './new-order/components/ReviewModal';
 import PhotoPreviewModal from './new-order/components/PhotoPreviewModal';
 import TargetWorkerCard from './new-order/sections/TargetWorkerCard';
 import CategorySection from './new-order/sections/CategorySection';
+import { CATEGORY_FIELD, REQUIRED_FIELDS } from './new-order/constants';
 import DescriptionSection from './new-order/sections/DescriptionSection';
 import AddressSection from './new-order/sections/AddressSection';
 import WhenSection from './new-order/sections/WhenSection';
@@ -60,7 +62,7 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
   const [floor, setFloor] = useState('');
   const [gpsLat, setGpsLat] = useState(null);
   const [gpsLng, setGpsLng] = useState(null);
-  const [when, setWhen] = useState(null);
+  const [when, setWhen] = useState('today');
   const [whenDate, setWhenDate] = useState(null);
   const [previewIndex, setPreviewIndex] = useState(null);
   const [toolsOption, setToolsOption] = useState(null);
@@ -116,13 +118,16 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
     tr('newOrder.addressModalTitle');
   const addressSubtitle = selectedDistrict?.name || selectedRegion?.name ? street.trim() : '';
 
-  // Majburiy maydonlar: tavsif, narx ("Ish uchun" — ish narxi, "Soatbay" — soat narxi), qachon
-  // (sana tanlangan bo'lsa — sana ham), manzil, telefon. Kategoriya ixtiyoriy (saytdagidek).
+  // Majburiy maydonlar: xizmat turi (konkret usta tanlanmagan bo'lsa), tavsif, narx ("Ish uchun" — ish narxi, "Soatbay" — soat narxi), qachon
+  // (sana tanlangan bo'lsa — sana ham), manzil, telefon.
   const addressReady = !!districtId || (gpsLat != null && gpsLng != null);
   const whenReady = !!when && (when !== 'date' || !!whenDate);
   const priceReady = pricingType === 'hourly' ? !!hourlyRate.trim() : !!fixedPrice.trim();
-  // Tartib saytdagi bilan bir xil: tavsif, narx, sana, manzil, telefon (kategoriya ixtiyoriy).
+  // Konkret ustaga berilgan buyurtmada xizmat turi ustaning o'zidan keladi; qolganida tanlash shart.
+  const categoryRequired = !orderWorker;
+  const requiredFields = categoryRequired ? [CATEGORY_FIELD, ...REQUIRED_FIELDS] : REQUIRED_FIELDS;
   const missing = [
+    categoryRequired && categoryIds.length === 0 && CATEGORY_FIELD,
     description.trim().length === 0 && 'newOrder.descriptionLabel',
     !priceReady && 'newOrder.pricingLabel',
     !whenReady && 'newOrder.whenLabel',
@@ -131,7 +136,6 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
   ].filter(Boolean);
   const ready = missing.length === 0;
   const extraFilled = [
-    categoryIds.length > 0,
     workerCount > 1,
     requirePhoto ||
       requireVerified ||
@@ -198,7 +202,7 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
         try {
           payload.photo_temp_keys = await uploadAll();
         } catch (uploadErr) {
-          Alert.alert(
+          appAlert(
             tr('newOrder.submitErrorTitle'),
             uploadErr?.code === 'UNSUPPORTED_PHOTO_TYPE'
               ? tr('newOrder.photosUnsupported')
@@ -221,7 +225,7 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
         raw: created,
       });
     } catch (err) {
-      Alert.alert(tr('newOrder.submitErrorTitle'), getErrorMessage(err, tr, 'common.error'));
+      appAlert(tr('newOrder.submitErrorTitle'), getErrorMessage(err, tr, 'common.error'));
     } finally {
       setSubmitting(false);
     }
@@ -271,8 +275,15 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
             2) manzil va aloqa — manzil, telefon, zaxira telefon;
             3) ixtiyoriy qo'shimcha — kategoriya, necha kishi, talablar. */}
         <StepHeader no={1} title={tr('newOrder.step1Title')} />
+        <CategorySection
+          selectedCategories={selectedCategories}
+          toggleCategory={toggleCategory}
+          setCategoryPickerOpen={setCategoryPickerOpen}
+          required={categoryRequired}
+        />
         <DescriptionSection
           selectedCategories={selectedCategories}
+          targeted={!!orderWorker}
           description={description}
           setDescription={setDescription}
         />
@@ -306,11 +317,6 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
 
         {/* Ixtiyoriy maydonlar yig'ilgan holda turadi */}
         <ExtraSection no={3} filled={extraFilled}>
-          <CategorySection
-            selectedCategories={selectedCategories}
-            toggleCategory={toggleCategory}
-            setCategoryPickerOpen={setCategoryPickerOpen}
-          />
           <WorkerCountSection workerCount={workerCount} setWorkerCount={setWorkerCount} />
           <RequirementsSection
             targeted={!!orderWorker}
@@ -332,7 +338,7 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
           <ToolsSection toolsOption={toolsOption} setToolsOption={setToolsOption} />
         </ExtraSection>
 
-        <OrderProgressCard missing={missing} />
+        <OrderProgressCard missing={missing} fields={requiredFields} />
 
         <SubmitButton ready={ready} missing={missing} onPress={openReview} />
       </KeyboardAwareScrollView>

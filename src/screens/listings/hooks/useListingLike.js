@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Alert } from 'react-native';
+import { appAlert } from '../../../components/AppAlert';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../../context/AuthContext';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -24,7 +24,7 @@ export default function useListingLike() {
         { id: listing.id, next: !listing.isLiked },
         {
           onError: (err) =>
-            Alert.alert(tr('common.errorTitle'), getErrorMessage(err, tr, 'listings.likeError')),
+            appAlert(tr('common.errorTitle'), getErrorMessage(err, tr, 'listings.likeError')),
         }
       );
     },

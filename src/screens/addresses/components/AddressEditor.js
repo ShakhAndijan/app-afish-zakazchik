@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Alert } from 'react-native';
+import { appAlert } from '../../../components/AppAlert';
 import AddressModal from '../../new-order/components/AddressModal';
 import useOrderLocation from '../../new-order/hooks/useOrderLocation';
 import LabelPicker from './LabelPicker';
@@ -39,7 +39,7 @@ export default function AddressEditor({ mode, initial, onClose, onSave, t, tr })
   const handleSave = async () => {
     if (saving) return;
     if (!loc.regionId && !loc.districtId && !street.trim() && gpsLat == null) {
-      Alert.alert(tr('common.errorTitle'), tr('addresses.errorEmpty'));
+      appAlert(tr('common.errorTitle'), tr('addresses.errorEmpty'));
       return;
     }
     setSaving(true);
@@ -63,7 +63,7 @@ export default function AddressEditor({ mode, initial, onClose, onSave, t, tr })
         lng: gpsLng,
       });
     } catch (e) {
-      Alert.alert(tr('common.errorTitle'), getErrorMessage(e, tr, 'addresses.errorSave'));
+      appAlert(tr('common.errorTitle'), getErrorMessage(e, tr, 'addresses.errorSave'));
     } finally {
       setSaving(false);
     }

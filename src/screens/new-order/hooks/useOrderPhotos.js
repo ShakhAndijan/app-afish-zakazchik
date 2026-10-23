@@ -1,7 +1,7 @@
 // Buyurtma rasmlari: tanlash, o'chirish va backendga yuklash.
 
 import { useState, useRef } from 'react';
-import { Alert } from 'react-native';
+import { appAlert } from '../../../components/AppAlert';
 import * as ImagePicker from 'expo-image-picker';
 import { useLanguage } from '../../../context/LanguageContext';
 import { uploadOrderPhoto } from '../../../api/orders';
@@ -20,7 +20,7 @@ export default function useOrderPhotos() {
     if (remaining <= 0) return;
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert(tr('common.errorTitle'), tr('newOrder.photosPermission'));
+      appAlert(tr('common.errorTitle'), tr('newOrder.photosPermission'));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({

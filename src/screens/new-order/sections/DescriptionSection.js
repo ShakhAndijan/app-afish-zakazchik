@@ -3,14 +3,19 @@ import { useTheme } from '../../../context/ThemeContext';
 import { useLanguage } from '../../../context/LanguageContext';
 import { common } from '../styles';
 
-export default function DescriptionSection({ selectedCategories, description, setDescription }) {
+export default function DescriptionSection({
+  selectedCategories,
+  targeted = false,
+  description,
+  setDescription,
+}) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
 
   return (
     <>
-      {/* ── Tavsif (xizmat turi tanlangandan keyin chiqadi) ── */}
-      {selectedCategories.length > 0 && (
+      {/* ── Tavsif (xizmat turi tanlangandan yoki usta tanlangandan keyin chiqadi) ── */}
+      {(selectedCategories.length > 0 || targeted) && (
         <>
           <Text style={[common.label, { color: t.text }]}>
             {tr('newOrder.descriptionLabel')}

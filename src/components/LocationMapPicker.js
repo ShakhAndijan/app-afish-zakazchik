@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, ActivityIndicator, Modal, Alert } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, ActivityIndicator, Modal } from 'react-native';
+import { appAlert } from './AppAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
@@ -192,7 +193,7 @@ export default function LocationMapPicker({
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        if (permissionTitle) Alert.alert(permissionTitle, permissionMessage);
+        if (permissionTitle) appAlert(permissionTitle, permissionMessage);
         return;
       }
       const pos = await Location.getCurrentPositionAsync({
@@ -202,7 +203,7 @@ export default function LocationMapPicker({
         `goTo(${pos.coords.latitude}, ${pos.coords.longitude}); true;`
       );
     } catch {
-      if (errorTitle) Alert.alert(errorTitle, errorMessage);
+      if (errorTitle) appAlert(errorTitle, errorMessage);
     } finally {
       setLocating(false);
     }

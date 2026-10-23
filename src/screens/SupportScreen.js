@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  Alert,
   View,
   Text,
   TextInput,
@@ -11,6 +10,7 @@ import {
   Platform,
   StyleSheet,
 } from 'react-native';
+import { appAlert } from '../components/AppAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -58,7 +58,7 @@ export default function SupportScreen({ kind: initialKind = 'question', onBack }
           setBody('');
           setSent(true);
         },
-        onError: (e) => Alert.alert(tr('common.errorTitle'), getErrorMessage(e, tr)),
+        onError: (e) => appAlert(tr('common.errorTitle'), getErrorMessage(e, tr)),
       }
     );
   };

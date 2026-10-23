@@ -1,16 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  ScrollView,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { appAlert } from '../components/AppAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAvoidingView, useKeyboardState } from 'react-native-keyboard-controller';
+import useBottomInset from '../hooks/useBottomInset';
 import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../context/ThemeContext';
@@ -30,6 +23,8 @@ const CHAT_POLL_MS = 5000;
 // ko'rinadi. Tepada joriy taklif va "Qabul qilish" / "Narx taklif qilish" tugmalari turadi.
 export default function RequestChatScreen({ orderId, onBack }) {
   const { theme: t } = useTheme();
+  const bottomInset = useBottomInset();
+  const keyboardVisible = useKeyboardState((st) => st.isVisible);
   const { t: tr } = useLanguage();
   const { order, refresh: refreshOrder } = useLiveOrder(orderId);
   const actions = useOrderActions(orderId, refreshOrder);
@@ -69,7 +64,7 @@ export default function RequestChatScreen({ orderId, onBack }) {
       setChat(await sendOrderChat(orderId, body));
       setText('');
     } catch (e) {
-      Alert.alert(tr('common.errorTitle'), getErrorMessage(e, tr, 'requests.actionFailed'));
+      appAlert(tr('common.errorTitle'), getErrorMessage(e, tr, 'requests.actionFailed'));
     } finally {
       setSending(false);
     }
@@ -82,24 +77,8 @@ export default function RequestChatScreen({ orderId, onBack }) {
   const offerDayValue = negotiating ? offerDay(order) : null;
   const agreeDayOk = isDayValid(offerDayValue);
 
-  // Saytdagidek: sababsiz, faqat tasdiqlash.
-  const confirmDecline = () =>
-    Alert.alert(tr('orderFlow.stage.declineTitle'), tr('orderFlow.stage.declineHint'), [
-      { text: tr('requests.close'), style: 'cancel' },
-      {
-        text: tr('orderFlow.stage.decline'),
-        style: 'destructive',
-        onPress: async () => {
-          if (await actions.decline()) loadChat();
-        },
-      },
-    ]);
-
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: t.bg }}
-      edges={['top', 'left', 'right', 'bottom']}
-    >
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }} edges={['top', 'left', 'right']}>
       <StatusBar style={t.isDark ? 'light' : 'dark'} />
 
       <View style={[s.header, { borderBottomColor: t.border }]}>
@@ -128,65 +107,28 @@ export default function RequestChatScreen({ orderId, onBack }) {
 
       {negotiating && (
         <View style={[s.priceBar, { backgroundColor: t.card, borderBottomColor: t.border }]}>
-          <View style={{ flex: 1 }}>
-            <Text style={[s.priceLabel, { color: t.muted }]}>
-              {order.offerPrice == null
-                ? tr('requests.noOfferYet')
-                : order.offerBy === 'worker'
-                  ? tr('requests.offerFromWorker')
-                  : tr('requests.offerFromMe')}
+          <MaterialCommunityIcons name="cash-multiple" size={18} color={t.orange} />
+          <Text style={[s.priceLabel, { color: t.muted }]} numberOfLines={1}>
+            {order.offerPrice == null
+              ? tr('requests.noOfferYet')
+              : order.offerBy === 'worker'
+                ? tr('requests.offerFromWorker')
+                : tr('requests.offerFromMe')}
+          </Text>
+          {order.offerPrice != null && (
+            <Text style={[s.priceValue, { color: t.orange }]} numberOfLines={1}>
+              {formatPrice(tr, order.offerPrice)}
+              {!!offerDayValue && (
+                <Text style={[s.priceLabel, { color: t.muted }]}>
+                  {`  ·  ${formatDay(tr, offerDayValue)}`}
+                </Text>
+              )}
             </Text>
-            {order.offerPrice != null && (
-              <Text style={[s.priceValue, { color: t.orange }]}>
-                {formatPrice(tr, order.offerPrice)}
-                {!!offerDayValue && (
-                  <Text style={[s.priceLabel, { color: t.muted }]}>
-                    {`  ·  ${formatDay(tr, offerDayValue)}`}
-                  </Text>
-                )}
-              </Text>
-            )}
-          </View>
-          <TouchableOpacity
-            style={[s.smallBtn, { borderColor: t.line2, borderWidth: 1.5 }]}
-            activeOpacity={0.8}
-            disabled={actions.busy}
-            onPress={() => setPriceOpen(true)}
-          >
-            <Text style={[s.smallBtnText, { color: t.text }]}>
-              {order.offerPrice != null
-                ? tr('orderFlow.stage.counter')
-                : tr('orderFlow.stage.offer')}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[s.smallBtn, { borderColor: t.red + '66', borderWidth: 1.5 }]}
-            activeOpacity={0.8}
-            disabled={actions.busy}
-            onPress={confirmDecline}
-          >
-            <Text style={[s.smallBtnText, { color: t.red }]}>{tr('orderFlow.stage.decline')}</Text>
-          </TouchableOpacity>
-          {workerOffer && (
-            <TouchableOpacity
-              style={[
-                s.smallBtn,
-                { backgroundColor: t.orange, opacity: actions.busy || !agreeDayOk ? 0.5 : 1 },
-              ]}
-              activeOpacity={0.85}
-              disabled={actions.busy || !agreeDayOk}
-              onPress={() => actions.confirmAgree(order)}
-            >
-              <Text style={[s.smallBtnText, { color: '#fff' }]}>{tr('orderFlow.stage.agree')}</Text>
-            </TouchableOpacity>
           )}
         </View>
       )}
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         <ScrollView
           ref={scrollRef}
           style={{ flex: 1 }}
@@ -202,8 +144,60 @@ export default function RequestChatScreen({ orderId, onBack }) {
           ))}
         </ScrollView>
 
+        {negotiating && !keyboardVisible && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            style={[s.chipsWrap, { borderTopColor: t.border, backgroundColor: t.bg }]}
+            contentContainerStyle={s.chips}
+          >
+            {workerOffer && (
+              <TouchableOpacity
+                style={[
+                  s.chip,
+                  { backgroundColor: t.orange, opacity: actions.busy || !agreeDayOk ? 0.5 : 1 },
+                ]}
+                activeOpacity={0.85}
+                disabled={actions.busy || !agreeDayOk}
+                onPress={() => actions.confirmAgree(order)}
+              >
+                <MaterialCommunityIcons name="check" size={16} color="#fff" />
+                <Text style={[s.chipText, { color: '#fff' }]}>{tr('orderFlow.stage.agree')}</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={[s.chip, { backgroundColor: t.orange + '14', borderColor: t.orange + '55' }]}
+              activeOpacity={0.8}
+              disabled={actions.busy}
+              onPress={() => setPriceOpen(true)}
+            >
+              <MaterialCommunityIcons name="cash-edit" size={16} color={t.orange} />
+              <Text style={[s.chipText, { color: t.orange }]}>
+                {order.offerPrice != null
+                  ? tr('orderFlow.stage.counter')
+                  : tr('orderFlow.stage.offer')}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[s.chip, { borderColor: t.red + '66' }]}
+              activeOpacity={0.8}
+              disabled={actions.busy}
+              onPress={() => actions.confirmDecline(loadChat)}
+            >
+              <MaterialCommunityIcons name="close-circle-outline" size={16} color={t.red} />
+              <Text style={[s.chipText, { color: t.red }]}>{tr('orderFlow.stage.decline')}</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        )}
+
         {canSend ? (
-          <View style={[s.inputRow, { borderTopColor: t.border, backgroundColor: t.bg }]}>
+          <View
+            style={[
+              s.inputRow,
+              { borderTopColor: t.border, backgroundColor: t.bg, paddingBottom: 10 + bottomInset },
+            ]}
+          >
             <TextInput
               style={[
                 s.input,
@@ -226,7 +220,12 @@ export default function RequestChatScreen({ orderId, onBack }) {
             </TouchableOpacity>
           </View>
         ) : (
-          <Text style={[s.closed, { color: t.faint, borderTopColor: t.border }]}>
+          <Text
+            style={[
+              s.closed,
+              { color: t.faint, borderTopColor: t.border, paddingBottom: 14 + bottomInset },
+            ]}
+          >
             {tr('requests.chatClosed')}
           </Text>
         )}
@@ -317,13 +316,24 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 9,
     borderBottomWidth: 1,
   },
-  priceLabel: { fontSize: 11.5 },
-  priceValue: { fontWeight: '800', fontSize: 16, marginTop: 1 },
-  smallBtn: { borderRadius: 10, paddingHorizontal: 12, height: 36, justifyContent: 'center' },
-  smallBtnText: { fontWeight: '700', fontSize: 12.5 },
+  priceLabel: { fontSize: 12 },
+  priceValue: { fontWeight: '800', fontSize: 15 },
+  chipsWrap: { flexGrow: 0, borderTopWidth: 1 },
+  chips: { gap: 8, paddingHorizontal: 14, paddingVertical: 8 },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    height: 38,
+    paddingHorizontal: 14,
+    borderRadius: 19,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  chipText: { fontWeight: '700', fontSize: 13 },
   messages: { padding: 16, gap: 8, flexGrow: 1 },
   empty: { textAlign: 'center', marginTop: 40, fontSize: 13 },
   system: { alignSelf: 'center', fontSize: 11.5, textAlign: 'center', marginVertical: 4 },

@@ -5,11 +5,11 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
-  Alert,
   ActivityIndicator,
   ScrollView,
   StyleSheet,
 } from 'react-native';
+import { appAlert } from '../../../components/AppAlert';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../../../context/ThemeContext';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -40,15 +40,12 @@ export default function CommentsSection({ listingId, signedIn, onLogin, sheet = 
     add.mutate(text, {
       onSuccess: () => setText(''),
       onError: (err) =>
-        Alert.alert(
-          tr('common.errorTitle'),
-          getErrorMessage(err, tr, 'listings.comments.sendError')
-        ),
+        appAlert(tr('common.errorTitle'), getErrorMessage(err, tr, 'listings.comments.sendError')),
     });
   };
 
   const confirmDelete = (comment) =>
-    Alert.alert(tr('listings.comments.deleteConfirm'), undefined, [
+    appAlert(tr('listings.comments.deleteConfirm'), undefined, [
       { text: tr('common.cancel'), style: 'cancel' },
       {
         text: tr('listings.comments.delete'),
@@ -56,7 +53,7 @@ export default function CommentsSection({ listingId, signedIn, onLogin, sheet = 
         onPress: () =>
           remove.mutate(comment.id, {
             onError: (err) =>
-              Alert.alert(
+              appAlert(
                 tr('common.errorTitle'),
                 getErrorMessage(err, tr, 'listings.comments.deleteError')
               ),

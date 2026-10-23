@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { appAlert, appConfirm } from '../../../components/AppAlert';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useRouter } from 'expo-router';
@@ -46,7 +47,7 @@ export default function OffersSection({ orderId, chooseUntil, onChanged }) {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       await onChanged?.();
     } catch (e) {
-      Alert.alert(tr('common.errorTitle'), getErrorMessage(e, tr, 'requests.actionFailed'));
+      appAlert(tr('common.errorTitle'), getErrorMessage(e, tr, 'requests.actionFailed'));
       query.refetch();
     } finally {
       setBusyId(null);
@@ -54,9 +55,9 @@ export default function OffersSection({ orderId, chooseUntil, onChanged }) {
   };
 
   const choose = (offer) =>
-    Alert.alert(
-      tr('orderFlow.match.chooseTitle', { name: offer.worker.name }),
-      [
+    appConfirm({
+      title: tr('orderFlow.match.chooseTitle', { name: offer.worker.name }),
+      message: [
         tr('orderFlow.match.chooseBody'),
         tr('orderFlow.match.choosePrice', { price: formatPrice(tr, offer.price) }),
         offer.offerDate
@@ -65,24 +66,18 @@ export default function OffersSection({ orderId, chooseUntil, onChanged }) {
       ]
         .filter(Boolean)
         .join('\n\n'),
-      [
-        { text: tr('requests.close'), style: 'cancel' },
-        {
-          text: tr('orderFlow.match.choose'),
-          onPress: () => run(offer, () => chooseOrderOffer(orderId, offer.id)),
-        },
-      ]
-    );
+      confirmLabel: tr('orderFlow.match.choose'),
+      onConfirm: () => run(offer, () => chooseOrderOffer(orderId, offer.id)),
+    });
 
   const reject = (offer) =>
-    Alert.alert(tr('orderFlow.match.rejectOfferTitle'), tr('orderFlow.match.rejectOfferBody'), [
-      { text: tr('requests.close'), style: 'cancel' },
-      {
-        text: tr('requests.decline'),
-        style: 'destructive',
-        onPress: () => run(offer, () => rejectOrderOffer(orderId, offer.id)),
-      },
-    ]);
+    appConfirm({
+      title: tr('orderFlow.match.rejectOfferTitle'),
+      message: tr('orderFlow.match.rejectOfferBody'),
+      confirmLabel: tr('requests.decline'),
+      destructive: true,
+      onConfirm: () => run(offer, () => rejectOrderOffer(orderId, offer.id)),
+    });
 
   // Qarshi narx: taklif ro'yxatda qoladi, narxi yangilanadi ("Siz taklif qilgan narx" belgisi bilan).
   const submitPrice = async (price) => {
@@ -92,9 +87,9 @@ export default function OffersSection({ orderId, chooseUntil, onChanged }) {
       await repriceOrderOffer(orderId, offer.id, price);
       setPriceFor(null);
       await query.refetch();
-      Alert.alert(tr('orderFlow.talk.priceSent'));
+      appAlert(tr('orderFlow.talk.priceSent'));
     } catch (e) {
-      Alert.alert(tr('common.errorTitle'), getErrorMessage(e, tr, 'requests.actionFailed'));
+      appAlert(tr('common.errorTitle'), getErrorMessage(e, tr, 'requests.actionFailed'));
     } finally {
       setBusyId(null);
     }
@@ -315,5 +310,5 @@ const s = StyleSheet.create({
   fullBtn: { flex: 0, alignSelf: 'stretch' },
   label: { fontSize: 13, fontWeight: '700' },
   btnTxt: { fontWeight: '700', fontSize: 14 },
-  hint: { fontSize: 12, lineHeight: 17 },
+  message: { fontSize: 12, lineHeight: 17 },
 });

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { appAlert } from '../components/AppAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -42,17 +43,6 @@ export default function RequestScreen({ orderId, onBack }) {
   const [sendOpen, setSendOpen] = useState(false);
   const [completeOpen, setCompleteOpen] = useState(false);
   const [repostOpen, setRepostOpen] = useState(false);
-
-  // Saytdagidek: sababsiz, faqat tasdiqlash (suhbat tugaydi, buyurtma qolgan takliflarga qaytadi).
-  const confirmDecline = () =>
-    Alert.alert(tr('orderFlow.stage.declineTitle'), tr('orderFlow.stage.declineHint'), [
-      { text: tr('requests.close'), style: 'cancel' },
-      {
-        text: tr('orderFlow.stage.decline'),
-        style: 'destructive',
-        onPress: () => actions.decline(),
-      },
-    ]);
 
   const header = (
     <View style={s.header}>
@@ -236,7 +226,7 @@ export default function RequestScreen({ orderId, onBack }) {
               )}
 
               {negotiating && (
-                <View style={s.actions}>
+                <View style={[s.actions, { borderTopColor: t.border }]}>
                   {info.state === 'offer' && (
                     <TouchableOpacity
                       style={[
@@ -257,13 +247,20 @@ export default function RequestScreen({ orderId, onBack }) {
                     </TouchableOpacity>
                   )}
                   <TouchableOpacity
-                    style={[s.btn, { borderColor: t.line2, borderWidth: 1.5 }]}
+                    style={[
+                      s.btn,
+                      {
+                        backgroundColor: t.orange + '14',
+                        borderColor: t.orange + '55',
+                        borderWidth: 1.5,
+                      },
+                    ]}
                     activeOpacity={0.8}
                     disabled={actions.busy}
                     onPress={() => setPriceOpen(true)}
                   >
-                    <MaterialCommunityIcons name="cash-edit" size={18} color={t.text} />
-                    <Text style={[s.btnText, { color: t.text }]} numberOfLines={1}>
+                    <MaterialCommunityIcons name="cash-edit" size={19} color={t.orange} />
+                    <Text style={[s.btnText, { color: t.orange }]}>
                       {order.offerPrice != null
                         ? tr('orderFlow.stage.counter')
                         : tr('orderFlow.stage.offer')}
@@ -276,13 +273,15 @@ export default function RequestScreen({ orderId, onBack }) {
               )}
               {negotiating && (
                 <TouchableOpacity
-                  style={[s.declineBtn, { borderColor: t.red + '66' }]}
-                  activeOpacity={0.8}
+                  style={s.declineBtn}
+                  activeOpacity={0.6}
                   disabled={actions.busy}
-                  onPress={confirmDecline}
+                  onPress={() => actions.confirmDecline()}
                 >
-                  <MaterialCommunityIcons name="close" size={18} color={t.red} />
-                  <Text style={[s.btnText, { color: t.red }]}>{tr('orderFlow.stage.decline')}</Text>
+                  <MaterialCommunityIcons name="close-circle-outline" size={17} color={t.red} />
+                  <Text style={[s.declineText, { color: t.red }]}>
+                    {tr('orderFlow.stage.decline')}
+                  </Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -381,10 +380,11 @@ export default function RequestScreen({ orderId, onBack }) {
 
         {isOpenOrder(order) && (
           <TouchableOpacity
-            style={[s.cancel, { borderColor: t.red + '66' }]}
-            activeOpacity={0.8}
+            style={[s.cancel, { backgroundColor: t.red + '12' }]}
+            activeOpacity={0.7}
             onPress={() => setCancelOpen(true)}
           >
+            <MaterialCommunityIcons name="trash-can-outline" size={18} color={t.red} />
             <Text style={[s.cancelText, { color: t.red }]}>{tr('requests.cancelOrder')}</Text>
           </TouchableOpacity>
         )}
@@ -407,7 +407,7 @@ export default function RequestScreen({ orderId, onBack }) {
         onSubmit={async (payload) => {
           if (await actions.repost(payload)) {
             setRepostOpen(false);
-            Alert.alert(tr('orderFlow.stage.reposted'));
+            appAlert(tr('orderFlow.stage.reposted'));
           }
         }}
       />
@@ -435,7 +435,7 @@ export default function RequestScreen({ orderId, onBack }) {
         onPick={async (worker) => {
           if (await actions.sendTo(worker.id)) {
             setSendOpen(false);
-            Alert.alert(tr('requests.sentTo', { name: worker.name }));
+            appAlert(tr('requests.sentTo', { name: worker.name }));
           }
         }}
       />
@@ -519,17 +519,18 @@ const s = StyleSheet.create({
   priceCard: { borderRadius: 18, borderWidth: 1, padding: 16, gap: 6 },
   priceLabel: { fontSize: 12.5 },
   priceValue: { fontWeight: '800', fontSize: 24 },
-  actions: { flexDirection: 'row', gap: 10, marginTop: 10 },
+  actions: { gap: 10, marginTop: 14, paddingTop: 14, borderTopWidth: 1 },
   btn: {
-    flex: 1,
-    height: 46,
-    borderRadius: 13,
+    minHeight: 50,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 7,
+    gap: 8,
   },
-  btnText: { fontWeight: '700', fontSize: 14 },
+  btnText: { fontWeight: '700', fontSize: 14.5 },
   wideBtn: {
     height: 48,
     borderRadius: 14,
@@ -539,15 +540,14 @@ const s = StyleSheet.create({
     gap: 8,
   },
   declineBtn: {
-    height: 44,
-    borderRadius: 13,
-    borderWidth: 1.5,
-    marginTop: 10,
+    height: 40,
+    marginTop: 4,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 7,
+    gap: 6,
   },
+  declineText: { fontWeight: '600', fontSize: 13.5 },
   chatBtn: {
     height: 52,
     borderRadius: 15,
@@ -560,9 +560,10 @@ const s = StyleSheet.create({
   cancel: {
     height: 48,
     borderRadius: 14,
-    borderWidth: 1.5,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
   },
   cancelText: { fontWeight: '700', fontSize: 14.5 },
 });

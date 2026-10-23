@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Alert } from 'react-native';
+import { appAlert } from '../../../components/AppAlert';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useUser } from '../../../context/UserContext';
 import { getCustomerMe, updateCustomerMe } from '../../../api/user';
@@ -27,7 +27,7 @@ export default function useProfileForm() {
         setValues(profileToForm(data));
       })
       .catch((e) => {
-        Alert.alert(tr('common.errorTitle'), getErrorMessage(e, tr, 'editProfile.loadError'));
+        appAlert(tr('common.errorTitle'), getErrorMessage(e, tr, 'editProfile.loadError'));
       })
       .finally(() => alive && setInitialLoading(false));
     return () => {
@@ -46,7 +46,7 @@ export default function useProfileForm() {
       await refreshUser();
       setSaved(true);
     } catch (e) {
-      Alert.alert(tr('common.errorTitle'), getErrorMessage(e, tr, 'editProfile.saveError'));
+      appAlert(tr('common.errorTitle'), getErrorMessage(e, tr, 'editProfile.saveError'));
     } finally {
       setSaving(false);
     }

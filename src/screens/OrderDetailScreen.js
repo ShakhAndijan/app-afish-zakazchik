@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Alert, ScrollView, Share } from 'react-native';
+import { ScrollView, Share } from 'react-native';
+import { appAlert } from '../components/AppAlert';
 import * as Linking from 'expo-linking';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -182,7 +183,7 @@ export default function OrderDetailScreen({ order: listOrder, onBack, onSelectUs
         onSubmit={async (payload) => {
           if (await actions.repost(payload)) {
             setRepostOpen(false);
-            Alert.alert(tr('orderFlow.stage.reposted'));
+            appAlert(tr('orderFlow.stage.reposted'));
           }
         }}
       />

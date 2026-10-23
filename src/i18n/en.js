@@ -5,6 +5,8 @@ import { ORDER_FLOW } from './orderFlowTexts';
 export const en = {
   orderFlow: ORDER_FLOW.en,
   common: {
+    ok: 'OK',
+    close: 'Close',
     years: ['{n} year', '{n} years'],
     currencySom: 'UZS',
     loading: 'Loading...',
@@ -1061,6 +1063,7 @@ export const en = {
       date: 'Pick a date',
       flexible: 'Flexible',
       flexibleSubtitle: 'Within a week',
+      change: 'Change',
     },
     photosLabel: 'Photos of similar work',
     photosHint: 'You can add up to 10 photos',
@@ -1121,7 +1124,7 @@ export const en = {
     requiredSub: 'To place the order, please fill in the following',
     requiredOk: 'Got it',
     extraTitle: 'More details',
-    extraSubtitle: 'Optional: category, how many people, requirements, tools…',
+    extraSubtitle: 'Optional: how many people, requirements, tools…',
     step1Title: 'Request details',
     step2Title: 'Address and contact',
     step3Title: 'Extra details and requirements',

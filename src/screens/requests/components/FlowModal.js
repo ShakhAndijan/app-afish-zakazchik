@@ -1,13 +1,5 @@
-import {
-  Modal,
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-} from 'react-native';
+import { Modal, View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { KeyboardAvoidingView, KeyboardProvider } from 'react-native-keyboard-controller';
 import { useTheme } from '../../../context/ThemeContext';
 import { useLanguage } from '../../../context/LanguageContext';
 
@@ -30,40 +22,47 @@ export default function FlowModal({
   const canSubmit = !disabled && !busy;
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={s.backdrop}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
-          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.body}>
-            <Text style={[s.title, { color: t.text }]}>{title}</Text>
-            {!!hint && <Text style={[s.hint, { color: t.muted }]}>{hint}</Text>}
-            {children}
-          </ScrollView>
-          <View style={s.actions}>
-            <TouchableOpacity
-              style={[s.btn, { borderColor: t.line2, borderWidth: 1.5 }]}
-              activeOpacity={0.8}
-              onPress={onClose}
-              disabled={busy}
-            >
-              <Text style={[s.btnText, { color: t.text }]}>{tr('requests.close')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                s.btn,
-                { backgroundColor: destructive ? t.red : t.orange, opacity: canSubmit ? 1 : 0.5 },
-              ]}
-              activeOpacity={0.85}
-              onPress={() => canSubmit && onSubmit()}
-              disabled={!canSubmit}
-            >
-              <Text style={[s.btnText, { color: '#fff' }]}>{confirmLabel}</Text>
-            </TouchableOpacity>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+      navigationBarTranslucent
+      onRequestClose={onClose}
+    >
+      {/* Android'da Modal alohida oyna: klaviatura hodisalari uchun o'z KeyboardProvider'i kerak. */}
+      <KeyboardProvider statusBarTranslucent navigationBarTranslucent>
+        <KeyboardAvoidingView style={s.backdrop} behavior="padding">
+          <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
+            <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.body}>
+              <Text style={[s.title, { color: t.text }]}>{title}</Text>
+              {!!hint && <Text style={[s.hint, { color: t.muted }]}>{hint}</Text>}
+              {children}
+            </ScrollView>
+            <View style={s.actions}>
+              <TouchableOpacity
+                style={[s.btn, { borderColor: t.line2, borderWidth: 1.5 }]}
+                activeOpacity={0.8}
+                onPress={onClose}
+                disabled={busy}
+              >
+                <Text style={[s.btnText, { color: t.text }]}>{tr('requests.close')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  s.btn,
+                  { backgroundColor: destructive ? t.red : t.orange, opacity: canSubmit ? 1 : 0.5 },
+                ]}
+                activeOpacity={0.85}
+                onPress={() => canSubmit && onSubmit()}
+                disabled={!canSubmit}
+              >
+                <Text style={[s.btnText, { color: '#fff' }]}>{confirmLabel}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </KeyboardProvider>
     </Modal>
   );
 }

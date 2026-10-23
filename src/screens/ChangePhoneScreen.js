@@ -6,8 +6,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
+import { appAlert } from '../components/AppAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -80,7 +80,7 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
       setCode('');
       setTimer(60);
     } catch (e) {
-      Alert.alert(tr('common.errorTitle'), getErrorMessage(e, tr, 'changePhone.sendError'));
+      appAlert(tr('common.errorTitle'), getErrorMessage(e, tr, 'changePhone.sendError'));
     } finally {
       setResending(false);
     }

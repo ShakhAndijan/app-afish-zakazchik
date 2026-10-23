@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Alert } from 'react-native';
+import { appAlert, appConfirm } from '../../../components/AppAlert';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLanguage } from '../../../context/LanguageContext';
 import {
@@ -36,7 +36,7 @@ export default function useOrderActions(orderId, onDone) {
         await onDone?.();
         return true;
       } catch (e) {
-        Alert.alert(tr('common.errorTitle'), getErrorMessage(e, tr, 'requests.actionFailed'));
+        appAlert(tr('common.errorTitle'), getErrorMessage(e, tr, 'requests.actionFailed'));
         return false;
       } finally {
         setBusy(false);
@@ -48,27 +48,27 @@ export default function useOrderActions(orderId, onDone) {
   // Tasdiqlashdan keyin: ACCEPTED → ACTIVE. Matn saytdagidek: narx, sana va telefonlar ochilishi.
   const confirmAgree = useCallback(
     (order) =>
-      Alert.alert(
-        tr('orderFlow.stage.agreeTitle'),
-        tr('orderFlow.order.takeBody', {
+      appConfirm({
+        title: tr('orderFlow.stage.agreeTitle'),
+        message: tr('orderFlow.order.takeBody', {
           price: `${formatNumber(Math.round(order.offerPrice))} ${tr('common.currencySom')}`,
           day: formatDay(tr, offerDay(order)),
         }),
-        [
-          { text: tr('requests.close'), style: 'cancel' },
-          { text: tr('orderFlow.stage.agree'), onPress: () => run(() => agreeOrder(orderId)) },
-        ]
-      ),
+        confirmLabel: tr('orderFlow.stage.agree'),
+        onConfirm: () => run(() => agreeOrder(orderId)),
+      }),
     [orderId, run, tr]
   );
 
   // Javob bermagan ustaga yuborilgan buyurtmani qaytarib olish.
   const confirmRecall = useCallback(
     () =>
-      Alert.alert(tr('orderFlow.order.recallTitle'), tr('orderFlow.order.recallHint'), [
-        { text: tr('requests.close'), style: 'cancel' },
-        { text: tr('orderFlow.order.recall'), onPress: () => run(() => recallOrder(orderId)) },
-      ]),
+      appConfirm({
+        title: tr('orderFlow.order.recallTitle'),
+        message: tr('orderFlow.order.recallHint'),
+        confirmLabel: tr('orderFlow.order.recall'),
+        onConfirm: () => run(() => recallOrder(orderId)),
+      }),
     [orderId, run, tr]
   );
 
@@ -84,23 +84,36 @@ export default function useOrderActions(orderId, onDone) {
   // "Ish hali bajarilmadi": ustaga xabar boradi. `left === 1` — oxirgi imkoniyat.
   const confirmNotDone = useCallback(
     (left) =>
-      Alert.alert(
-        tr('orderFlow.stage.notDoneTitle'),
-        [tr('orderFlow.stage.notDoneHint'), left === 1 ? tr('orderFlow.stage.notDoneLast') : null]
+      appConfirm({
+        title: tr('orderFlow.stage.notDoneTitle'),
+        message: [
+          tr('orderFlow.stage.notDoneHint'),
+          left === 1 ? tr('orderFlow.stage.notDoneLast') : null,
+        ]
           .filter(Boolean)
           .join(' '),
-        [
-          { text: tr('requests.close'), style: 'cancel' },
-          {
-            text: tr('orderFlow.stage.notDone'),
-            onPress: async () => {
-              if (await run(() => workNotDone(orderId))) {
-                Alert.alert(tr('orderFlow.stage.notDoneSent'));
-              }
-            },
-          },
-        ]
-      ),
+        confirmLabel: tr('orderFlow.stage.notDone'),
+        onConfirm: async () => {
+          if (await run(() => workNotDone(orderId))) {
+            appAlert(tr('orderFlow.stage.notDoneSent'));
+          }
+        },
+      }),
+    [orderId, run, tr]
+  );
+
+  // Kelishuvni to'xtatish: saytdagidek sababsiz, faqat tasdiqlash. `after` — muvaffaqiyatdan keyin.
+  const confirmDecline = useCallback(
+    (after) =>
+      appConfirm({
+        title: tr('orderFlow.stage.declineTitle'),
+        message: tr('orderFlow.stage.declineHint'),
+        confirmLabel: tr('orderFlow.stage.decline'),
+        destructive: true,
+        onConfirm: async () => {
+          if (await run(() => declineOrder(orderId))) after?.();
+        },
+      }),
     [orderId, run, tr]
   );
 
@@ -116,10 +129,12 @@ export default function useOrderActions(orderId, onDone) {
   // Qaytgan buyurtmani umumiy ro'yxatga chiqarish (tasdiqlashdan keyin).
   const confirmPublish = useCallback(
     () =>
-      Alert.alert(tr('requests.publishTitle'), tr('requests.publishHint'), [
-        { text: tr('requests.close'), style: 'cancel' },
-        { text: tr('requests.publish'), onPress: () => run(() => publishOrder(orderId)) },
-      ]),
+      appConfirm({
+        title: tr('requests.publishTitle'),
+        message: tr('requests.publishHint'),
+        confirmLabel: tr('requests.publish'),
+        onConfirm: () => run(() => publishOrder(orderId)),
+      }),
     [orderId, run, tr]
   );
 
@@ -134,6 +149,7 @@ export default function useOrderActions(orderId, onDone) {
 
   return {
     busy,
+    confirmDecline,
     confirmAgree,
     confirmRecall,
     confirmNotDone,

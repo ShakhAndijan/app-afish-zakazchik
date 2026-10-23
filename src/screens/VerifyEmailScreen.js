@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  Alert,
   View,
   Text,
   TextInput,
@@ -11,6 +10,7 @@ import {
   Platform,
   StyleSheet,
 } from 'react-native';
+import { appAlert } from '../components/AppAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -48,12 +48,12 @@ export default function VerifyEmailScreen({ onBack }) {
   const [done, setDone] = useState(false);
   const value = email ?? current ?? '';
 
-  const fail = (e, key) => Alert.alert(tr('common.errorTitle'), getErrorMessage(e, tr, key));
+  const fail = (e, key) => appAlert(tr('common.errorTitle'), getErrorMessage(e, tr, key));
 
   const sendCode = async () => {
     const addr = value.trim();
     if (!EMAIL_RE.test(addr)) {
-      Alert.alert(tr('common.errorTitle'), tr('account.email.invalid'));
+      appAlert(tr('common.errorTitle'), tr('account.email.invalid'));
       return;
     }
     setBusy(true);

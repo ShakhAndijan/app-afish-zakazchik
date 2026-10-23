@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
-  Alert,
   AppState,
   Image,
   Linking,
@@ -11,6 +10,7 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
+import { appAlert } from '../components/AppAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
@@ -61,7 +61,7 @@ export default function VerifyIdentityScreen({ onBack }) {
         ? await ImagePicker.requestCameraPermissionsAsync()
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert(
+        appAlert(
           tr('profile.errors.permissionTitle'),
           tr(fromCamera ? 'profile.errors.cameraPermission' : 'profile.errors.galleryPermission')
         );
@@ -74,7 +74,7 @@ export default function VerifyIdentityScreen({ onBack }) {
       if (res.canceled) return;
       const a = res.assets[0];
       if (a.fileSize && a.fileSize > MAX_BYTES) {
-        Alert.alert(tr('common.errorTitle'), tr('account.verify.tooLarge'));
+        appAlert(tr('common.errorTitle'), tr('account.verify.tooLarge'));
         return;
       }
       setFiles((prev) =>
@@ -85,7 +85,7 @@ export default function VerifyIdentityScreen({ onBack }) {
   );
 
   const addFile = () =>
-    Alert.alert(tr('account.verify.addPhoto'), undefined, [
+    appAlert(tr('account.verify.addPhoto'), undefined, [
       { text: tr('avatarPicker.camera'), onPress: () => pick(true) },
       { text: tr('avatarPicker.gallery'), onPress: () => pick(false) },
       { text: tr('common.cancel'), style: 'cancel' },
@@ -98,9 +98,9 @@ export default function VerifyIdentityScreen({ onBack }) {
       setFiles([]);
       setConsent(false);
       await queryClient.invalidateQueries({ queryKey: ['identity', 'status'] });
-      Alert.alert(tr('account.verify.submitted'));
+      appAlert(tr('account.verify.submitted'));
     } catch (e) {
-      Alert.alert(tr('common.errorTitle'), getErrorMessage(e, tr, 'account.verify.sendFailed'));
+      appAlert(tr('common.errorTitle'), getErrorMessage(e, tr, 'account.verify.sendFailed'));
     } finally {
       setSending(false);
     }
@@ -112,7 +112,7 @@ export default function VerifyIdentityScreen({ onBack }) {
       const { redirect_url } = await startIdentityProvider('myid');
       await Linking.openURL(redirect_url);
     } catch (e) {
-      Alert.alert(tr('common.errorTitle'), getErrorMessage(e, tr, 'account.verify.sendFailed'));
+      appAlert(tr('common.errorTitle'), getErrorMessage(e, tr, 'account.verify.sendFailed'));
     } finally {
       setStarting(false);
     }

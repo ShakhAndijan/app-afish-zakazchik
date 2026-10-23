@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
   View,
   Text,
   TextInput,
@@ -12,6 +11,7 @@ import {
   useWindowDimensions,
   StyleSheet,
 } from 'react-native';
+import { appAlert } from '../components/AppAlert';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
@@ -119,7 +119,7 @@ export default function WorkersScreen({ onBack }) {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert(tr('workersList.nearbyDeniedTitle'), tr('workersList.nearbyDeniedMsg'), [
+        appAlert(tr('workersList.nearbyDeniedTitle'), tr('workersList.nearbyDeniedMsg'), [
           { text: tr('common.cancel'), style: 'cancel' },
           { text: tr('workersList.pickOnMap'), onPress: () => setPickerOpen(true) },
         ]);
@@ -133,7 +133,7 @@ export default function WorkersScreen({ onBack }) {
       });
       setSort('distance');
     } catch {
-      Alert.alert(tr('workersList.nearby'), tr('workersList.nearbyError'), [
+      appAlert(tr('workersList.nearby'), tr('workersList.nearbyError'), [
         { text: tr('common.cancel'), style: 'cancel' },
         { text: tr('workersList.pickOnMap'), onPress: () => setPickerOpen(true) },
       ]);

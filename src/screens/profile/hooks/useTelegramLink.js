@@ -1,5 +1,6 @@
 import { useCallback, useEffect } from 'react';
-import { Alert, AppState, Linking } from 'react-native';
+import { AppState, Linking } from 'react-native';
+import { appAlert } from '../../../components/AppAlert';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLanguage } from '../../../context/LanguageContext';
 import { createTelegramLink, getTelegramStatus, unlinkTelegram } from '../../../api/account';
@@ -26,7 +27,7 @@ export default function useTelegramLink(active) {
   }, [active, refetch]);
 
   const fail = (e) =>
-    Alert.alert(tr('common.errorTitle'), getErrorMessage(e, tr, 'account.telegram.failed'));
+    appAlert(tr('common.errorTitle'), getErrorMessage(e, tr, 'account.telegram.failed'));
 
   const connect = useCallback(async () => {
     try {
@@ -40,7 +41,7 @@ export default function useTelegramLink(active) {
 
   const unlink = useCallback(
     () =>
-      Alert.alert(tr('account.telegram.unlinkTitle'), tr('account.telegram.unlinkBody'), [
+      appAlert(tr('account.telegram.unlinkTitle'), tr('account.telegram.unlinkBody'), [
         { text: tr('common.cancel'), style: 'cancel' },
         {
           text: tr('account.telegram.unlink'),

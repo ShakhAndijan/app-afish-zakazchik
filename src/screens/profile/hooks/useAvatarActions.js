@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert } from 'react-native';
+import { appAlert } from '../../../components/AppAlert';
 import * as ImagePicker from 'expo-image-picker';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useUser } from '../../../context/UserContext';
@@ -14,7 +14,7 @@ async function pickImage(source, onPicked, tr) {
     ? await ImagePicker.requestCameraPermissionsAsync()
     : await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (!perm.granted) {
-    Alert.alert(
+    appAlert(
       tr('profile.errors.permissionTitle'),
       tr(fromCamera ? 'profile.errors.cameraPermission' : 'profile.errors.galleryPermission')
     );
@@ -50,7 +50,7 @@ export default function useAvatarActions() {
       setPreviewUri(null);
     } catch (e) {
       setPreviewUri(null);
-      Alert.alert(
+      appAlert(
         tr('common.errorTitle'),
         getErrorMessage(e, tr, 'profile.errors.avatarUploadFailed')
       );
@@ -77,7 +77,7 @@ export default function useAvatarActions() {
       await deleteAvatar();
       await refreshUser();
     } catch (e) {
-      Alert.alert(
+      appAlert(
         tr('common.errorTitle'),
         getErrorMessage(e, tr, 'profile.errors.avatarDeleteFailed')
       );

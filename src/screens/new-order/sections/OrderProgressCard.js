@@ -6,11 +6,11 @@ import { REQUIRED_FIELDS } from '../constants';
 
 // Saytdagi "Ваш заказ — 0/2 обязательных" xulosasining mobil ko'rinishi: majburiy maydonlar
 // to'ldirilgani sari real vaqtda yangilanadi. `missing` — hali to'ldirilmagan maydonlar kalitlari.
-export default function OrderProgressCard({ missing }) {
+export default function OrderProgressCard({ missing, fields = REQUIRED_FIELDS }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
-  const total = REQUIRED_FIELDS.length;
-  const done = total - REQUIRED_FIELDS.filter((k) => missing.includes(k)).length;
+  const total = fields.length;
+  const done = total - fields.filter((k) => missing.includes(k)).length;
   const complete = done === total;
 
   return (
@@ -30,7 +30,7 @@ export default function OrderProgressCard({ missing }) {
         />
       </View>
       <View style={s.items}>
-        {REQUIRED_FIELDS.map((key) => {
+        {fields.map((key) => {
           const ok = !missing.includes(key);
           return (
             <View key={key} style={s.item}>

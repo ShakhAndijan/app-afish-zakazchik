@@ -11,6 +11,7 @@ export default function CategorySection({
   selectedCategories,
   toggleCategory,
   setCategoryPickerOpen,
+  required = false,
 }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
@@ -19,7 +20,10 @@ export default function CategorySection({
   return (
     <>
       {/* ── Xizmat turi (ko'p tanlovli) ── */}
-      <Text style={[common.label, { color: t.text }]}>{tr('newOrder.categoryLabel')}</Text>
+      <Text style={[common.label, { color: t.text }]}>
+        {tr('newOrder.categoryLabel')}
+        {required && <Text style={{ color: t.red }}> *</Text>}
+      </Text>
 
       {selectedCategories.length === 0 ? (
         <TouchableOpacity

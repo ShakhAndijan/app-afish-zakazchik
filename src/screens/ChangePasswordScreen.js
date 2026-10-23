@@ -8,8 +8,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
+import { appAlert } from '../components/AppAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -116,7 +116,7 @@ export default function ChangePasswordScreen({ onBack }) {
       if (e.status === 400 || e.status === 401 || e.status === 403) {
         setCurrentPwError(tr('changePassword.currentPwError'));
       } else {
-        Alert.alert(tr('common.errorTitle'), getErrorMessage(e, tr, 'changePassword.genericError'));
+        appAlert(tr('common.errorTitle'), getErrorMessage(e, tr, 'changePassword.genericError'));
       }
     } finally {
       setLoading(false);

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { StyleSheet, Alert } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { appAlert } from '../components/AppAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import { useTheme } from '../context/ThemeContext';
@@ -164,7 +165,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
       const data = await requestResetPasswordOtp(fullPhone);
       setForgotDevCode(data?.dev_code || '');
     } catch (e) {
-      Alert.alert(t('common.errorTitle'), getErrorMessage(e, t, 'login.errors.sendCodeFailed'));
+      appAlert(t('common.errorTitle'), getErrorMessage(e, t, 'login.errors.sendCodeFailed'));
     } finally {
       setForgotResendLoading(false);
     }
@@ -192,7 +193,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
       await finishLogin({ access_token: token, refresh_token: refreshToken });
     } catch (e) {
       if (e.message !== 'cancelled') {
-        Alert.alert(t('common.errorTitle'), getErrorMessage(e, t, 'login.errors.googleFailed'));
+        appAlert(t('common.errorTitle'), getErrorMessage(e, t, 'login.errors.googleFailed'));
       }
     } finally {
       setGoogleLoading(false);

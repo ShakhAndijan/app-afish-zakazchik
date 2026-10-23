@@ -5,6 +5,8 @@ import { ORDER_FLOW } from './orderFlowTexts';
 export const ru = {
   orderFlow: ORDER_FLOW.ru,
   common: {
+    ok: 'ОК',
+    close: 'Закрыть',
     years: ['{n} год', '{n} года', '{n} лет'],
     currencySom: 'сум',
     loading: 'Загрузка...',
@@ -1061,6 +1063,7 @@ export const ru = {
       date: 'На дату',
       flexible: 'Гибко',
       flexibleSubtitle: 'В течение недели',
+      change: 'Изменить',
     },
     photosLabel: 'Фото примеры работы',
     photosHint: 'Можно добавить до 10 фото',
@@ -1121,7 +1124,7 @@ export const ru = {
     requiredSub: 'Чтобы оформить заказ, заполните следующее',
     requiredOk: 'Понятно',
     extraTitle: 'Дополнительно',
-    extraSubtitle: 'По желанию: категория, сколько человек, требования, инструменты…',
+    extraSubtitle: 'По желанию: сколько человек, требования, инструменты…',
     step1Title: 'Детали заказа',
     step2Title: 'Адрес и контакты',
     step3Title: 'Дополнительно и требования',
