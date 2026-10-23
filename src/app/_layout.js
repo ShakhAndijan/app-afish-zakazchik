@@ -83,43 +83,45 @@ function RootNavigator() {
     <UserProvider enabled={signedIn}>
       <WalletProvider>
         <NavigationThemeProvider value={navTheme}>
-          <StatusBar style="light" />
-          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.bg } }}>
-            <Stack.Protected guard={signedIn}>
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="wallet" />
-              <Stack.Screen name="orders" />
-              <Stack.Screen name="order/[id]" />
-              <Stack.Screen name="order-worker" />
-              <Stack.Screen name="addresses" />
-              <Stack.Screen name="payment-history" />
-              <Stack.Screen name="notifications" />
-              <Stack.Screen name="help" />
-              <Stack.Screen name="edit-profile" />
-              <Stack.Screen name="change-password" />
-              <Stack.Screen name="change-phone" />
-              <Stack.Screen name="my-rating" />
-              <Stack.Screen name="verify-identity" />
-              <Stack.Screen name="verify-email" />
-              <Stack.Screen name="favorites" />
-              <Stack.Screen name="request/[id]" />
-              <Stack.Screen name="chat" />
-              <Stack.Screen name="support" />
-              <Stack.Screen name="support-chat" />
-            </Stack.Protected>
-            <Stack.Protected guard={!signedIn}>
-              <Stack.Screen name="index" />
-              <Stack.Screen name="login" />
-            </Stack.Protected>
-            <Stack.Screen name="usta/[id]" />
-            <Stack.Screen name="work" />
-            <Stack.Screen name="listings" />
-            <Stack.Screen name="listing/[id]" />
-            <Stack.Screen name="reels" options={{ animation: 'fade' }} />
-            <Stack.Screen name="workers" />
-            <Stack.Screen name="document" />
-          </Stack>
-          <AuthRedirect />
+          <View style={{ flex: 1, backgroundColor: t.bg }}>
+            <StatusBar style="light" />
+            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.bg } }}>
+              <Stack.Protected guard={signedIn}>
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="wallet" />
+                <Stack.Screen name="orders" />
+                <Stack.Screen name="order/[id]" />
+                <Stack.Screen name="order-worker" />
+                <Stack.Screen name="addresses" />
+                <Stack.Screen name="payment-history" />
+                <Stack.Screen name="notifications" />
+                <Stack.Screen name="help" />
+                <Stack.Screen name="edit-profile" />
+                <Stack.Screen name="change-password" />
+                <Stack.Screen name="change-phone" />
+                <Stack.Screen name="my-rating" />
+                <Stack.Screen name="verify-identity" />
+                <Stack.Screen name="verify-email" />
+                <Stack.Screen name="favorites" />
+                <Stack.Screen name="request/[id]" />
+                <Stack.Screen name="chat" />
+                <Stack.Screen name="support" />
+                <Stack.Screen name="support-chat" />
+              </Stack.Protected>
+              <Stack.Protected guard={!signedIn}>
+                <Stack.Screen name="index" />
+                <Stack.Screen name="login" />
+              </Stack.Protected>
+              <Stack.Screen name="usta/[id]" />
+              <Stack.Screen name="work" />
+              <Stack.Screen name="listings" />
+              <Stack.Screen name="listing/[id]" />
+              <Stack.Screen name="reels" options={{ animation: 'fade' }} />
+              <Stack.Screen name="workers" />
+              <Stack.Screen name="document" />
+            </Stack>
+            <AuthRedirect />
+          </View>
         </NavigationThemeProvider>
       </WalletProvider>
     </UserProvider>

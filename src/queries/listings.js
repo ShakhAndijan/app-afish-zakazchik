@@ -107,7 +107,8 @@ function patchListing(queryClient, listingId, change) {
     item && 'isFavorite' in item && item.id === listingId ? { ...item, ...change(item) } : item;
   queryClient.setQueriesData({ queryKey: ['listings'] }, (data) => {
     if (!data) return data;
-    if (data.pages) {
+    // Cheksiz ro'yxatda `pages` — sahifalar massivi; oddiy sahifa javobida esa jami sahifalar soni (raqam).
+    if (Array.isArray(data.pages)) {
       return { ...data, pages: data.pages.map((p) => ({ ...p, items: p.items.map(patch) })) };
     }
     if (Array.isArray(data.items)) return { ...data, items: data.items.map(patch) };
