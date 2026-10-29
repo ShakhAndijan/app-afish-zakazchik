@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { orderOrRequestRoute } from '../navigation/params';
-import AfishLoader from '../components/AfishLoader';
+import AppLoader from '../components/AppLoader';
 import SectionError from './zakazchi-main/components/SectionError';
 import useMyOrders from './orders/hooks/useMyOrders';
 import useOrderFilters from './orders/hooks/useOrderFilters';
@@ -13,10 +13,12 @@ import OrdersStatsRow from './orders/components/OrdersStatsRow';
 import OrdersTabs from './orders/components/OrdersTabs';
 import OrderCard from './orders/components/OrderCard';
 import OrdersEmpty from './orders/components/OrdersEmpty';
+import useBottomInset from '../hooks/useBottomInset';
 
 // "Buyurtmalarim": statistika, holat tablari va buyurtmalar ro'yxati. Kartani bossangiz
 // buyurtma tafsiloti sahifasi (router) ochiladi.
 export default function ZakazchiOrdersScreen({ onBack }) {
+  const bottomInset = useBottomInset();
   const router = useRouter();
   const { theme: t } = useTheme();
   const { orders, initialLoading, failed, refreshing, refresh, retry } = useMyOrders();
@@ -29,7 +31,7 @@ export default function ZakazchiOrdersScreen({ onBack }) {
 
       {initialLoading ? (
         <View style={s.center}>
-          <AfishLoader size={180} />
+          <AppLoader size={180} />
         </View>
       ) : failed ? (
         <SectionError style={{ marginHorizontal: 20, marginTop: 24 }} onRetry={retry} />
@@ -37,7 +39,7 @@ export default function ZakazchiOrdersScreen({ onBack }) {
         <ScrollView
           showsVerticalScrollIndicator={false}
           style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: 24 }}
+          contentContainerStyle={{ paddingBottom: 24 + bottomInset }}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}

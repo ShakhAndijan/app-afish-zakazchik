@@ -9,9 +9,11 @@ import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { ustaRoute } from '../navigation/params';
 import Avatar from '../components/Avatar';
-import AfishLoader from '../components/AfishLoader';
+import AppLoader from '../components/AppLoader';
 import SectionError from './zakazchi-main/components/SectionError';
 import StatusBanner from './requests/components/StatusBanner';
+import ContactsCard from './orders/components/ContactsCard';
+import DescriptionCard from './orders/components/DescriptionCard';
 import PromptModal from './requests/components/PromptModal';
 import SendToModal from './requests/components/SendToModal';
 import OfferModal from './requests/components/OfferModal';
@@ -29,10 +31,12 @@ import {
   offerDay,
   timeLabel,
 } from './requests/utils';
+import useBottomInset from '../hooks/useBottomInset';
 
 // Buyurtma kuzatuv ekrani (backenddan jonli): holat banneri, xulosa, usta va narx kelishuvi.
 // Usta buyurtmani qabul qilgach (ACCEPTED) chat ochiladi, narx taklif/qabul qilinadi (ACTIVE).
 export default function RequestScreen({ orderId, onBack }) {
+  const bottomInset = useBottomInset();
   const router = useRouter();
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
@@ -66,7 +70,7 @@ export default function RequestScreen({ orderId, onBack }) {
         {header}
         {loading ? (
           <View style={s.center}>
-            <AfishLoader size={160} />
+            <AppLoader size={160} />
           </View>
         ) : failed ? (
           <SectionError style={{ marginHorizontal: 20, marginTop: 24 }} onRetry={refresh} />
@@ -117,7 +121,7 @@ export default function RequestScreen({ orderId, onBack }) {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32, gap: 16 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 + bottomInset, gap: 16 }}
       >
         <StatusBanner info={info} pulsing={info.state === 'pending' || negotiating} />
 
@@ -158,6 +162,8 @@ export default function RequestScreen({ orderId, onBack }) {
           />
         </View>
 
+        <DescriptionCard text={order.description} />
+
         {hasWorker && (
           <>
             <Text style={[s.sectionTitle, { color: t.text }]}>{tr('requests.workerSection')}</Text>
@@ -184,6 +190,8 @@ export default function RequestScreen({ orderId, onBack }) {
               </View>
               <MaterialCommunityIcons name="chevron-right" size={22} color={t.faint} />
             </TouchableOpacity>
+
+            <ContactsCard order={order} />
 
             <Text style={[s.sectionTitle, { color: t.text }]}>{tr('requests.priceSection')}</Text>
             <View style={[s.priceCard, { backgroundColor: t.card, borderColor: t.border }]}>

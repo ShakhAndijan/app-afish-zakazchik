@@ -3,17 +3,17 @@ import { View, StyleSheet, TouchableOpacity, Text, ActivityIndicator, Modal } fr
 import { appAlert } from './AppAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Location from 'expo-location';
 import { COLORS } from '../constants/colors';
 import { YANDEX_MAPS_API_KEY, YANDEX_GEOCODER_API_KEY } from '../constants/config';
 import { devLog } from '../utils/log';
 
-// Yandex API kaliti "afish.uz" domeniga bog'lab yaratilgan, lekin WebView xarita
+// Yandex API kaliti "harna.uz" domeniga bog'lab yaratilgan, lekin WebView xarita
 // HTML'ni to'g'ridan-to'g'ri matn sifatida (haqiqiy domensiz) yuklaydi —
 // shuning uchun geokoder so'rovlari "scriptError" bilan rad etilishi mumkin.
 // `baseUrl` WebView'ga shu domenni "sahifa manbai" sifatida beradi.
-const MAP_BASE_URL = 'https://dev.afish.uz/';
+const MAP_BASE_URL = 'https://dev.harna.uz/';
 
 const buildMapHtml = (initLat, initLng) => `
 <!DOCTYPE html>
@@ -199,9 +199,7 @@ export default function LocationMapPicker({
       const pos = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.High,
       });
-      ref.current?.injectJavaScript(
-        `goTo(${pos.coords.latitude}, ${pos.coords.longitude}); true;`
-      );
+      ref.current?.injectJavaScript(`goTo(${pos.coords.latitude}, ${pos.coords.longitude}); true;`);
     } catch {
       if (errorTitle) appAlert(errorTitle, errorMessage);
     } finally {
@@ -314,19 +312,13 @@ export default function LocationMapPicker({
               <Ionicons name="navigate" size={15} color="#fff" />
             )}
             {!!locateLabel && (
-              <Text style={styles.locateTxt}>
-                {locating ? locatingLabel : locateLabel}
-              </Text>
+              <Text style={styles.locateTxt}>{locating ? locatingLabel : locateLabel}</Text>
             )}
           </TouchableOpacity>
         </View>
       </View>
 
-      <Modal
-        visible={fullscreen}
-        animationType="slide"
-        onRequestClose={() => setFullscreen(false)}
-      >
+      <Modal visible={fullscreen} animationType="slide" onRequestClose={() => setFullscreen(false)}>
         <SafeAreaView style={styles.fullWrap} edges={['top', 'bottom']}>
           <WebView
             ref={fullRef}

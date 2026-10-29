@@ -13,7 +13,7 @@ import { useRouter } from 'expo-router';
 import { KeyboardAwareScrollView, useKeyboardState } from 'react-native-keyboard-controller';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import AfishLoader from '../components/AfishLoader';
+import AppLoader from '../components/AppLoader';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -97,7 +97,7 @@ export default function ListingDetailScreen({ listingId, initial, onBack }) {
         {header}
         {detail.loading ? (
           <View style={s.center}>
-            <AfishLoader size={120} />
+            <AppLoader size={120} />
           </View>
         ) : (
           <SectionError style={{ margin: H_PAD }} onRetry={detail.refetch} />

@@ -5,10 +5,11 @@ import { useQuery } from '@tanstack/react-query';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
-import AfishLoader from '../components/AfishLoader';
+import AppLoader from '../components/AppLoader';
 import SectionError from './zakazchi-main/components/SectionError';
 import { getCustomerMe } from '../api/user';
 import { getBadgeLevels, getCustomerReviews } from '../api/account';
+import useBottomInset from '../hooks/useBottomInset';
 
 const LEVELS = ['bronze', 'silver', 'gold'];
 const LEVEL_COLOR = { bronze: '#c8803c', silver: '#9aa5b1', gold: '#e8a91b' };
@@ -24,6 +25,7 @@ const dateLabel = (value) => {
 // Mijoz statusi (Bronza/Kumush/Oltin — avtomatik beriladi, ustalar buyurtmalarda ko'radi) va
 // ustalar bergan baholar. Saytdagi "Hisob" sahifasidagi status kartasi va "Как вас оценили специалисты" bloki.
 export default function MyRatingScreen({ onBack }) {
+  const bottomInset = useBottomInset();
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
 
@@ -75,14 +77,18 @@ export default function MyRatingScreen({ onBack }) {
 
       {me.isPending ? (
         <View style={s.center}>
-          <AfishLoader size={160} />
+          <AppLoader size={160} />
         </View>
       ) : me.isError ? (
         <SectionError style={{ marginHorizontal: 20, marginTop: 24 }} onRetry={me.refetch} />
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32, gap: 14 }}
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            paddingBottom: 32 + bottomInset,
+            gap: 14,
+          }}
         >
           <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
             <View style={s.cardHead}>
@@ -144,7 +150,7 @@ export default function MyRatingScreen({ onBack }) {
 
             {reviews.isPending && customerId != null ? (
               <View style={{ paddingVertical: 20 }}>
-                <AfishLoader size={90} />
+                <AppLoader size={90} />
               </View>
             ) : list.length === 0 ? (
               <Text style={[s.empty, { color: t.muted }]}>

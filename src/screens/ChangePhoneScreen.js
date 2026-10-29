@@ -18,6 +18,7 @@ import { requestChangePhoneOtp, verifyChangePhoneOtp } from '../api/user';
 import SuccessModal from '../components/SuccessModal';
 import OtpInput from '../components/login/OtpInput';
 import { getErrorMessage } from '../utils/errors';
+import useBottomInset from '../hooks/useBottomInset';
 
 const formatPhone = (raw = '') => {
   const d = raw.replace(/\D/g, '').slice(0, 9);
@@ -30,6 +31,7 @@ const formatPhone = (raw = '') => {
 };
 
 export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
+  const bottomInset = useBottomInset();
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
   const [step, setStep] = useState('input');
@@ -119,7 +121,7 @@ export default function ChangePhoneScreen({ currentPhone, onBack, onChanged }) {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={s.scroll}
+        contentContainerStyle={[s.scroll, { paddingBottom: 40 + bottomInset }]}
         keyboardShouldPersistTaps="handled"
       >
         {step === 'input' ? (

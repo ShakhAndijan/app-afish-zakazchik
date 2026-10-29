@@ -1,18 +1,12 @@
 import React, { useState, useRef } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  Animated,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import QRCode from 'react-native-qrcode-svg';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import useBottomInset from '../hooks/useBottomInset';
 
 const fmt = (n) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
@@ -79,9 +73,7 @@ function CodeBox({ t }) {
   });
 
   return (
-    <View
-      style={[s.codeWrap, { backgroundColor: t.card, borderColor: t.border }]}
-    >
+    <View style={[s.codeWrap, { backgroundColor: t.card, borderColor: t.border }]}>
       {/* QR code */}
       <View style={s.qrSection}>
         <View style={s.qrBox}>
@@ -92,9 +84,7 @@ function CodeBox({ t }) {
             backgroundColor="#fff"
           />
         </View>
-        <Text style={[s.qrHint, { color: t.muted }]}>
-          {tr('referral.qrHint')}
-        </Text>
+        <Text style={[s.qrHint, { color: t.muted }]}>{tr('referral.qrHint')}</Text>
       </View>
 
       {/* Code display */}
@@ -107,10 +97,7 @@ function CodeBox({ t }) {
         <TouchableOpacity
           onPress={onCopy}
           activeOpacity={0.8}
-          style={[
-            s.codeBtn,
-            { backgroundColor: copied ? 'rgba(47,163,122,0.15)' : t.orange },
-          ]}
+          style={[s.codeBtn, { backgroundColor: copied ? 'rgba(47,163,122,0.15)' : t.orange }]}
         >
           <MaterialCommunityIcons
             name={copied ? 'check' : 'content-copy'}
@@ -149,11 +136,7 @@ function ShareRow({ t }) {
   return (
     <View style={s.shareRow}>
       {SHARE_APPS.map((app) => (
-        <TouchableOpacity
-          key={app.key}
-          style={s.shareItem}
-          activeOpacity={0.8}
-        >
+        <TouchableOpacity key={app.key} style={s.shareItem} activeOpacity={0.8}>
           <View
             style={[
               s.shareIcon,
@@ -163,11 +146,7 @@ function ShareRow({ t }) {
               },
             ]}
           >
-            <MaterialCommunityIcons
-              name={app.icon}
-              size={22}
-              color={app.fg || t.text}
-            />
+            <MaterialCommunityIcons name={app.icon} size={22} color={app.fg || t.text} />
           </View>
           <Text style={[s.shareLabel, { color: t.muted }]}>
             {app.labelKey ? tr(`referral.share.${app.labelKey}`) : app.label}
@@ -194,12 +173,7 @@ function InvitedRow({ item, border, t }) {
         : tr('referral.status.joined');
 
   return (
-    <View
-      style={[
-        s.invRow,
-        border && { borderTopWidth: 1, borderTopColor: t.border },
-      ]}
-    >
+    <View style={[s.invRow, border && { borderTopWidth: 1, borderTopColor: t.border }]}>
       <View style={[s.invAvatar, { backgroundColor: item.color }]}>
         <Text style={s.invInitial}>{item.initial}</Text>
       </View>
@@ -212,57 +186,38 @@ function InvitedRow({ item, border, t }) {
 }
 
 export default function ZakazchiReferralScreen({ onBack }) {
+  const bottomInset = useBottomInset();
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: t.bg }}
-      edges={['top', 'left', 'right']}
-    >
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }} edges={['top', 'left', 'right']}>
       <StatusBar style={t.isDark ? 'light' : 'dark'} />
 
       {/* Header */}
       <View style={[s.header, { backgroundColor: t.bg }]}>
         <TouchableOpacity
-          style={[
-            s.backBtn,
-            { backgroundColor: t.card, borderColor: t.border },
-          ]}
+          style={[s.backBtn, { backgroundColor: t.card, borderColor: t.border }]}
           onPress={onBack}
           activeOpacity={0.8}
         >
-          <MaterialCommunityIcons
-            name="chevron-left"
-            size={24}
-            color={t.text}
-          />
+          <MaterialCommunityIcons name="chevron-left" size={24} color={t.text} />
         </TouchableOpacity>
-        <Text style={[s.headerTitle, { color: t.text }]}>
-          {tr('referral.headerTitle')}
-        </Text>
+        <Text style={[s.headerTitle, { color: t.text }]}>{tr('referral.headerTitle')}</Text>
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={s.scroll}
+        contentContainerStyle={[s.scroll, { paddingBottom: 40 + bottomInset }]}
       >
         {/* ── Hero card ── */}
         <View style={[s.hero, { backgroundColor: t.orange }]}>
           <View style={s.heroCircle} />
           <View style={s.heroGiftBox}>
-            <MaterialCommunityIcons
-              name="gift-outline"
-              size={26}
-              color="#fff"
-            />
+            <MaterialCommunityIcons name="gift-outline" size={26} color="#fff" />
           </View>
-          <Text style={s.heroTitle}>
-            {tr('referral.heroTitle', { amount: fmt(YOU_GET) })}
-          </Text>
-          <Text style={s.heroSub}>
-            {tr('referral.heroSubtitle', { amount: fmt(FRIEND_GETS) })}
-          </Text>
+          <Text style={s.heroTitle}>{tr('referral.heroTitle', { amount: fmt(YOU_GET) })}</Text>
+          <Text style={s.heroSub}>{tr('referral.heroSubtitle', { amount: fmt(FRIEND_GETS) })}</Text>
         </View>
 
         {/* ── You / Friend split ── */}
@@ -273,18 +228,13 @@ export default function ZakazchiReferralScreen({ onBack }) {
           ].map(([labelKey, val, col]) => (
             <View
               key={labelKey}
-              style={[
-                s.splitCard,
-                { backgroundColor: t.card, borderColor: t.border },
-              ]}
+              style={[s.splitCard, { backgroundColor: t.card, borderColor: t.border }]}
             >
               <Text style={[s.splitLabel, { color: t.muted }]}>
                 {tr(`referral.split.${labelKey}`)}
               </Text>
               <Text style={[s.splitValue, { color: col }]}>{fmt(val)}</Text>
-              <Text style={[s.splitSub, { color: t.faint }]}>
-                {tr('common.currencySom')}
-              </Text>
+              <Text style={[s.splitSub, { color: t.faint }]}>{tr('common.currencySom')}</Text>
             </View>
           ))}
         </View>
@@ -297,16 +247,12 @@ export default function ZakazchiReferralScreen({ onBack }) {
 
         {/* ── How it works ── */}
         <View>
-          <Text style={[s.secTitle, { color: t.text }]}>
-            {tr('referral.howItWorksTitle')}
-          </Text>
+          <Text style={[s.secTitle, { color: t.text }]}>{tr('referral.howItWorksTitle')}</Text>
           <View style={s.stepsCol}>
             {STEP_KEYS.map((stepKey, i) => (
               <View key={stepKey} style={s.stepRow}>
                 <View style={s.stepNum}>
-                  <Text style={[s.stepNumText, { color: t.orange }]}>
-                    {i + 1}
-                  </Text>
+                  <Text style={[s.stepNumText, { color: t.orange }]}>{i + 1}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[s.stepTitle, { color: t.text }]}>
@@ -322,24 +268,11 @@ export default function ZakazchiReferralScreen({ onBack }) {
         </View>
 
         {/* ── Invited list ── */}
-        <View
-          style={[
-            s.invCard,
-            { backgroundColor: t.card, borderColor: t.border },
-          ]}
-        >
+        <View style={[s.invCard, { backgroundColor: t.card, borderColor: t.border }]}>
           <View style={[s.invHeader, { borderBottomColor: t.border }]}>
-            <View
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}
-            >
-              <MaterialCommunityIcons
-                name="account-group-outline"
-                size={18}
-                color={t.orange}
-              />
-              <Text style={[s.invTitle, { color: t.text }]}>
-                {tr('referral.invitedTitle')}
-              </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+              <MaterialCommunityIcons name="account-group-outline" size={18} color={t.orange} />
+              <Text style={[s.invTitle, { color: t.text }]}>{tr('referral.invitedTitle')}</Text>
             </View>
             <Text style={[s.invCount, { color: t.muted }]}>
               {tr('referral.invitedCount', { n: INVITED.length })}

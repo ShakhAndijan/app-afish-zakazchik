@@ -1,11 +1,11 @@
-// Saytdagi (dev.afish.uz) "Ko'p so'raladigan savollar" va hujjatlar ("Biz haqimizda", "Maxfiylik siyosati",
+// Saytdagi (dev.harna.uz) "Ko'p so'raladigan savollar" va hujjatlar ("Biz haqimizda", "Maxfiylik siyosati",
 // "Foydalanish shartlari") matnlari — uz / ru / en. Sayt xuddi shu matnlarni ko'rsatadi; FAQ backenddan
 // (/faq) kelsa o'sha, bo'sh bo'lsa shu zaxira ro'yxat ishlatiladi.
 export const FAQ_ITEMS = {
   uz: [
     {
-      q: 'Afish.uz nima?',
-      a: "Afish.uz — xizmat ko'rsatuvchi mutaxassislar va mijozlarni bog'laydigan platforma. Kerakli yo'nalishni tanlaysiz, mutaxassislar ro'yxatini reyting, joylashuv va narx bo'yicha saralaysiz va to'g'ridan-to'g'ri buyurtma berasiz.",
+      q: 'Harna.uz nima?',
+      a: "Harna.uz — xizmat ko'rsatuvchi mutaxassislar va mijozlarni bog'laydigan platforma. Kerakli yo'nalishni tanlaysiz, mutaxassislar ro'yxatini reyting, joylashuv va narx bo'yicha saralaysiz va to'g'ridan-to'g'ri buyurtma berasiz.",
     },
     {
       q: "Ro'yxatdan o'tish pullikmi?",
@@ -42,8 +42,8 @@ export const FAQ_ITEMS = {
   ],
   ru: [
     {
-      q: 'Что такое Afish.uz?',
-      a: 'Afish.uz — платформа, которая связывает специалистов и заказчиков. Вы выбираете нужное направление, фильтруете специалистов по рейтингу, местоположению и цене и оформляете заказ напрямую.',
+      q: 'Что такое Harna.uz?',
+      a: 'Harna.uz — платформа, которая связывает специалистов и заказчиков. Вы выбираете нужное направление, фильтруете специалистов по рейтингу, местоположению и цене и оформляете заказ напрямую.',
     },
     {
       q: 'Регистрация платная?',
@@ -80,8 +80,8 @@ export const FAQ_ITEMS = {
   ],
   en: [
     {
-      q: 'What is Afish.uz?',
-      a: 'Afish.uz connects skilled professionals with the people who need them. Pick a service, filter by rating, location and price, and book directly.',
+      q: 'What is Harna.uz?',
+      a: 'Harna.uz connects skilled professionals with the people who need them. Pick a service, filter by rating, location and price, and book directly.',
     },
     {
       q: 'Is there a fee to sign up?',
@@ -126,7 +126,7 @@ export const DOCUMENTS = {
       sections: [
         {
           h: 'Biz nima qilamiz',
-          p: "Afish.uz — xizmat ko'rsatuvchi mutaxassislar va ularga ehtiyoji bor mijozlarni bog'laydigan onlayn platforma. Ta'mirlash, tozalash, elektrik, santexnika, repetitorlik va boshqa o'nlab yo'nalishda mutaxassis topish uchun endi tanish-bilishga tayanish shart emas.",
+          p: "Harna.uz — xizmat ko'rsatuvchi mutaxassislar va ularga ehtiyoji bor mijozlarni bog'laydigan onlayn platforma. Ta'mirlash, tozalash, elektrik, santexnika, repetitorlik va boshqa o'nlab yo'nalishda mutaxassis topish uchun endi tanish-bilishga tayanish shart emas.",
         },
         {
           h: 'Qanday ishlaydi',
@@ -152,7 +152,7 @@ export const DOCUMENTS = {
       sections: [
         {
           h: '1. Umumiy qoidalar',
-          p: "Ushbu siyosat Afish.uz platformasidan foydalanuvchilar ma'lumotlarini yig'ish, saqlash, ishlatish va himoya qilish tartibini belgilaydi. Ro'yxatdan o'tish jarayonida ushbu siyosat bilan rozilik bildirish majburiy.",
+          p: "Ushbu siyosat Harna.uz platformasidan foydalanuvchilar ma'lumotlarini yig'ish, saqlash, ishlatish va himoya qilish tartibini belgilaydi. Ro'yxatdan o'tish jarayonida ushbu siyosat bilan rozilik bildirish majburiy.",
         },
         {
           h: "2. Qanday ma'lumotlar yig'iladi",
@@ -202,11 +202,11 @@ export const DOCUMENTS = {
       sections: [
         {
           h: '1. Shartlarning qabul qilinishi',
-          p: "Afish.uz platformasidan foydalanish orqali siz ushbu shartlarga rozilik bildirasiz. Rozi bo'lmasangiz, platformadan foydalanmang.",
+          p: "Harna.uz platformasidan foydalanish orqali siz ushbu shartlarga rozilik bildirasiz. Rozi bo'lmasangiz, platformadan foydalanmang.",
         },
         {
           h: '2. Platformaning roli',
-          p: "Afish.uz — mijoz va mutaxassis o'rtasidagi bog'lovchi platforma. Biz xizmatni o'zimiz ko'rsatmaymiz va tomonlar o'rtasidagi shartnomaning tarafi emasmiz.\n\nIshning sifati, muddati va narxi mutaxassisning o'zi bilan kelishiladi. Platforma ishonchni oshirish uchun reyting, sharh va shaxs tasdiqlash vositalarini beradi, lekin ish natijasi uchun javobgarlikni o'z zimmasiga olmaydi.",
+          p: "Harna.uz — mijoz va mutaxassis o'rtasidagi bog'lovchi platforma. Biz xizmatni o'zimiz ko'rsatmaymiz va tomonlar o'rtasidagi shartnomaning tarafi emasmiz.\n\nIshning sifati, muddati va narxi mutaxassisning o'zi bilan kelishiladi. Platforma ishonchni oshirish uchun reyting, sharh va shaxs tasdiqlash vositalarini beradi, lekin ish natijasi uchun javobgarlikni o'z zimmasiga olmaydi.",
         },
         {
           h: '3. Hisob va uning xavfsizligi',
@@ -250,7 +250,7 @@ export const DOCUMENTS = {
       sections: [
         {
           h: 'Чем мы занимаемся',
-          p: 'Afish.uz — онлайн-платформа, которая связывает специалистов и заказчиков. Ремонт, уборка, электрика, сантехника, репетиторство и десятки других направлений — искать специалиста через знакомых больше не нужно.',
+          p: 'Harna.uz — онлайн-платформа, которая связывает специалистов и заказчиков. Ремонт, уборка, электрика, сантехника, репетиторство и десятки других направлений — искать специалиста через знакомых больше не нужно.',
         },
         {
           h: 'Как это работает',
@@ -276,7 +276,7 @@ export const DOCUMENTS = {
       sections: [
         {
           h: '1. Общие положения',
-          p: 'Настоящая политика определяет порядок сбора, хранения, использования и защиты данных пользователей платформы Afish.uz. Согласие с политикой обязательно при регистрации.',
+          p: 'Настоящая политика определяет порядок сбора, хранения, использования и защиты данных пользователей платформы Harna.uz. Согласие с политикой обязательно при регистрации.',
         },
         {
           h: '2. Какие данные собираются',
@@ -326,11 +326,11 @@ export const DOCUMENTS = {
       sections: [
         {
           h: '1. Принятие условий',
-          p: 'Используя платформу Afish.uz, вы соглашаетесь с настоящими условиями. Если вы не согласны — не пользуйтесь платформой.',
+          p: 'Используя платформу Harna.uz, вы соглашаетесь с настоящими условиями. Если вы не согласны — не пользуйтесь платформой.',
         },
         {
           h: '2. Роль платформы',
-          p: 'Afish.uz связывает заказчиков и специалистов. Мы не оказываем услуги сами и не являемся стороной договора между ними.\n\nКачество, сроки и цена работы согласуются напрямую с специалистом. Платформа предоставляет рейтинги, отзывы и подтверждение личности для повышения доверия, но не несёт ответственности за результат работы.',
+          p: 'Harna.uz связывает заказчиков и специалистов. Мы не оказываем услуги сами и не являемся стороной договора между ними.\n\nКачество, сроки и цена работы согласуются напрямую с специалистом. Платформа предоставляет рейтинги, отзывы и подтверждение личности для повышения доверия, но не несёт ответственности за результат работы.',
         },
         {
           h: '3. Аккаунт и его безопасность',
@@ -374,7 +374,7 @@ export const DOCUMENTS = {
       sections: [
         {
           h: 'What we do',
-          p: 'Afish.uz is an online platform that connects skilled professionals with the people who need them. Repairs, cleaning, electrical work, plumbing, tutoring and dozens of other services — finding someone no longer depends on who you happen to know.',
+          p: 'Harna.uz is an online platform that connects skilled professionals with the people who need them. Repairs, cleaning, electrical work, plumbing, tutoring and dozens of other services — finding someone no longer depends on who you happen to know.',
         },
         {
           h: 'How it works',
@@ -400,7 +400,7 @@ export const DOCUMENTS = {
       sections: [
         {
           h: '1. General',
-          p: 'This policy sets out how Afish.uz collects, stores, uses and protects user data. Accepting it is required to register.',
+          p: 'This policy sets out how Harna.uz collects, stores, uses and protects user data. Accepting it is required to register.',
         },
         {
           h: '2. What we collect',
@@ -450,11 +450,11 @@ export const DOCUMENTS = {
       sections: [
         {
           h: '1. Accepting these terms',
-          p: 'By using Afish.uz you agree to these terms. If you do not agree, please do not use the platform.',
+          p: 'By using Harna.uz you agree to these terms. If you do not agree, please do not use the platform.',
         },
         {
           h: '2. What the platform is',
-          p: 'Afish.uz connects customers and professionals. We do not perform the services ourselves and are not a party to the agreement between them.\n\nQuality, timing and price are agreed directly with the professional. The platform provides ratings, reviews and identity verification to support trust, but is not responsible for the outcome of the work.',
+          p: 'Harna.uz connects customers and professionals. We do not perform the services ourselves and are not a party to the agreement between them.\n\nQuality, timing and price are agreed directly with the professional. The platform provides ratings, reviews and identity verification to support trust, but is not responsible for the outcome of the work.',
         },
         {
           h: '3. Your account',

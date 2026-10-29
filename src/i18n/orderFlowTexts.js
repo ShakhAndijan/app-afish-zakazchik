@@ -137,6 +137,7 @@ export const ORDER_FLOW = {
       priceSend: 'Yuborish',
       priceSent: 'Narx taklifi yuborildi',
       byYou: 'Siz taklif qilgan narx',
+      write: 'Yozish',
       choosePriceMine:
         'Siz taklif qilgan narx: {price}. Mutaxassis uni tasdiqlasa, kelishuv tuziladi.',
     },
@@ -291,6 +292,7 @@ export const ORDER_FLOW = {
       priceSend: 'Отправить',
       priceSent: 'Предложение цены отправлено',
       byYou: 'Ваша цена',
+      write: 'Написать',
       choosePriceMine:
         'Ваша цена: {price}. Когда специалист её подтвердит, договорённость состоится.',
     },
@@ -441,6 +443,7 @@ export const ORDER_FLOW = {
       priceSend: 'Send',
       priceSent: 'Price offer sent',
       byYou: 'Your price',
+      write: 'Write',
       choosePriceMine: 'Your price: {price}. Once the specialist confirms it, the deal is made.',
     },
     final: {

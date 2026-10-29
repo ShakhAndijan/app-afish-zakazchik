@@ -1,4 +1,4 @@
-import { ENDPOINTS } from '../constants/config';
+import { ENDPOINTS, CLIENT_HEADERS } from '../constants/config';
 import { getToken, getRefreshToken, saveSession } from './token';
 import { devLog } from './log';
 
@@ -27,7 +27,11 @@ async function requestRefresh() {
   try {
     const res = await fetch(ENDPOINTS.AUTH_REFRESH, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+      headers: {
+        ...CLIENT_HEADERS,
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+      },
       body: JSON.stringify({ refresh_token: refreshToken }),
       signal: controller.signal,
     });
@@ -61,6 +65,7 @@ const send = (url, options, token) =>
   fetch(url, {
     ...options,
     headers: {
+      ...CLIENT_HEADERS,
       'ngrok-skip-browser-warning': 'true',
       ...(options.headers || {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),

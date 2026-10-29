@@ -1,8 +1,14 @@
 import {
-  View, Text, StyleSheet, ActivityIndicator,
-  KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity,
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  TouchableOpacity,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { COLORS } from '../../constants/colors';
 import { useLanguage } from '../../context/LanguageContext';
@@ -33,7 +39,8 @@ export default function PasswordStep({
 }) {
   const { t } = useLanguage();
   const identifierMode = detectIdentifierMode(identifier);
-  const identifierLabel = identifierMode === 'phone' ? `+998 ${formatPhone(identifier)}` : identifier;
+  const identifierLabel =
+    identifierMode === 'phone' ? `+998 ${formatPhone(identifier)}` : identifier;
   const ready = password.length >= 4 && !loading;
 
   return (

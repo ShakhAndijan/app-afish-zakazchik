@@ -7,7 +7,15 @@ import { getToken, getRefreshToken } from '../utils/token';
 import { request } from '../utils/request';
 
 const logReq = (name) => devLog(`[auth] → ${name}`);
-const logOk = (name) => devLog(`[auth] ✓ ${name}`);
+// Javob konsolga chiqadi (faqat dev); tokenlar to'liq ko'rsatilmaydi.
+const SECRET_KEYS = ['access_token', 'refresh_token'];
+const redact = (data) =>
+  data && typeof data === 'object'
+    ? Object.fromEntries(
+        Object.entries(data).map(([k, v]) => [k, SECRET_KEYS.includes(k) && v ? '***' : v])
+      )
+    : data;
+const logOk = (name, data) => devLog(`[auth] ✓ ${name}`, JSON.stringify(redact(data), null, 2));
 const logErr = (name, err) => devLog(`[auth] ✗ ${name}`, err?.message || err);
 
 // Kirish oqimidagi so'rovlar: token yo'q (auth: false), xato ApiError bo'lib chiqadi.
@@ -15,7 +23,7 @@ async function authPost(name, url, body, fallbackMessage) {
   logReq(name);
   try {
     const data = await request(url, { method: 'POST', body, auth: false, fallbackMessage });
-    logOk(name);
+    logOk(name, data);
     return data;
   } catch (err) {
     logErr(name, err);

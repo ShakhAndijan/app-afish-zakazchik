@@ -372,7 +372,7 @@ export const uz = {
     sectionHead: {
       howItWorks: 'Qanday ishlaydi',
       reviews: 'Mijozlar fikri',
-      whyAfish: 'Nega AFISH?',
+      whyHarna: 'Nega HARNA?',
     },
     steps: {
       step1Title: 'Xizmatni tanlang',
@@ -504,7 +504,7 @@ export const uz = {
       openProfile: "Profilni ko'rish",
       otherByWorker: "Ustaning boshqa e'lonlari",
       orderCta: 'Shu xizmatni buyurtma qilish',
-      shareMessage: '{title} — {price}. Usta: {name}. Afish.uz',
+      shareMessage: '{title} — {price}. Usta: {name}. Harna.uz',
     },
     likeError: "Layk bosib bo'lmadi",
     reels: {
@@ -628,7 +628,7 @@ export const uz = {
       title: 'Ishonch va ish hududi',
       radius: '{n} km radiusda ishlaydi',
       districts: 'Ishlash hududlari: {list}',
-      since: 'Afishda {year}-yildan beri',
+      since: 'Harnada {year}-yildan beri',
       response: "O'rtacha {time} ichida javob beradi",
       acceptance: 'Buyurtmalarning {n}% ini qabul qiladi',
       repeat: '{n}% mijoz qayta murojaat qiladi',
@@ -682,7 +682,7 @@ export const uz = {
       title: "Manzilingizni to'ldiring",
       subtitle: "Buyurtma berishni tezlashtirish uchun manzil qo'shing",
     },
-    wallet: { title: 'AFISH.uz hamyon', topup: "To'ldirish" },
+    wallet: { title: 'HARNA.uz hamyon', topup: "To'ldirish" },
     loyalty: { silverCustomer: 'Kumush mijoz', toNextLevel: 'Oltingacha 3 buyurtma' },
     menu: {
       orderHistory: 'Buyurtmalar tarixi',
@@ -699,7 +699,7 @@ export const uz = {
       helpCenter: 'Yordam markazi',
     },
     logout: 'Hisobdan chiqish',
-    footer: 'AFISH.uz · versiya 1.0.1',
+    footer: 'HARNA.uz · versiya 1.0.1',
   },
   notifTypes: {
     fallback: 'Yangi xabar',
@@ -957,6 +957,14 @@ export const uz = {
     stepTalk: 'Kelishuv',
     stepWork: 'Ish',
     stepDone: 'Bajarildi',
+    phonesAfterDeal: 'Telefon raqamlar narx kelishilgach ikkala tomonga ochiladi',
+    descriptionTitle: 'Ish tavsifi',
+    descriptionBy: 'Siz yozgan',
+    workerPhone: 'Mutaxassis telefoni',
+    yourPhone: 'Sizning raqamingiz',
+    backupPhone: 'Zaxira telefon',
+    phonesSharedHint: "Raqamlaringiz kelishilgan mutaxassisga ko'rinadi",
+    call: "Qo'ng'iroq qilish",
     statusSubtext: {
       done: 'Ish muvaffaqiyatli yakunlandi',
       cancelled: 'Bu buyurtma bekor qilingan',
@@ -1135,7 +1143,7 @@ export const uz = {
     requiredSub: "Buyurtma berish uchun quyidagilarni to'ldiring",
     requiredOk: 'Tushunarli',
     extraTitle: "Qo'shimcha ma'lumotlar",
-    extraSubtitle: 'Ixtiyoriy: necha kishi, talablar, ish anjomlari…',
+    extraSubtitle: 'Xizmat turi, zaxira telefon, necha kishi, talablar, ish anjomlari…',
     step1Title: 'Buyurtma tafsilotlari',
     step2Title: 'Manzil va aloqa',
     step3Title: "Qo'shimcha ma'lumotlar va talablar",
@@ -1192,7 +1200,7 @@ export const uz = {
     newSuggestion: 'Yangi taklif',
     tabQuestions: 'Murojaatlar',
     tabSuggestions: 'Takliflar',
-    teamName: 'Afish jamoasi',
+    teamName: 'Harna jamoasi',
     status: {
       new: "Ko'rib chiqilmoqda",
       answered: 'Javob berilgan',

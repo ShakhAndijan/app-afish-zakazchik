@@ -18,10 +18,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
-import AfishLoader from '../components/AfishLoader';
+import AppLoader from '../components/AppLoader';
 import SectionError from './zakazchi-main/components/SectionError';
 import { getIdentityStatus, startIdentityProvider, submitIdentityDocuments } from '../api/account';
 import { getErrorMessage } from '../utils/errors';
+import useBottomInset from '../hooks/useBottomInset';
 
 const MIN_FILES = 2;
 const MAX_FILES = 5;
@@ -37,6 +38,7 @@ const STATUS_ICON = {
 // Shaxsni tasdiqlash (saytdagi "Profilingizni tasdiqlang"): pasport/ID rasmi + hujjat bilan selfie
 // administratorga yuboriladi; MyID mavjud bo'lsa tezkor tasdiqlash ham taklif qilinadi.
 export default function VerifyIdentityScreen({ onBack }) {
+  const bottomInset = useBottomInset();
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
   const queryClient = useQueryClient();
@@ -149,7 +151,7 @@ export default function VerifyIdentityScreen({ onBack }) {
 
       {status.isPending ? (
         <View style={s.center}>
-          <AfishLoader size={160} />
+          <AppLoader size={160} />
         </View>
       ) : status.isError ? (
         <SectionError style={{ marginHorizontal: 20, marginTop: 24 }} onRetry={status.refetch} />
@@ -157,7 +159,11 @@ export default function VerifyIdentityScreen({ onBack }) {
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32, gap: 14 }}
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            paddingBottom: 32 + bottomInset,
+            gap: 14,
+          }}
         >
           <Text style={[s.lead, { color: t.muted }]}>{tr('account.verify.subtitle')}</Text>
 

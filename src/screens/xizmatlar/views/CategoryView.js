@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
-import AfishLoader from '../../../components/AfishLoader';
+import AppLoader from '../../../components/AppLoader';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useXizmatlarStyles } from '../styles';
 import { applyAdvFilters } from '../utils';
@@ -50,7 +50,7 @@ export default function CategoryView({
 
           {loading ? (
             <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-              <AfishLoader size={90} />
+              <AppLoader size={90} />
             </View>
           ) : (
             <>

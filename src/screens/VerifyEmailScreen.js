@@ -22,12 +22,14 @@ import SuccessModal from '../components/SuccessModal';
 import { getCustomerMe } from '../api/user';
 import { requestEmailOtp, verifyEmailOtp } from '../api/account';
 import { getErrorMessage } from '../utils/errors';
+import useBottomInset from '../hooks/useBottomInset';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 // Email qo'shish/tasdiqlash (saytdagi "Email manzili"): manzilga kod yuboriladi, kod kiritilsa tasdiqlanadi.
 // Boshqa manzil kiritilsa, hisobdagi email o'shanga almashadi.
 export default function VerifyEmailScreen({ onBack }) {
+  const bottomInset = useBottomInset();
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
   const queryClient = useQueryClient();
@@ -105,7 +107,11 @@ export default function VerifyEmailScreen({ onBack }) {
       >
         <ScrollView
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32, gap: 14 }}
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            paddingBottom: 32 + bottomInset,
+            gap: 14,
+          }}
         >
           {!!current && (
             <View

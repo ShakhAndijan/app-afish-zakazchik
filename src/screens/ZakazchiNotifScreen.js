@@ -8,6 +8,7 @@ import { useTheme } from '../context/ThemeContext';
 import NotificationsList from './notifications/NotificationsList';
 import { useUnreadNotifications } from '../queries/notifications';
 import { useLanguage } from '../context/LanguageContext';
+import useBottomInset from '../hooks/useBottomInset';
 
 function Toggle({ on, onPress, accent }) {
   const anim = useRef(new Animated.Value(on ? 1 : 0)).current;
@@ -52,6 +53,7 @@ function ToggleRow({ iconName, iconColor, label, sub, on, onPress, border, t }) 
 }
 
 export default function ZakazchiNotifScreen({ onBack }) {
+  const bottomInset = useBottomInset();
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
   const [tab, setTab] = useState('list');
@@ -112,7 +114,10 @@ export default function ZakazchiNotifScreen({ onBack }) {
       {tab === 'list' ? (
         <NotificationsList />
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[s.scroll, { paddingBottom: 40 + bottomInset }]}
+        >
           {/* Master hero card */}
           <TouchableOpacity
             onPress={() => setMaster((m) => !m)}

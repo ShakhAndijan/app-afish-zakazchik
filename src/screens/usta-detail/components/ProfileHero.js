@@ -3,7 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLanguage } from '../../../context/LanguageContext';
-import AfishLoader from '../../../components/AfishLoader';
+import AppLoader from '../../../components/AppLoader';
 import { useUstaStyles } from '../styles';
 import UstaAvatar from './UstaAvatar';
 import { formatDuration } from '../utils';
@@ -95,7 +95,7 @@ export default function ProfileHero({
 
         {!!bio && <Text style={st.heroBio}>{bio}</Text>}
 
-        {showLoader && <AfishLoader size={56} style={{ alignItems: 'center', marginTop: 12 }} />}
+        {showLoader && <AppLoader size={56} style={{ alignItems: 'center', marginTop: 12 }} />}
       </LinearGradient>
     </>
   );

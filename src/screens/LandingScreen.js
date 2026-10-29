@@ -9,7 +9,6 @@ import TrustRow from './landing/components/TrustRow';
 import ServiceCategories from './landing/components/ServiceCategories';
 import SeasonalSection from './landing/components/SeasonalSection';
 import TopWorkers from './landing/components/TopWorkers';
-import TopWorks from './landing/components/TopWorks';
 import ListingsCarousel from './zakazchi-main/components/ListingsCarousel';
 import SectionHead from './landing/components/SectionHead';
 import HowItWorks from './landing/components/HowItWorks';
@@ -46,14 +45,12 @@ export default function LandingScreen({ onLogin, onSelectUsta }) {
           {/* Mehmon uchun e'lonlar ochiq; "Barchasi" kirish oynasiga olib boradi */}
           <ListingsCarousel style={{ marginTop: 28 }} onSeeAll={onLogin} />
 
-          <TopWorks />
-
           {/* Mehmon uchun hamma slayd kirish oynasiga olib boradi */}
           <PromoBanners style={{ marginTop: 28 }} hPad={16} onSlidePress={onLogin} />
 
           <ReviewsCarousel />
 
-          <SectionHead title={t('app.sectionHead.whyAfish')} />
+          <SectionHead title={t('app.sectionHead.whyHarna')} />
           <Benefits />
 
           <ClosingCta onPress={onLogin} />

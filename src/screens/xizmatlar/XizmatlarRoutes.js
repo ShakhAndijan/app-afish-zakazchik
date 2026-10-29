@@ -14,7 +14,7 @@ import RegionPickerSheet from './components/RegionPickerSheet';
 import BrowseView from './views/BrowseView';
 import SubCategoryView from './views/SubCategoryView';
 import CategoryView from './views/CategoryView';
-import AfishLoader from '../../components/AfishLoader';
+import AppLoader from '../../components/AppLoader';
 import { ustaRoute } from '../../navigation/params';
 
 // "Xizmatlar" bo'limi `app/(tabs)/services/` papkasida o'zining Stack navigatoriga ega:
@@ -126,7 +126,7 @@ function Placeholder({ searchRow }) {
     <>
       {searchRow}
       <View style={{ flex: 1, alignItems: 'center', paddingTop: 60 }}>
-        <AfishLoader size={90} />
+        <AppLoader size={90} />
       </View>
     </>
   );

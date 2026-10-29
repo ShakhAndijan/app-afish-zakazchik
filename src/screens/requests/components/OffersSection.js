@@ -105,6 +105,18 @@ export default function OffersSection({ orderId, chooseUntil, onChanged }) {
       })
     );
 
+  // Tanlashdan oldin shu taklif egasi bilan gaplashish (saytdagi "Yozish").
+  const openChat = (offer) =>
+    router.push({
+      pathname: '/chat',
+      params: {
+        orderId: String(orderId),
+        workerId: String(offer.worker.id),
+        workerName: offer.worker.name ?? '',
+        ...(offer.worker.photo ? { workerPhoto: offer.worker.photo } : {}),
+      },
+    });
+
   const until = formatDeadline(tr, chooseUntil);
 
   return (
@@ -196,14 +208,32 @@ export default function OffersSection({ orderId, chooseUntil, onChanged }) {
                 <Text style={[s.comment, { color: t.subtext ?? t.muted }]}>{offer.comment}</Text>
               )}
 
-              <TouchableOpacity
-                style={[s.btn, s.fullBtn, { borderColor: t.line2, borderWidth: 1.5 }]}
-                activeOpacity={0.8}
-                disabled={busyId != null}
-                onPress={() => setPriceFor(offer)}
-              >
-                <Text style={[s.btnTxt, { color: t.text }]}>{tr('orderFlow.talk.price')}</Text>
-              </TouchableOpacity>
+              <View style={s.actions}>
+                <TouchableOpacity
+                  style={[
+                    s.btn,
+                    s.talkBtn,
+                    { backgroundColor: t.blue + '1a', borderColor: t.blue + '55' },
+                  ]}
+                  activeOpacity={0.8}
+                  disabled={busyId != null}
+                  onPress={() => openChat(offer)}
+                  accessibilityRole="button"
+                >
+                  <MaterialCommunityIcons name="chat-outline" size={17} color={t.blue} />
+                  <Text style={[s.btnTxt, { color: t.blue }]}>{tr('orderFlow.talk.write')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[s.btn, { borderColor: t.line2, borderWidth: 1.5 }]}
+                  activeOpacity={0.8}
+                  disabled={busyId != null}
+                  onPress={() => setPriceFor(offer)}
+                >
+                  <Text style={[s.btnTxt, { color: t.text }]} numberOfLines={1}>
+                    {tr('orderFlow.talk.price')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
 
               <View style={s.actions}>
                 <TouchableOpacity
@@ -308,6 +338,7 @@ const s = StyleSheet.create({
   actions: { flexDirection: 'row', gap: 10 },
   btn: { flex: 1, height: 44, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   fullBtn: { flex: 0, alignSelf: 'stretch' },
+  talkBtn: { flexDirection: 'row', gap: 6, borderWidth: 1.5 },
   label: { fontSize: 13, fontWeight: '700' },
   btnTxt: { fontWeight: '700', fontSize: 14 },
   message: { fontSize: 12, lineHeight: 17 },

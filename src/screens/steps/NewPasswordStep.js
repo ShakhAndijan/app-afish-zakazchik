@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { View, Text, Image, StyleSheet, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { COLORS } from '../../constants/colors';
 import { useLanguage } from '../../context/LanguageContext';
 import BackBtn from '../../components/login/BackBtn';
 import PasswordInput from '../../components/login/PasswordInput';
 import PrimaryBtn from '../../components/login/PrimaryBtn';
+import BrandLogo from '../../components/BrandLogo';
 
 const PASSWORD_RULES = [
   { key: 'length', test: (pw) => pw.length >= 8 },
@@ -39,12 +40,7 @@ function PasswordRules({ password }) {
   );
 }
 
-export default function NewPasswordStep({
-  onBack,
-  onSubmit,
-  loading = false,
-  error = '',
-}) {
+export default function NewPasswordStep({ onBack, onSubmit, loading = false, error = '' }) {
   const { t } = useLanguage();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -63,15 +59,9 @@ export default function NewPasswordStep({
       <BackBtn onPress={onBack} />
 
       <View style={styles.header}>
-        <Image
-          source={require('../../../assets/afish-logo-vertical.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
+        <BrandLogo width={270} dark />
         <Text style={styles.title}>{t('login.newPasswordStep.title')}</Text>
-        <Text style={styles.subtitle}>
-          {t('login.newPasswordStep.subtitle')}
-        </Text>
+        <Text style={styles.subtitle}>{t('login.newPasswordStep.subtitle')}</Text>
       </View>
 
       <View style={styles.fieldWrap}>

@@ -371,7 +371,7 @@ export const en = {
     sectionHead: {
       howItWorks: 'How it works',
       reviews: 'Customer reviews',
-      whyAfish: 'Why AFISH?',
+      whyHarna: 'Why HARNA?',
     },
     steps: {
       step1Title: 'Choose a service',
@@ -502,7 +502,7 @@ export const en = {
       openProfile: 'View profile',
       otherByWorker: 'More from this specialist',
       orderCta: 'Order this service',
-      shareMessage: '{title} — {price}. Specialist: {name}. Afish.uz',
+      shareMessage: '{title} — {price}. Specialist: {name}. Harna.uz',
     },
     likeError: "Couldn't like the listing",
     reels: {
@@ -625,7 +625,7 @@ export const en = {
       title: 'Trust & service area',
       radius: 'Works within {n} km',
       districts: 'Service districts: {list}',
-      since: 'On Afish since {year}',
+      since: 'On Harna since {year}',
       response: 'Replies in {time} on average',
       acceptance: 'Accepts {n}% of orders',
       repeat: '{n}% of clients come back',
@@ -679,7 +679,7 @@ export const en = {
       title: 'Add your address',
       subtitle: 'Add an address to speed up placing an order',
     },
-    wallet: { title: 'AFISH.uz wallet', topup: 'Top up' },
+    wallet: { title: 'HARNA.uz wallet', topup: 'Top up' },
     loyalty: { silverCustomer: 'Silver customer', toNextLevel: '3 orders to Gold' },
     menu: {
       orderHistory: 'Order history',
@@ -696,7 +696,7 @@ export const en = {
       helpCenter: 'Help center',
     },
     logout: 'Log out',
-    footer: 'AFISH.uz · version 1.0.1',
+    footer: 'HARNA.uz · version 1.0.1',
   },
   notifTypes: {
     fallback: 'New notification',
@@ -950,6 +950,14 @@ export const en = {
     stepTalk: 'Agreement',
     stepWork: 'Work',
     stepDone: 'Done',
+    phonesAfterDeal: 'Phone numbers open to both sides once the price is agreed',
+    descriptionTitle: 'Job description',
+    descriptionBy: 'Written by you',
+    workerPhone: "Worker's phone",
+    yourPhone: 'Your number',
+    backupPhone: 'Backup phone',
+    phonesSharedHint: 'Your numbers are visible to the agreed worker',
+    call: 'Call',
     statusSubtext: {
       done: 'The job was completed successfully',
       cancelled: 'This order was cancelled',
@@ -1124,7 +1132,7 @@ export const en = {
     requiredSub: 'To place the order, please fill in the following',
     requiredOk: 'Got it',
     extraTitle: 'More details',
-    extraSubtitle: 'Optional: how many people, requirements, tools…',
+    extraSubtitle: 'Service type, backup phone, how many people, requirements, tools…',
     step1Title: 'Request details',
     step2Title: 'Address and contact',
     step3Title: 'Extra details and requirements',
@@ -1177,7 +1185,7 @@ export const en = {
     newSuggestion: 'New suggestion',
     tabQuestions: 'Requests',
     tabSuggestions: 'Suggestions',
-    teamName: 'Afish team',
+    teamName: 'Harna team',
     status: {
       new: 'In review',
       answered: 'Answered',

@@ -4,7 +4,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { BENEFITS } from '../constants';
 import InfoRow from './InfoRow';
 
-// "Nega AFISH?": kafolat, tekshirilgan ustalar, tezkor xizmat kartochkalari.
+// "Nega HARNA?": kafolat, tekshirilgan ustalar, tezkor xizmat kartochkalari.
 export default function Benefits() {
   const { t } = useLanguage();
 

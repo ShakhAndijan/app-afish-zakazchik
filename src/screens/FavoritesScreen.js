@@ -8,18 +8,20 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import Avatar from '../components/Avatar';
-import AfishLoader from '../components/AfishLoader';
+import AppLoader from '../components/AppLoader';
 import SectionError from './zakazchi-main/components/SectionError';
 import { getFavoritesPage, unlikeWorker } from '../api/workers';
 import { getFavoriteListingsPage } from '../api/listings';
 import { listingsRoute, ustaRoute } from '../navigation/params';
 import { getErrorMessage } from '../utils/errors';
+import useBottomInset from '../hooks/useBottomInset';
 
 const EMPTY = [];
 
 // Sevimlilar (saytdagi "Sevimlilar"): "Mutaxassislar (N)" va "E'lonlar (N)" — e'lonlar tabi
 // saqlangan e'lonlar ekranini ochadi.
 export default function FavoritesScreen({ onBack }) {
+  const bottomInset = useBottomInset();
   const router = useRouter();
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
@@ -90,7 +92,7 @@ export default function FavoritesScreen({ onBack }) {
 
       {workers.isPending ? (
         <View style={s.center}>
-          <AfishLoader size={140} />
+          <AppLoader size={140} />
         </View>
       ) : workers.isError ? (
         <SectionError style={{ marginHorizontal: 20, marginTop: 24 }} onRetry={workers.refetch} />
@@ -98,7 +100,12 @@ export default function FavoritesScreen({ onBack }) {
         <FlatList
           data={items}
           keyExtractor={(w) => String(w.id)}
-          contentContainerStyle={{ padding: 20, gap: 10, flexGrow: 1 }}
+          contentContainerStyle={{
+            padding: 20,
+            paddingBottom: 20 + bottomInset,
+            gap: 10,
+            flexGrow: 1,
+          }}
           refreshing={workers.isRefetching}
           onRefresh={workers.refetch}
           ListEmptyComponent={

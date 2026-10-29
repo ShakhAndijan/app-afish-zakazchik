@@ -1,4 +1,4 @@
-import { View, Text, Image, StyleSheet, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ActivityIndicator } from 'react-native';
 import { useState } from 'react';
 
 import { COLORS } from '../../constants/colors';
@@ -6,6 +6,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import BackBtn from '../../components/login/BackBtn';
 import PrimaryBtn from '../../components/login/PrimaryBtn';
 import { detectIdentifierMode } from '../../utils/identifier';
+import BrandLogo from '../../components/BrandLogo';
 
 const formatPhone = (raw = '') => {
   const d = raw.replace(/\D/g, '').slice(0, 9);
@@ -24,18 +25,15 @@ export default function CompleteProfileStep({ onBack, onSubmit, loading, error, 
 
   const ready = firstName.trim() && lastName.trim() && !loading;
   const identifierMode = detectIdentifierMode(identifier);
-  const identifierLabel = identifierMode === 'phone' ? `+998 ${formatPhone(identifier)}` : identifier;
+  const identifierLabel =
+    identifierMode === 'phone' ? `+998 ${formatPhone(identifier)}` : identifier;
 
   return (
     <View style={styles.container}>
       <BackBtn onPress={onBack} />
 
       <View style={styles.header}>
-        <Image
-          source={require('../../../assets/afish-logo-vertical.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
+        <BrandLogo width={250} dark />
 
         <View style={styles.badge}>
           <Text style={styles.badgeTxt}>{t('login.registerStep.info.newBadge')}</Text>

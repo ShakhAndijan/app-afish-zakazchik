@@ -17,7 +17,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import AfishLoader from '../components/AfishLoader';
+import AppLoader from '../components/AppLoader';
 import ListingCard from '../components/ListingCard';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -318,7 +318,7 @@ export default function WorkersScreen({ onBack }) {
   if (feed.loading) {
     empty = (
       <View style={s.center}>
-        <AfishLoader size={120} />
+        <AppLoader size={120} />
       </View>
     );
   } else if (feed.error) {

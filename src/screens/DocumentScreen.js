@@ -5,10 +5,12 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { DOCUMENTS } from '../i18n/siteTexts';
+import useBottomInset from '../hooks/useBottomInset';
 
 // Hujjat sahifasi (saytdagi /about, /privacy, /terms): "Biz haqimizda", "Maxfiylik siyosati",
 // "Foydalanish shartlari" — sayt bilan bir xil matn, tanlangan tilda.
 export default function DocumentScreen({ docKey, onBack }) {
+  const bottomInset = useBottomInset();
   const { theme: t } = useTheme();
   const { language, t: tr } = useLanguage();
   const doc = (DOCUMENTS[language] ?? DOCUMENTS.uz)[docKey] ?? DOCUMENTS.uz.about;
@@ -31,7 +33,7 @@ export default function DocumentScreen({ docKey, onBack }) {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 48, gap: 22 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 48 + bottomInset, gap: 22 }}
       >
         {!!doc.updated && (
           <Text style={{ color: t.faint, fontSize: 12.5 }}>

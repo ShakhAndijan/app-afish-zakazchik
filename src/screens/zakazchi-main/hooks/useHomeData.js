@@ -1,12 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { categoriesQuery } from '../../../queries/categories';
-import { getWorkers, getFavorites } from '../../../api/workers';
-import { getTopComments } from '../../../api/reviews';
-import { getSystemStats } from '../../../api/stats';
+import { getFavorites } from '../../../api/workers';
+import { markStartup } from '../../../utils/startup';
+import { topWorkersQuery, homeStatsQuery, homeReviewsQuery } from '../../../queries/home';
 import { getRecentOrders } from '../../../api/orders';
-
-const MIN = 60 * 1000;
 
 // Mijozning shaxsiy xulosasi: faol buyurtmalar va qayta buyurtma berish mumkin bo'lgan
 // oxirgi bajarilgan buyurtma. Buyurtmalar ro'yxati olinmasa ham xato emas — bo'sh xulosa.
@@ -40,24 +38,13 @@ export default function useHomeData() {
 
   const categories = useQuery(categoriesQuery);
   // Kategoriya almashganda kalit o'zgaradi: yangi ro'yxat yuklanguncha loader ko'rinadi.
-  const workers = useQuery({
-    queryKey: ['workers', 'top', selectedCategoryId],
-    queryFn: () => getWorkers({ page: 1, size: 5, categoryId: selectedCategoryId }),
-  });
+  const workers = useQuery(topWorkersQuery(selectedCategoryId));
   const favorites = useQuery({
     queryKey: ['favorites', 'home'],
     queryFn: () => getFavorites({ page: 1, size: 10 }),
   });
-  const stats = useQuery({
-    queryKey: ['home', 'stats'],
-    queryFn: async () => (await getSystemStats()) ?? null,
-    staleTime: 10 * MIN,
-  });
-  const reviews = useQuery({
-    queryKey: ['home', 'reviews'],
-    queryFn: () => getTopComments({ limit: 10 }),
-    staleTime: 5 * MIN,
-  });
+  const stats = useQuery(homeStatsQuery);
+  const reviews = useQuery(homeReviewsQuery);
   // Faol buyurtmalar tez o'zgaradi: har safar bosh sahifa ochilganda/qaytilganda yangilanadi.
   const summary = useQuery({
     queryKey: ['home', 'summary'],
@@ -97,6 +84,15 @@ export default function useHomeData() {
   };
   const all = Object.values(sections);
 
+  const initialLoading = all.every((s) => s.loading);
+  const logged = useRef(false);
+  useEffect(() => {
+    if (!initialLoading && !logged.current) {
+      logged.current = true;
+      markStartup("bosh sahifa ma'lumoti ko'rindi");
+    }
+  }, [initialLoading]);
+
   return {
     ...sections,
     selectedCategoryId,
@@ -105,7 +101,7 @@ export default function useHomeData() {
     refresh,
     refreshSummary: summary.refetch,
     retry,
-    initialLoading: all.every((s) => s.loading),
+    initialLoading,
     allFailed: all.every((s) => s.error),
   };
 }

@@ -13,7 +13,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import SuccessModal from '../components/SuccessModal';
-import AfishLoader from '../components/AfishLoader';
+import AppLoader from '../components/AppLoader';
 import { s } from './edit-profile/styles';
 import { formatDisplayDate } from './edit-profile/utils';
 import useProfileForm from './edit-profile/hooks/useProfileForm';
@@ -26,10 +26,12 @@ import GenderToggle from './edit-profile/components/GenderToggle';
 import LocationField from './edit-profile/components/LocationField';
 import OptionSheet from './edit-profile/components/OptionSheet';
 import BirthDateSheet from './edit-profile/components/BirthDateSheet';
+import useBottomInset from '../hooks/useBottomInset';
 
 // Profilni tahrirlash: shaxsiy ma'lumot, aloqa va manzil. Forma holati `useProfileForm` da,
 // tanlov ro'yxatlari `useReferenceLists` da, har bir maydon/oyna `edit-profile/components/` da.
 export default function EditProfileScreen({ onBack }) {
+  const bottomInset = useBottomInset();
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
 
@@ -50,7 +52,7 @@ export default function EditProfileScreen({ onBack }) {
         <StatusBar style={t.isDark ? 'light' : 'dark'} />
         <ScreenHeader onBack={onBack} />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <AfishLoader size={120} />
+          <AppLoader size={120} />
         </View>
       </SafeAreaView>
     );
@@ -67,7 +69,7 @@ export default function EditProfileScreen({ onBack }) {
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={s.scroll}
+          contentContainerStyle={[s.scroll, { paddingBottom: 40 + bottomInset }]}
           keyboardShouldPersistTaps="handled"
         >
           <FormSection title={tr('editProfile.groups.personal')}>

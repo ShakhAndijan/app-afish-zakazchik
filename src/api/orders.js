@@ -107,8 +107,15 @@ export function mapOrder(o) {
         ? [o.category_id ?? o.category?.id]
         : [],
     service: o.category?.name ?? null,
+    // Ish nomlari (tavsifdan olingan qisqa matnsiz) va mijoz yozgan to'liq tavsif.
+    taskNames: taskNames.join(', '),
+    description,
     master: workerName,
     workerId,
+    // Telefon raqamlar narx kelishilgach ochiladi (backend shu paytgacha `worker.phone`ni bermaydi).
+    workerPhone: o.worker?.phone ?? o.worker_phone ?? null,
+    contactPhone: o.contact_phone ?? null,
+    backupPhone: o.backup_phone ?? null,
     masterPhoto: workerPhoto,
     letter: workerName ? workerName.trim()[0].toUpperCase() : '?',
     color: AVATAR_COLORS[(workerId ?? o.id) % AVATAR_COLORS.length],
@@ -237,9 +244,13 @@ export async function getOrderChat(orderId) {
   return mapChat(await getJson(ENDPOINTS.ORDER_CHAT(orderId), 'Chat yuklanmadi'));
 }
 
-/** Xabar yuboradi; yangilangan butun chatni qaytaradi. */
-export async function sendOrderChat(orderId, body) {
-  return mapChat(await postJson(ENDPOINTS.ORDER_CHAT(orderId), { body }, 'Xabar yuborilmadi'));
+/**
+ * Xabar yuboradi; yangilangan butun chatni qaytaradi. `workerId` — usta hali tanlanmagan ommaviy
+ * buyurtmada aynan shu taklif egasiga yozish uchun (tanlashdan oldin gaplashish).
+ */
+export async function sendOrderChat(orderId, body, workerId) {
+  const payload = workerId != null ? { body, worker_id: workerId } : { body };
+  return mapChat(await postJson(ENDPOINTS.ORDER_CHAT(orderId), payload, 'Xabar yuborilmadi'));
 }
 
 export const markOrderChatRead = (orderId) =>

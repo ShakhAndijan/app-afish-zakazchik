@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import AfishLoader from '../components/AfishLoader';
+import AppLoader from '../components/AppLoader';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { useCategoryTreeQuery } from '../queries/categories';
@@ -125,7 +125,7 @@ export default function ListingReelsScreen({
   } else if (size) {
     body = (
       <View style={s.center}>
-        <AfishLoader size={120} />
+        <AppLoader size={120} />
         {!!onBack && (
           <TouchableOpacity
             onPress={onBack}

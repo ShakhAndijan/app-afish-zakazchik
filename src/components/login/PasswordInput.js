@@ -1,20 +1,27 @@
 import { useState } from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 
-export default function PasswordInput({ value = '', onChangeText, theme, placeholder = 'Parolni kiriting' }) {
+export default function PasswordInput({
+  value = '',
+  onChangeText,
+  theme,
+  placeholder = 'Parolni kiriting',
+}) {
   const [show, setShow] = useState(false);
   const isDark = !theme || theme.isDark !== false;
   const faint = isDark ? '#6c7f9a' : '#8a97ab';
 
   return (
-    <View style={[
-      styles.container,
-      {
-        backgroundColor: isDark ? '#0a1626' : '#ffffff',
-        borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.10)',
-      },
-    ]}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: isDark ? '#0a1626' : '#ffffff',
+          borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.10)',
+        },
+      ]}
+    >
       <Feather name="lock" size={19} color={faint} />
       <TextInput
         style={[styles.input, { color: isDark ? '#fff' : '#0f1117' }]}

@@ -18,6 +18,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useWallet } from '../context/WalletContext';
 import SuccessModal from '../components/SuccessModal';
+import useBottomInset from '../hooks/useBottomInset';
 
 const QUICK_AMOUNTS = [50000, 100000, 200000, 500000];
 
@@ -50,6 +51,7 @@ function MethodOption({ icon, label, active, color, onPress, t }) {
 }
 
 export default function WalletScreen({ onBack }) {
+  const bottomInset = useBottomInset();
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
   const { balance, transactions, topUp } = useWallet();
@@ -106,7 +108,7 @@ export default function WalletScreen({ onBack }) {
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 32 }}
+          contentContainerStyle={{ paddingBottom: 32 + bottomInset }}
           keyboardShouldPersistTaps="handled"
         >
           {/* ── Balans hero ── */}
@@ -118,8 +120,7 @@ export default function WalletScreen({ onBack }) {
               </View>
               <Text style={s.balanceLabel}>{tr('wallet.balanceLabel')}</Text>
               <Text style={s.balanceValue}>
-                {fmt(balance)}{' '}
-                <Text style={s.balanceCurrency}>{tr('common.currencySom')}</Text>
+                {fmt(balance)} <Text style={s.balanceCurrency}>{tr('common.currencySom')}</Text>
               </Text>
               <View style={s.infoRow}>
                 <Feather name="info" size={13} color="rgba(255,255,255,0.85)" />
@@ -152,12 +153,7 @@ export default function WalletScreen({ onBack }) {
                       setCustomAmount('');
                     }}
                   >
-                    <Text
-                      style={[
-                        s.amountChipText,
-                        { color: active ? t.orange : t.text },
-                      ]}
-                    >
+                    <Text style={[s.amountChipText, { color: active ? t.orange : t.text }]}>
                       {fmt(a)}
                     </Text>
                   </TouchableOpacity>
@@ -241,7 +237,11 @@ export default function WalletScreen({ onBack }) {
                     style={[s.txRow, { backgroundColor: t.card, borderColor: t.border }]}
                   >
                     <View style={[s.txIcon, { backgroundColor: '#2fa37a1c' }]}>
-                      <MaterialCommunityIcons name="wallet-plus-outline" size={17} color="#2fa37a" />
+                      <MaterialCommunityIcons
+                        name="wallet-plus-outline"
+                        size={17}
+                        color="#2fa37a"
+                      />
                     </View>
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <Text style={[s.txTitle, { color: t.text }]} numberOfLines={1}>
@@ -333,7 +333,13 @@ const s = StyleSheet.create({
   infoText: { flex: 1, fontSize: 11.5, color: 'rgba(255,255,255,0.9)', lineHeight: 16 },
 
   sectionTitle: { fontWeight: '700', fontSize: 16 },
-  groupLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.3, marginTop: 14, marginBottom: 9 },
+  groupLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    marginTop: 14,
+    marginBottom: 9,
+  },
 
   amountGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 9 },
   amountChip: {

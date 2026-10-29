@@ -13,10 +13,12 @@ import WorkerCard from './work-detail/components/WorkerCard';
 import PriceSection from './work-detail/components/PriceSection';
 import { MasterNoteSection, CustomerReviewSection } from './work-detail/components/NoteSections';
 import PhotoThumbs from './work-detail/components/PhotoThumbs';
+import useBottomInset from '../hooks/useBottomInset';
 
 // Bajarilgan ish tafsiloti. Backenddan kelmagan maydonlar namuna ma'lumot bilan to'ldiriladi
 // (`work-detail/mock.js`) va "Namuna ma'lumot" belgisi bilan ko'rsatiladi.
 export default function WorkDetailScreen({ work, onBack, onSelectUsta }) {
+  const bottomInset = useBottomInset();
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -57,8 +59,16 @@ export default function WorkDetailScreen({ work, onBack, onSelectUsta }) {
       <StatusBar style={t.isDark ? 'light' : 'dark'} />
       <WorkDetailHeader onBack={onBack} onShare={share} />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
-        <WorkHero photos={photos} index={photoIndex} onIndexChange={setPhotoIndex} rating={rating} />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 32 + bottomInset }}
+      >
+        <WorkHero
+          photos={photos}
+          index={photoIndex}
+          onIndexChange={setPhotoIndex}
+          rating={rating}
+        />
 
         <View style={{ paddingHorizontal: 20, paddingTop: 18 }}>
           <WorkMeta
@@ -77,7 +87,11 @@ export default function WorkDetailScreen({ work, onBack, onSelectUsta }) {
             onPress={openUstaProfile}
           />
 
-          <PriceSection details={details} mock={isMock.priceSection} showSplit={isMock.priceSplit} />
+          <PriceSection
+            details={details}
+            mock={isMock.priceSection}
+            showSplit={isMock.priceSplit}
+          />
 
           <MasterNoteSection
             name={workerName}

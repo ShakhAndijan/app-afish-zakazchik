@@ -10,7 +10,7 @@ import { useRouter } from 'expo-router';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
-import AfishLoader from '../../components/AfishLoader';
+import AppLoader from '../../components/AppLoader';
 import SectionError from '../zakazchi-main/components/SectionError';
 import {
   useMarkAllNotificationsRead,
@@ -39,7 +39,7 @@ export default function NotificationsList() {
   if (feed.loading) {
     return (
       <View style={s.center}>
-        <AfishLoader size={140} />
+        <AppLoader size={140} />
       </View>
     );
   }

@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { COLORS } from '../../constants/colors';
 import { useLanguage } from '../../context/LanguageContext';
 import PrimaryBtn from '../../components/login/PrimaryBtn';
@@ -16,9 +16,7 @@ export default function SuccessStep({ onHome }) {
 
       <View style={styles.textBlock}>
         <Text style={styles.title}>{t('login.successStep.title')}</Text>
-        <Text style={styles.subtitle}>
-          {t('login.successStep.subtitle')}
-        </Text>
+        <Text style={styles.subtitle}>{t('login.successStep.subtitle')}</Text>
       </View>
 
       <View style={styles.btnWrap}>

@@ -3,7 +3,7 @@ import { View, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter, useFocusEffect } from 'expo-router';
-import AfishLoader from '../components/AfishLoader';
+import AppLoader from '../components/AppLoader';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useWallet } from '../context/WalletContext';
@@ -102,7 +102,7 @@ export default function ZakazchiMainScreen() {
 
         {home.initialLoading ? (
           <View style={{ paddingVertical: 140, alignItems: 'center', justifyContent: 'center' }}>
-            <AfishLoader size={180} />
+            <AppLoader size={180} />
           </View>
         ) : home.allFailed ? (
           <SectionError style={{ marginHorizontal: 20, marginTop: 24 }} onRetry={home.refresh} />
@@ -172,7 +172,7 @@ export default function ZakazchiMainScreen() {
               onRetry={() => home.retry('favorites')}
             />
 
-            {/* ── Mijoz holatiga qarab: buyurtmasi bor — shaxsiy blok, yo'q — "Nega AFISH?" ── */}
+            {/* ── Mijoz holatiga qarab: buyurtmasi bor — shaxsiy blok, yo'q — "Nega HARNA?" ── */}
             {!home.summary.loading && (
               <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
                 {hasPersonal ? (

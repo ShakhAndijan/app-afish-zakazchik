@@ -2,8 +2,13 @@
 // kompyuterda gitdan olinib ishlatiladi, .env gitga kirmaydi). .env dagi EXPO_PUBLIC_* qiymatlari
 // berilsa, ular shu qiymatlardan ustun turadi. Backend tayyor bo'lgach geocoder serverga o'tadi.
 export const API_BASE_URL = (
-  process.env.EXPO_PUBLIC_API_BASE_URL || 'https://dev-back.afish.uz'
+  process.env.EXPO_PUBLIC_API_BASE_URL || 'https://dev-back.harna.uz'
 ).replace(/\/+$/, '');
+
+// Backendga so'rov mobil ilovadan kelayotganini bildiradi: masalan, kod SMS'i "mobil ilovasiga kirish"
+// matni bilan yuboriladi (sarlavhasiz so'rovga "vebsayt" matni ketadi). Backend'ga yuboriladigan
+// HAR BIR so'rovda bo'lishi kerak; tashqi xizmatlarga (Yandex, presigned yuklash) yuborilmaydi.
+export const CLIENT_HEADERS = { 'X-Harna-Client': 'app' };
 
 export const YANDEX_MAPS_API_KEY =
   process.env.EXPO_PUBLIC_YANDEX_MAPS_API_KEY || 'e9e77baf-a133-46b1-9f59-055744b55c57';
@@ -19,11 +24,11 @@ export const FEATURES = {
   savedAddresses: false,
 };
 
-// Qo'llab-quvvatlash aloqa ma'lumotlari — saytdagi (dev.afish.uz/config.json) bilan bir xil.
+// Qo'llab-quvvatlash aloqa ma'lumotlari — saytdagi (dev.harna.uz/config.json) bilan bir xil.
 // Telegram/Instagram saytda hozircha bo'sh: bo'sh qiymat ilovada ham ko'rsatilmaydi.
 export const SUPPORT_CONTACT = {
   phone: '+998942599590',
-  email: 'support@afish.uz',
+  email: 'support@harna.uz',
   telegram: '',
 };
 

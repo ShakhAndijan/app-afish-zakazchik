@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { View, Text, ScrollView } from 'react-native';
-import AfishLoader from '../../../components/AfishLoader';
+import AppLoader from '../../../components/AppLoader';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useXizmatlarStyles } from '../styles';
 import OverallStats from '../components/OverallStats';
@@ -94,7 +94,7 @@ export default function BrowseView({
           </Text>
           {categoriesLoading ? (
             <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-              <AfishLoader size={90} />
+              <AppLoader size={90} />
             </View>
           ) : searching ? (
             found.length > 0 ? (

@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity } from 'react-native';
-import AfishLoader from '../../../components/AfishLoader';
+import AppLoader from '../../../components/AppLoader';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useXizmatlarStyles } from '../styles';
 import WorkerList from './WorkerList';
@@ -24,7 +24,7 @@ export default function VerifiedSection({ verified, onClear, onSelectWorker }) {
       </View>
       {verified.loading ? (
         <View style={{ paddingVertical: 30, alignItems: 'center' }}>
-          <AfishLoader size={80} />
+          <AppLoader size={80} />
         </View>
       ) : verified.items.length > 0 ? (
         <WorkerList

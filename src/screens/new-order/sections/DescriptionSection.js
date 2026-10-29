@@ -3,35 +3,26 @@ import { useTheme } from '../../../context/ThemeContext';
 import { useLanguage } from '../../../context/LanguageContext';
 import { common } from '../styles';
 
-export default function DescriptionSection({
-  selectedCategories,
-  targeted = false,
-  description,
-  setDescription,
-}) {
+export default function DescriptionSection({ description, setDescription }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
 
   return (
     <>
-      {/* ── Tavsif (xizmat turi tanlangandan yoki usta tanlangandan keyin chiqadi) ── */}
-      {(selectedCategories.length > 0 || targeted) && (
-        <>
-          <Text style={[common.label, { color: t.text }]}>
-            {tr('newOrder.descriptionLabel')}
-            <Text style={{ color: t.red }}> *</Text>
-          </Text>
-          <TextInput
-            value={description}
-            onChangeText={setDescription}
-            placeholder={tr('newOrder.descriptionPlaceholder')}
-            placeholderTextColor={t.faint}
-            multiline
-            numberOfLines={4}
-            style={[s.textarea, { backgroundColor: t.card, borderColor: t.border, color: t.text }]}
-          />
-        </>
-      )}
+      {/* ── Tavsif ── */}
+      <Text style={[common.label, { color: t.text }]}>
+        {tr('newOrder.descriptionLabel')}
+        <Text style={{ color: t.red }}> *</Text>
+      </Text>
+      <TextInput
+        value={description}
+        onChangeText={setDescription}
+        placeholder={tr('newOrder.descriptionPlaceholder')}
+        placeholderTextColor={t.faint}
+        multiline
+        numberOfLines={4}
+        style={[s.textarea, { backgroundColor: t.card, borderColor: t.border, color: t.text }]}
+      />
     </>
   );
 }

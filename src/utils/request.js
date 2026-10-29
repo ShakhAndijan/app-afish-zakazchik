@@ -1,5 +1,7 @@
 import { apiFetch } from './apiClient';
 import { getApiLanguage } from './apiLanguage';
+import { CLIENT_HEADERS } from '../constants/config';
+import { devLog } from './log';
 
 const DEFAULT_TIMEOUT_MS = 15000;
 
@@ -85,6 +87,7 @@ export async function request(
     method,
     signal: controller.signal,
     headers: {
+      ...CLIENT_HEADERS,
       'Accept-Language': getApiLanguage(),
       ...(isJsonBody ? { 'Content-Type': 'application/json' } : {}),
       ...(headers || {}),
@@ -96,6 +99,8 @@ export async function request(
   try {
     res = await (auth ? apiFetch(url, init) : fetch(url, init));
   } catch (err) {
+    // Aniq sabab (DNS, SSL, timeout) foydalanuvchi matnida yo'qoladi — Metro konsolida ko'rinadi.
+    devLog(`[request] ✗ ${method} ${url} →`, err?.name, err?.message);
     if (err?.name === 'AbortError') {
       throw new ApiError({
         kind: 'timeout',

@@ -10,6 +10,7 @@ import { useFaq } from '../queries/support';
 import { FAQ_ITEMS } from '../i18n/siteTexts';
 import { SUPPORT_CONTACT } from '../constants/config';
 import { documentRoute, supportRoute } from '../navigation/params';
+import useBottomInset from '../hooks/useBottomInset';
 
 const DOCS = ['about', 'terms', 'privacy'];
 
@@ -58,6 +59,7 @@ function FaqAccordion({ items }) {
 }
 
 export default function ZakazchiHelpScreen({ onBack }) {
+  const bottomInset = useBottomInset();
   const router = useRouter();
   const { theme: t } = useTheme();
   const { language, t: tr } = useLanguage();
@@ -128,7 +130,7 @@ export default function ZakazchiHelpScreen({ onBack }) {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: 40 + bottomInset }}
       >
         {/* ── Header ── */}
         <View style={s.header}>

@@ -6,13 +6,15 @@ import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
-import AfishLoader from '../components/AfishLoader';
+import AppLoader from '../components/AppLoader';
 import SectionError from './zakazchi-main/components/SectionError';
 import useAddresses from './addresses/hooks/useAddresses';
 import AddressCard from './addresses/components/AddressCard';
 import AddressEditor from './addresses/components/AddressEditor';
+import useBottomInset from '../hooks/useBottomInset';
 
 export default function ZakazchiAddressesScreen({ onBack }) {
+  const bottomInset = useBottomInset();
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
   const { primary, extras, loading, failed, retry, savePrimary, saveExtra, removeExtra } =
@@ -64,7 +66,7 @@ export default function ZakazchiAddressesScreen({ onBack }) {
 
       {loading ? (
         <View style={s.center}>
-          <AfishLoader size={180} />
+          <AppLoader size={180} />
         </View>
       ) : failed ? (
         <SectionError style={{ marginHorizontal: 20, marginTop: 24 }} onRetry={retry} />
@@ -87,7 +89,7 @@ export default function ZakazchiAddressesScreen({ onBack }) {
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 + bottomInset }}
         >
           {!!primary && (
             <>

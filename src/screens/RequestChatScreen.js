@@ -21,7 +21,15 @@ const CHAT_POLL_MS = 5000;
 
 // Buyurtma chati (backenddan): usta bilan suhbat, narx takliflari chatda alohida qator bo'lib
 // ko'rinadi. Tepada joriy taklif va "Qabul qilish" / "Narx taklif qilish" tugmalari turadi.
-export default function RequestChatScreen({ orderId, onBack }) {
+// `workerId` berilsa (usta tanlanmagan buyurtmada taklif kartasidan "Yozish"), aynan shu usta bilan
+// suhbat ochiladi va xabarlar unga yuboriladi.
+export default function RequestChatScreen({
+  orderId,
+  workerId = null,
+  workerName = null,
+  workerPhoto = null,
+  onBack,
+}) {
   const { theme: t } = useTheme();
   const bottomInset = useBottomInset();
   const keyboardVisible = useKeyboardState((st) => st.isVisible);
@@ -45,7 +53,10 @@ export default function RequestChatScreen({ orderId, onBack }) {
   usePolling(loadChat, CHAT_POLL_MS);
 
   // Hozirgi usta bilan suhbat (bo'lmasa — eng oxirgisi).
-  const thread = chat?.threads.find((th) => th.isActive) ?? chat?.threads[chat.threads.length - 1];
+  const thread =
+    workerId != null
+      ? chat?.threads.find((th) => th.workerId === workerId)
+      : (chat?.threads.find((th) => th.isActive) ?? chat?.threads[chat.threads.length - 1]);
   const messages = thread?.messages ?? [];
 
   useEffect(() => {
@@ -61,7 +72,7 @@ export default function RequestChatScreen({ orderId, onBack }) {
     if (!body || sending) return;
     setSending(true);
     try {
-      setChat(await sendOrderChat(orderId, body));
+      setChat(await sendOrderChat(orderId, body, workerId));
       setText('');
     } catch (e) {
       appAlert(tr('common.errorTitle'), getErrorMessage(e, tr, 'requests.actionFailed'));
@@ -72,7 +83,8 @@ export default function RequestChatScreen({ orderId, onBack }) {
 
   const negotiating = order?.rawStatus === 'accepted';
   const workerOffer = negotiating && order.offerBy !== 'customer' && order.offerPrice != null;
-  const canSend = chat ? chat.canSend : true;
+  // Aniq ustaga yozilganda: suhbat bor bo'lsa faqat u faol bo'lganda, hali boshlanmagan bo'lsa — taklif turgani uchun mumkin.
+  const canSend = workerId != null ? (thread ? thread.isActive : true) : chat ? chat.canSend : true;
   // Kelishish uchun taklifdagi sana yaroqli bo'lishi kerak (saytdagidek).
   const offerDayValue = negotiating ? offerDay(order) : null;
   const agreeDayOk = isDayValid(offerDayValue);
@@ -90,14 +102,17 @@ export default function RequestChatScreen({ orderId, onBack }) {
           <MaterialCommunityIcons name="chevron-left" size={24} color={t.text} />
         </TouchableOpacity>
         <Avatar
-          letter={(thread?.workerName ?? order?.master ?? '?').trim()[0]?.toUpperCase() ?? '?'}
+          letter={
+            (thread?.workerName ?? workerName ?? order?.master ?? '?').trim()[0]?.toUpperCase() ??
+            '?'
+          }
           bgColor={order?.color}
-          uri={thread?.workerPhoto ?? order?.masterPhoto}
+          uri={thread?.workerPhoto ?? workerPhoto ?? order?.masterPhoto}
           size={40}
         />
         <View style={{ flex: 1 }}>
           <Text style={[s.name, { color: t.text }]} numberOfLines={1}>
-            {thread?.workerName ?? order?.master ?? tr('requests.workerSection')}
+            {thread?.workerName ?? workerName ?? order?.master ?? tr('requests.workerSection')}
           </Text>
           <Text style={[s.meta, { color: t.muted }]} numberOfLines={1}>
             {tr('requests.headerTitle', { id: orderId })}

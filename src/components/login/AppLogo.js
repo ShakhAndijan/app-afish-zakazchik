@@ -1,13 +1,10 @@
-import { View, Image, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import BrandLogo from '../BrandLogo';
 
 export default function AppLogo() {
   return (
     <View style={styles.wrap}>
-      <Image
-        source={require('../../../assets/afish-logo-vertical.png')}
-        style={styles.logo}
-        resizeMode="contain"
-      />
+      <BrandLogo width={200} />
     </View>
   );
 }
@@ -15,9 +12,5 @@ export default function AppLogo() {
 const styles = StyleSheet.create({
   wrap: {
     alignItems: 'center',
-  },
-  logo: {
-    width: 200,
-    height: 130,
   },
 });

@@ -21,7 +21,6 @@ import ReviewModal from './new-order/components/ReviewModal';
 import PhotoPreviewModal from './new-order/components/PhotoPreviewModal';
 import TargetWorkerCard from './new-order/sections/TargetWorkerCard';
 import CategorySection from './new-order/sections/CategorySection';
-import { CATEGORY_FIELD, REQUIRED_FIELDS } from './new-order/constants';
 import DescriptionSection from './new-order/sections/DescriptionSection';
 import AddressSection from './new-order/sections/AddressSection';
 import WhenSection from './new-order/sections/WhenSection';
@@ -123,11 +122,7 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
   const addressReady = !!districtId || (gpsLat != null && gpsLng != null);
   const whenReady = !!when && (when !== 'date' || !!whenDate);
   const priceReady = pricingType === 'hourly' ? !!hourlyRate.trim() : !!fixedPrice.trim();
-  // Konkret ustaga berilgan buyurtmada xizmat turi ustaning o'zidan keladi; qolganida tanlash shart.
-  const categoryRequired = !orderWorker;
-  const requiredFields = categoryRequired ? [CATEGORY_FIELD, ...REQUIRED_FIELDS] : REQUIRED_FIELDS;
   const missing = [
-    categoryRequired && categoryIds.length === 0 && CATEGORY_FIELD,
     description.trim().length === 0 && 'newOrder.descriptionLabel',
     !priceReady && 'newOrder.pricingLabel',
     !whenReady && 'newOrder.whenLabel',
@@ -136,6 +131,8 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
   ].filter(Boolean);
   const ready = missing.length === 0;
   const extraFilled = [
+    categoryIds.length > 0,
+    !!backupPhone.trim(),
     workerCount > 1,
     requirePhoto ||
       requireVerified ||
@@ -270,23 +267,13 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
 
         <TargetWorkerCard orderWorker={orderWorker} setOrderWorker={setOrderWorker} />
 
-        {/* Tartib saytdagi (dev.afish.uz/buyurtma) bilan bir xil:
+        {/* Tartib saytdagi (dev.harna.uz/buyurtma) bilan bir xil:
             1) tafsilotlar — tavsif, narx, sana, rasm;
-            2) manzil va aloqa — manzil, telefon, zaxira telefon;
-            3) ixtiyoriy qo'shimcha — kategoriya, necha kishi, talablar. */}
+            2) manzil va aloqa — manzil, telefon;
+            3) qo'shimcha — xizmat turi, zaxira telefon,
+               necha kishi, talablar. */}
         <StepHeader no={1} title={tr('newOrder.step1Title')} />
-        <CategorySection
-          selectedCategories={selectedCategories}
-          toggleCategory={toggleCategory}
-          setCategoryPickerOpen={setCategoryPickerOpen}
-          required={categoryRequired}
-        />
-        <DescriptionSection
-          selectedCategories={selectedCategories}
-          targeted={!!orderWorker}
-          description={description}
-          setDescription={setDescription}
-        />
+        <DescriptionSection description={description} setDescription={setDescription} />
         <PricingSection
           pricingType={pricingType}
           setPricingType={setPricingType}
@@ -313,10 +300,15 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
           addressSubtitle={addressSubtitle}
         />
         <ContactSection phone={phone} setPhone={setPhone} />
-        <BackupPhoneSection backupPhone={backupPhone} setBackupPhone={setBackupPhone} />
 
         {/* Ixtiyoriy maydonlar yig'ilgan holda turadi */}
         <ExtraSection no={3} filled={extraFilled}>
+          <CategorySection
+            selectedCategories={selectedCategories}
+            toggleCategory={toggleCategory}
+            setCategoryPickerOpen={setCategoryPickerOpen}
+          />
+          <BackupPhoneSection backupPhone={backupPhone} setBackupPhone={setBackupPhone} />
           <WorkerCountSection workerCount={workerCount} setWorkerCount={setWorkerCount} />
           <RequirementsSection
             targeted={!!orderWorker}
@@ -338,7 +330,7 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
           <ToolsSection toolsOption={toolsOption} setToolsOption={setToolsOption} />
         </ExtraSection>
 
-        <OrderProgressCard missing={missing} fields={requiredFields} />
+        <OrderProgressCard missing={missing} />
 
         <SubmitButton ready={ready} missing={missing} onPress={openReview} />
       </KeyboardAwareScrollView>

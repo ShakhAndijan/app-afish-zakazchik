@@ -1,5 +1,5 @@
 import { TouchableOpacity, StyleSheet } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { COLORS } from '../../constants/colors';
 
 export default function BackBtn({ onPress }) {

@@ -19,6 +19,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { getCustomerMe, setPassword } from '../api/user';
 import SuccessModal from '../components/SuccessModal';
 import { getErrorMessage } from '../utils/errors';
+import useBottomInset from '../hooks/useBottomInset';
 
 const HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 };
 
@@ -81,6 +82,7 @@ function PasswordRules({ password, t }) {
 }
 
 export default function ChangePasswordScreen({ onBack }) {
+  const bottomInset = useBottomInset();
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
   const queryClient = useQueryClient();
@@ -140,7 +142,10 @@ export default function ChangePasswordScreen({ onBack }) {
         </Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[s.scroll, { paddingBottom: 40 + bottomInset }]}
+      >
         <View style={[s.hero, { backgroundColor: t.card, borderColor: t.border }]}>
           <View style={[s.heroIcon, { backgroundColor: t.blue + '1c' }]}>
             <MaterialCommunityIcons name="shield-lock-outline" size={24} color={t.blue} />

@@ -3,8 +3,8 @@ import { View, StyleSheet } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { YANDEX_MAPS_API_KEY } from '../../constants/config';
 
-// Yandex API kaliti "afish.uz" domeniga bog'langan (LocationMapPicker bilan bir xil sabab).
-const MAP_BASE_URL = 'https://dev.afish.uz/';
+// Yandex API kaliti "harna.uz" domeniga bog'langan (LocationMapPicker bilan bir xil sabab).
+const MAP_BASE_URL = 'https://dev.harna.uz/';
 
 const HTML = `
 <!DOCTYPE html>

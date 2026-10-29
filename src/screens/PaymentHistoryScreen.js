@@ -1,11 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -13,6 +7,7 @@ import Feather from '@expo/vector-icons/Feather';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useWallet } from '../context/WalletContext';
+import useBottomInset from '../hooks/useBottomInset';
 
 const fmt = (n) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
@@ -122,7 +117,8 @@ function TransactionCard({ tx, t }) {
       <View style={[s.amountRow, { borderTopColor: t.border }]}>
         <Text style={[s.amountLabel, { color: t.muted }]}>{tr('paymentHistory.amountLabel')}</Text>
         <Text style={[s.amount, { color: isIn ? '#2fa37a' : t.text }]}>
-          {isIn ? '+' : '-'} {fmt(tx.amount)} <Text style={[s.amountSub, { color: t.muted }]}>{tr('common.currencySom')}</Text>
+          {isIn ? '+' : '-'} {fmt(tx.amount)}{' '}
+          <Text style={[s.amountSub, { color: t.muted }]}>{tr('common.currencySom')}</Text>
         </Text>
       </View>
     </View>
@@ -130,15 +126,13 @@ function TransactionCard({ tx, t }) {
 }
 
 export default function PaymentHistoryScreen({ onBack }) {
+  const bottomInset = useBottomInset();
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
   const { transactions } = useWallet();
   const [tab, setTab] = useState('all');
 
-  const list = useMemo(
-    () => transactions.filter((tx) => matchesTab(tx, tab)),
-    [transactions, tab]
-  );
+  const list = useMemo(() => transactions.filter((tx) => matchesTab(tx, tab)), [transactions, tab]);
   const tabs = TABS(tr);
 
   const counts = useMemo(
@@ -181,7 +175,10 @@ export default function PaymentHistoryScreen({ onBack }) {
         <Text style={[s.headerTitle, { color: t.text }]}>{tr('paymentHistory.headerTitle')}</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 24 + bottomInset }}
+      >
         {/* Stats */}
         <View style={[s.statsRow, { backgroundColor: t.card, borderColor: t.border }]}>
           <StatCell
@@ -224,14 +221,19 @@ export default function PaymentHistoryScreen({ onBack }) {
                 activeOpacity={0.8}
                 style={[
                   s.tabBtn,
-                  { backgroundColor: active ? t.orange : t.card, borderColor: active ? t.orange : t.border },
+                  {
+                    backgroundColor: active ? t.orange : t.card,
+                    borderColor: active ? t.orange : t.border,
+                  },
                 ]}
               >
                 <Text style={[s.tabLabel, { color: active ? '#fff' : t.muted }]}>{tb.label}</Text>
                 <View
                   style={[
                     s.tabBadge,
-                    { backgroundColor: active ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.06)' },
+                    {
+                      backgroundColor: active ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.06)',
+                    },
                   ]}
                 >
                   <Text style={[s.tabBadgeText, { color: active ? '#fff' : t.faint }]}>
@@ -250,10 +252,10 @@ export default function PaymentHistoryScreen({ onBack }) {
               <View style={[s.emptyIcon, { backgroundColor: t.card, borderColor: t.border }]}>
                 <MaterialCommunityIcons name="receipt-text-outline" size={40} color={t.faint} />
               </View>
-              <Text style={[s.emptyText, { color: t.text }]}>{tr('paymentHistory.emptyTitle')}</Text>
-              <Text style={[s.emptySub, { color: t.muted }]}>
-                {tr('paymentHistory.emptySub')}
+              <Text style={[s.emptyText, { color: t.text }]}>
+                {tr('paymentHistory.emptyTitle')}
               </Text>
+              <Text style={[s.emptySub, { color: t.muted }]}>{tr('paymentHistory.emptySub')}</Text>
             </View>
           ) : (
             list.map((tx) => <TransactionCard key={tx.id} tx={tx} t={t} />)
@@ -319,7 +321,14 @@ const s = StyleSheet.create({
 
   list: { paddingHorizontal: 16, gap: 11 },
 
-  card: { position: 'relative', borderRadius: 18, padding: 14, paddingLeft: 18, borderWidth: 1, overflow: 'hidden' },
+  card: {
+    position: 'relative',
+    borderRadius: 18,
+    padding: 14,
+    paddingLeft: 18,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
   accentBar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4 },
 
   topRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },

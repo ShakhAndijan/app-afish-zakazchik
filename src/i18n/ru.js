@@ -371,7 +371,7 @@ export const ru = {
     sectionHead: {
       howItWorks: 'Как это работает',
       reviews: 'Отзывы клиентов',
-      whyAfish: 'Почему AFISH?',
+      whyHarna: 'Почему HARNA?',
     },
     steps: {
       step1Title: 'Выберите услугу',
@@ -503,7 +503,7 @@ export const ru = {
       openProfile: 'Открыть профиль',
       otherByWorker: 'Другие объявления специалиста',
       orderCta: 'Заказать эту услугу',
-      shareMessage: '{title} — {price}. Специалист: {name}. Afish.uz',
+      shareMessage: '{title} — {price}. Специалист: {name}. Harna.uz',
     },
     likeError: 'Не удалось поставить лайк',
     reels: {
@@ -626,7 +626,7 @@ export const ru = {
       title: 'Доверие и зона работы',
       radius: 'Работает в радиусе {n} км',
       districts: 'Районы работы: {list}',
-      since: 'На Afish с {year} года',
+      since: 'На Harna с {year} года',
       response: 'Отвечает в среднем за {time}',
       acceptance: 'Принимает {n}% заказов',
       repeat: '{n}% клиентов обращаются повторно',
@@ -684,7 +684,7 @@ export const ru = {
       title: 'Заполните адрес',
       subtitle: 'Добавьте адрес, чтобы ускорить оформление заказа',
     },
-    wallet: { title: 'Кошелёк AFISH.uz', topup: 'Пополнить' },
+    wallet: { title: 'Кошелёк HARNA.uz', topup: 'Пополнить' },
     loyalty: { silverCustomer: 'Серебряный клиент', toNextLevel: 'До золотого: 3 заказа' },
     menu: {
       orderHistory: 'История заказов',
@@ -701,7 +701,7 @@ export const ru = {
       helpCenter: 'Центр помощи',
     },
     logout: 'Выйти из аккаунта',
-    footer: 'AFISH.uz · версия 1.0.1',
+    footer: 'HARNA.uz · версия 1.0.1',
   },
   notifTypes: {
     fallback: 'Новое уведомление',
@@ -950,6 +950,14 @@ export const ru = {
     stepTalk: 'Согласование',
     stepWork: 'Работа',
     stepDone: 'Выполнен',
+    phonesAfterDeal: 'Номера телефонов откроются обеим сторонам после согласования цены',
+    descriptionTitle: 'Описание работы',
+    descriptionBy: 'Вы написали',
+    workerPhone: 'Телефон мастера',
+    yourPhone: 'Ваш номер',
+    backupPhone: 'Запасной телефон',
+    phonesSharedHint: 'Ваши номера видны согласованному мастеру',
+    call: 'Позвонить',
     statusSubtext: {
       done: 'Работа успешно завершена',
       cancelled: 'Этот заказ отменён',
@@ -1124,7 +1132,7 @@ export const ru = {
     requiredSub: 'Чтобы оформить заказ, заполните следующее',
     requiredOk: 'Понятно',
     extraTitle: 'Дополнительно',
-    extraSubtitle: 'По желанию: сколько человек, требования, инструменты…',
+    extraSubtitle: 'Тип услуги, запасной телефон, сколько человек, требования, инструменты…',
     step1Title: 'Детали заказа',
     step2Title: 'Адрес и контакты',
     step3Title: 'Дополнительно и требования',
@@ -1177,7 +1185,7 @@ export const ru = {
     newSuggestion: 'Новое предложение',
     tabQuestions: 'Обращения',
     tabSuggestions: 'Предложения',
-    teamName: 'Команда Afish',
+    teamName: 'Команда Harna',
     status: {
       new: 'На рассмотрении',
       answered: 'Есть ответ',

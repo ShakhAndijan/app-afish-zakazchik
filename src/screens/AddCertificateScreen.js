@@ -22,6 +22,7 @@ import Feather from '@expo/vector-icons/Feather';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import useBottomInset from '../hooks/useBottomInset';
 
 const FIELD_OPTIONS = [
   { key: 'plumbing', name: 'Santexnika', icon: 'wrench', color: '#2fa37a' },
@@ -234,6 +235,7 @@ function DateField({ label, value, placeholder, onPress, onClear, t, optional })
 }
 
 export default function AddCertificateScreen({ onBack, onSave }) {
+  const bottomInset = useBottomInset();
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
   const monthNames = tr('login.registerStep.birthDate.months');
@@ -333,7 +335,11 @@ export default function AddCertificateScreen({ onBack, onSave }) {
       </View>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[s.scroll, { paddingBottom: 40 + bottomInset }]}
+          keyboardShouldPersistTaps="handled"
+        >
           {photoUri ? (
             <TouchableOpacity style={s.photoWrap} activeOpacity={0.9} onPress={openPhotoSheet}>
               <Image source={{ uri: photoUri }} style={s.photoImg} resizeMode="cover" />

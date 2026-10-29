@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "afish.uz",
+    "name": "harna.uz",
     "slug": "mobile-app-afish",
     "scheme": "mobile-app-afish",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/afish-logo-icon.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "backgroundColor": "#0c1828",
     "ios": {
@@ -22,7 +22,7 @@
       "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
-        "foregroundImage": "./assets/afish-logo-icon.png"
+        "foregroundImage": "./assets/adaptive-icon.png"
       },
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
@@ -46,7 +46,28 @@
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-router"
+      "expo-router",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "buildArchs": [
+              "arm64-v8a",
+              "armeabi-v7a"
+            ],
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0c1828",
+          "image": "./assets/logo-on-dark.png",
+          "imageWidth": 220
+        }
+      ]
     ],
     "extra": {
       "eas": {

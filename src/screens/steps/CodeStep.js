@@ -1,12 +1,13 @@
-import { View, Text, Image, StyleSheet, ActivityIndicator, AppState } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, AppState } from 'react-native';
 import { useState, useEffect } from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { COLORS } from '../../constants/colors';
 import { useLanguage } from '../../context/LanguageContext';
 import BackBtn from '../../components/login/BackBtn';
 import OtpInput from '../../components/login/OtpInput';
 import PrimaryBtn from '../../components/login/PrimaryBtn';
+import BrandLogo from '../../components/BrandLogo';
 
 const RESEND_SECONDS = 60;
 
@@ -55,7 +56,10 @@ export default function CodeStep({
 
   const timer = Math.max(0, Math.ceil((deadline - now) / 1000));
 
-  const handleBack = () => { setCode(''); onBack(); };
+  const handleBack = () => {
+    setCode('');
+    onBack();
+  };
   const resend = async () => {
     setCode('');
     setDeadline(Date.now() + RESEND_SECONDS * 1000);
@@ -67,19 +71,15 @@ export default function CodeStep({
       <BackBtn onPress={handleBack} />
 
       <View style={styles.header}>
-        <Image
-          source={require('../../../assets/afish-logo-vertical.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
+        <BrandLogo width={280} dark />
         <Text style={styles.title}>{t('login.codeStep.title')}</Text>
         <Text style={styles.subtitle}>
           {email ? (
             <Text style={styles.phone}>{email}</Text>
           ) : (
             <Text style={styles.phone}>+998 {formatPhone(phone)}</Text>
-          )}
-          {' '}{email ? t('login.codeStep.subtitleEmail') : t('login.codeStep.subtitle')}
+          )}{' '}
+          {email ? t('login.codeStep.subtitleEmail') : t('login.codeStep.subtitle')}
         </Text>
       </View>
 
@@ -96,11 +96,16 @@ export default function CodeStep({
 
       <Text style={styles.timerText}>
         {timer > 0 ? (
-          <>{t('login.codeStep.resendIn')} <Text style={styles.timerCount}>00:{String(timer).padStart(2, '0')}</Text></>
+          <>
+            {t('login.codeStep.resendIn')}{' '}
+            <Text style={styles.timerCount}>00:{String(timer).padStart(2, '0')}</Text>
+          </>
         ) : resendLoading ? (
           <ActivityIndicator size="small" color={COLORS.orange} />
         ) : (
-          <Text style={styles.resend} onPress={resend}>{t('login.codeStep.resendNow')}</Text>
+          <Text style={styles.resend} onPress={resend}>
+            {t('login.codeStep.resendNow')}
+          </Text>
         )}
       </Text>
 

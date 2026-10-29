@@ -10,9 +10,9 @@ import React, {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQueryClient } from '@tanstack/react-query';
 import { setApiLanguage } from '../utils/apiLanguage';
+import { LANG_KEY, savedLanguage } from '../utils/startup';
 import { translations } from '../i18n/translations';
 
-const LANG_KEY = 'app_language';
 export const DEFAULT_LANG = 'uz';
 
 function resolve(dict, key) {
@@ -23,10 +23,7 @@ function resolve(dict, key) {
 
 function interpolate(str, vars) {
   if (!vars) return str;
-  return Object.keys(vars).reduce(
-    (s, k) => s.replace(new RegExp(`\\{${k}\\}`, 'g'), vars[k]),
-    str
-  );
+  return Object.keys(vars).reduce((s, k) => s.replace(new RegExp(`\\{${k}\\}`, 'g'), vars[k]), str);
 }
 
 const LanguageContext = createContext({
@@ -39,10 +36,17 @@ export function LanguageProvider({ children }) {
   const [language, setLanguageState] = useState(DEFAULT_LANG);
   const queryClient = useQueryClient();
   const prevLanguage = useRef(DEFAULT_LANG);
+  const [ready, setReady] = useState(false);
 
+  // Saqlangan til birinchi renderdan oldin qo'yiladi (ekran avval "uz"da, keyin o'zgarib ko'rinmasin
+  // va keraksiz qayta yuklash bo'lmasin); shu vaqtgacha native splash ko'rinib turadi.
   useEffect(() => {
-    AsyncStorage.getItem(LANG_KEY).then((saved) => {
-      if (saved && translations[saved]) setLanguageState(saved);
+    savedLanguage.then((saved) => {
+      if (saved) {
+        prevLanguage.current = saved;
+        setLanguageState(saved);
+      }
+      setReady(true);
     });
   }, []);
 
@@ -65,9 +69,7 @@ export function LanguageProvider({ children }) {
   const t = useCallback(
     (key, vars) => {
       const value =
-        resolve(translations[language], key) ??
-        resolve(translations[DEFAULT_LANG], key) ??
-        key;
+        resolve(translations[language], key) ?? resolve(translations[DEFAULT_LANG], key) ?? key;
       return typeof value === 'string' ? interpolate(value, vars) : value;
     },
     [language]
@@ -75,6 +77,7 @@ export function LanguageProvider({ children }) {
 
   const value = useMemo(() => ({ language, setLanguage, t }), [language, setLanguage, t]);
 
+  if (!ready) return null;
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
 

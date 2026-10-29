@@ -28,7 +28,7 @@ function describe(key, stats, tr) {
   return tr(`app.benefits.${key}Desc`);
 }
 
-// "Nega AFISH?" bo'limi (yangi mijozlar uchun). Kartalar haqiqiy statistikaga bog'langan:
+// "Nega HARNA?" bo'limi (yangi mijozlar uchun). Kartalar haqiqiy statistikaga bog'langan:
 //  - "Kafolatlangan ish" bosilsa — yordam ekrani (`onOpenGuarantee`),
 //  - "Tekshirilgan ustalar" bosilsa — faqat tasdiqlangan ustalar filtri (`onOpenVerified`).
 // "Tezkor javob" uchun backendda umumiy ko'rsatkich yo'q, shuning uchun namunaviy belgi bilan.
@@ -40,7 +40,7 @@ export default function BenefitsSection({ stats, onOpenGuarantee, onOpenVerified
 
   return (
     <>
-      <SectionHeader title={tr('app.sectionHead.whyAfish')} />
+      <SectionHeader title={tr('app.sectionHead.whyHarna')} />
       <View style={{ gap: 12 }}>
         {BENEFITS.map((b) => {
           const press = onPress[b.key];

@@ -1,6 +1,6 @@
 import { supportRoute } from '../../navigation/params';
 
-// Sayt (dev.afish.uz) bildirishnomalarining matn kaliti va yo'nalishi bilan bir xil mantiq.
+// Sayt (dev.harna.uz) bildirishnomalarining matn kaliti va yo'nalishi bilan bir xil mantiq.
 // `type` + `payload` dan i18n kaliti (`notifTypes.*`) tanlanadi: mijoz uchun maxsus matn bo'lsa o'sha, bo'lmasa umumiy.
 
 export function notificationKey(n) {

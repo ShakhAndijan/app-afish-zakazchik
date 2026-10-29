@@ -18,7 +18,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useUser } from '../context/UserContext';
-import AfishLoader from '../components/AfishLoader';
+import AppLoader from '../components/AppLoader';
 import SectionError from './zakazchi-main/components/SectionError';
 import { useSendSupportChat, useSupportConversation } from '../queries/support';
 import { SUPPORT_MAX_LENGTH, SUPPORT_MIN_LENGTH } from '../api/support';
@@ -98,7 +98,7 @@ export default function SupportChatScreen({ onBack }) {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         {conversation.isPending ? (
           <View style={s.center}>
-            <AfishLoader size={110} />
+            <AppLoader size={110} />
           </View>
         ) : conversation.isError && messages.length === 0 ? (
           <SectionError style={{ margin: 20 }} onRetry={conversation.refetch} />

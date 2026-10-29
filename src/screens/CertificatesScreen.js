@@ -16,6 +16,7 @@ import Feather from '@expo/vector-icons/Feather';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import AddCertificateScreen from './AddCertificateScreen';
+import useBottomInset from '../hooks/useBottomInset';
 
 const STATUS_META = {
   verified: { color: '#2fa37a', bg: 'rgba(47,163,122,0.15)', icon: 'check-decagram' },
@@ -48,7 +49,7 @@ const INITIAL_CERTIFICATES = [
   },
   {
     id: 'c2',
-    title: 'Elektr xavfsizligi bo\'yicha sertifikat',
+    title: "Elektr xavfsizligi bo'yicha sertifikat",
     field: 'Elektr montaji',
     institution: 'IEC Standartlashtirish markazi',
     day: 2,
@@ -171,7 +172,12 @@ function CertificateCard({ cert, t, onViewImage, onRequestDelete }) {
         </View>
 
         <View style={[s.infoCard, { borderTopColor: t.border }]}>
-          <InfoRow icon="home" label={tr('certificates.institutionLabel')} value={cert.institution} t={t} />
+          <InfoRow
+            icon="home"
+            label={tr('certificates.institutionLabel')}
+            value={cert.institution}
+            t={t}
+          />
           <InfoRow
             icon="calendar"
             label={tr('certificates.issuedLabel')}
@@ -188,7 +194,12 @@ function CertificateCard({ cert, t, onViewImage, onRequestDelete }) {
             }
             t={t}
           />
-          <InfoRow icon="hash" label={tr('certificates.certNumberLabel')} value={cert.certNumber} t={t} />
+          <InfoRow
+            icon="hash"
+            label={tr('certificates.certNumberLabel')}
+            value={cert.certNumber}
+            t={t}
+          />
         </View>
       </View>
     </View>
@@ -244,6 +255,7 @@ function ConfirmDeleteModal({ cert, onCancel, onConfirm, t }) {
 }
 
 export default function CertificatesScreen({ onBack }) {
+  const bottomInset = useBottomInset();
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
   const [certificates, setCertificates] = useState(INITIAL_CERTIFICATES);
@@ -290,7 +302,10 @@ export default function CertificatesScreen({ onBack }) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 24 + bottomInset }}
+      >
         {/* Stats */}
         <View style={[s.statsRow, { backgroundColor: t.card, borderColor: t.border }]}>
           <StatCell
@@ -326,9 +341,7 @@ export default function CertificatesScreen({ onBack }) {
                 <MaterialCommunityIcons name="certificate-outline" size={40} color={t.faint} />
               </View>
               <Text style={[s.emptyText, { color: t.text }]}>{tr('certificates.emptyTitle')}</Text>
-              <Text style={[s.emptySub, { color: t.muted }]}>
-                {tr('certificates.emptySub')}
-              </Text>
+              <Text style={[s.emptySub, { color: t.muted }]}>{tr('certificates.emptySub')}</Text>
               <TouchableOpacity
                 style={[s.emptyAddBtn, { backgroundColor: t.orange }]}
                 onPress={() => setShowAddScreen(true)}

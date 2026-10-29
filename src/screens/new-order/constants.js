@@ -5,9 +5,6 @@ export const RATING_OPTIONS = [0, 4, 4.5, 4.8];
 export const EXPERIENCE_OPTIONS = [0, 1, 3, 5, 10];
 export const EXTRA_REQUIREMENTS_MAX = 500;
 
-// Xizmat turi: konkret ustaga emas, umumiy buyurtma berilganda majburiy.
-export const CATEGORY_FIELD = 'newOrder.categoryLabel';
-
 // Majburiy maydonlar (NewOrderScreen'dagi `missing` kalitlari bilan bir xil).
 export const REQUIRED_FIELDS = [
   'newOrder.descriptionLabel',

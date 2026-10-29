@@ -1,45 +1,74 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  TextInput,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import useBottomInset from '../hooks/useBottomInset';
 
 const fmt = (n) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
 const PROMO = [
   {
-    id: 'p1', code: 'USTA20', type: 'percent', value: 20, cap: 50000,
-    title: 'Birinchi buyurtmaga', desc: 'Har qanday xizmatga 20% chegirma',
-    status: 'active', expire: '30-iyun', accent: '#E8743B',
+    id: 'p1',
+    code: 'USTA20',
+    type: 'percent',
+    value: 20,
+    cap: 50000,
+    title: 'Birinchi buyurtmaga',
+    desc: 'Har qanday xizmatga 20% chegirma',
+    status: 'active',
+    expire: '30-iyun',
+    accent: '#E8743B',
   },
   {
-    id: 'p2', code: 'SANTEX50', type: 'amount', value: 50000, cap: null,
-    title: 'Santexnika xizmati', desc: 'Santexnik chaqirganda chegirma',
-    status: 'active', expire: '15-iyul', accent: '#3E8BE8',
+    id: 'p2',
+    code: 'SANTEX50',
+    type: 'amount',
+    value: 50000,
+    cap: null,
+    title: 'Santexnika xizmati',
+    desc: 'Santexnik chaqirganda chegirma',
+    status: 'active',
+    expire: '15-iyul',
+    accent: '#3E8BE8',
   },
   {
-    id: 'p3', code: 'YOZ2026', type: 'percent', value: 15, cap: 40000,
-    title: 'Yozgi aksiya', desc: 'Tozalash xizmatlariga 15%',
-    status: 'active', expire: '1-avgust', accent: '#34B57C',
+    id: 'p3',
+    code: 'YOZ2026',
+    type: 'percent',
+    value: 15,
+    cap: 40000,
+    title: 'Yozgi aksiya',
+    desc: 'Tozalash xizmatlariga 15%',
+    status: 'active',
+    expire: '1-avgust',
+    accent: '#34B57C',
   },
   {
-    id: 'p4', code: 'WELCOME10', type: 'percent', value: 10, cap: 30000,
-    title: 'Xush kelibsiz', desc: 'Ilovaga kirganingiz uchun',
-    status: 'used', expire: '12-may', accent: '#9B6FE3',
+    id: 'p4',
+    code: 'WELCOME10',
+    type: 'percent',
+    value: 10,
+    cap: 30000,
+    title: 'Xush kelibsiz',
+    desc: 'Ilovaga kirganingiz uchun',
+    status: 'used',
+    expire: '12-may',
+    accent: '#9B6FE3',
   },
   {
-    id: 'p5', code: 'BAHOR25', type: 'percent', value: 25, cap: 60000,
-    title: 'Bahorgi chegirma', desc: "Mebel yig'ishga 25%",
-    status: 'expired', expire: '1-aprel', accent: '#E85B9A',
+    id: 'p5',
+    code: 'BAHOR25',
+    type: 'percent',
+    value: 25,
+    cap: 60000,
+    title: 'Bahorgi chegirma',
+    desc: "Mebel yig'ishga 25%",
+    status: 'expired',
+    expire: '1-aprel',
+    accent: '#E85B9A',
   },
 ];
 
@@ -121,9 +150,7 @@ function PromoCard({ p, t }) {
         {/* Code + copy */}
         <View style={s.codeRow}>
           <View style={[s.codeBox, { borderColor: t.border }]}>
-            <Text style={[s.codeText, { color: dim ? t.muted : t.text }]}>
-              {p.code}
-            </Text>
+            <Text style={[s.codeText, { color: dim ? t.muted : t.text }]}>{p.code}</Text>
           </View>
           <TouchableOpacity
             onPress={onCopy}
@@ -132,11 +159,7 @@ function PromoCard({ p, t }) {
             style={[
               s.copyBtn,
               {
-                backgroundColor: copied
-                  ? 'rgba(47,163,122,0.15)'
-                  : dim
-                  ? t.rowIconBg
-                  : p.accent,
+                backgroundColor: copied ? 'rgba(47,163,122,0.15)' : dim ? t.rowIconBg : p.accent,
               },
             ]}
           >
@@ -156,6 +179,7 @@ function PromoCard({ p, t }) {
 }
 
 export default function ZakazchiPromoScreen({ onBack }) {
+  const bottomInset = useBottomInset();
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
   const [tab, setTab] = useState('active');
@@ -165,10 +189,7 @@ export default function ZakazchiPromoScreen({ onBack }) {
   const ptabs = PTABS(tr);
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: t.bg }}
-      edges={['top', 'left', 'right']}
-    >
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }} edges={['top', 'left', 'right']}>
       <StatusBar style={t.isDark ? 'light' : 'dark'} />
 
       {/* Header */}
@@ -207,7 +228,9 @@ export default function ZakazchiPromoScreen({ onBack }) {
           disabled={!field}
         >
           <MaterialCommunityIcons name="plus" size={18} color={field ? '#fff' : t.muted} />
-          <Text style={[s.addBtnText, { color: field ? '#fff' : t.muted }]}>{tr('promo.addBtn')}</Text>
+          <Text style={[s.addBtnText, { color: field ? '#fff' : t.muted }]}>
+            {tr('promo.addBtn')}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -226,7 +249,12 @@ export default function ZakazchiPromoScreen({ onBack }) {
               ]}
             >
               <Text style={[s.tabLabel, { color: on ? '#fff' : t.muted }]}>{tb.label}</Text>
-              <View style={[s.tabBadge, { backgroundColor: on ? 'rgba(255,255,255,0.25)' : t.rowIconBg }]}>
+              <View
+                style={[
+                  s.tabBadge,
+                  { backgroundColor: on ? 'rgba(255,255,255,0.25)' : t.rowIconBg },
+                ]}
+              >
                 <Text style={[s.tabBadgeText, { color: on ? '#fff' : t.faint }]}>
                   {PCOUNTS[tb.key]}
                 </Text>
@@ -239,7 +267,7 @@ export default function ZakazchiPromoScreen({ onBack }) {
       {/* Promo list */}
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={s.list}
+        contentContainerStyle={[s.list, { paddingBottom: 24 + bottomInset }]}
         showsVerticalScrollIndicator={false}
       >
         {list.length ? (

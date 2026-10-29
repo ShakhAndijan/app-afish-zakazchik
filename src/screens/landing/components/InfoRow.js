@@ -2,7 +2,7 @@ import { View, Text } from 'react-native';
 import { COLORS } from '../../../constants/colors';
 
 // Sarlavha + tavsifli qator; chap tomonda `badge` (raqam yoki ikonka) joylashadi.
-// "Qanday ishlaydi" va "Nega AFISH?" bo'limlari shu qatorni ishlatadi.
+// "Qanday ishlaydi" va "Nega HARNA?" bo'limlari shu qatorni ishlatadi.
 export default function InfoRow({ badge, accent, title, description, card = false }) {
   return (
     <View

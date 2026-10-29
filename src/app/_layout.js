@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import {
   Stack,
   useRouter,
@@ -9,12 +9,11 @@ import {
   DefaultTheme,
 } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { COLORS } from '../constants/colors';
 import { queryClient, persistOptions } from '../queries/client';
-import AfishLoader from '../components/AfishLoader';
 import { AppAlertHost } from '../components/AppAlert';
 import BiometricLockScreen from '../screens/BiometricLockScreen';
 import { AuthProvider, useAuth } from '../context/AuthContext';
@@ -22,6 +21,17 @@ import { LanguageProvider } from '../context/LanguageContext';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { UserProvider } from '../context/UserContext';
 import { WalletProvider } from '../context/WalletContext';
+import { markStartup } from '../utils/startup';
+
+// Native splash birinchi ekran tayyor bo'lguncha turadi: bo'sh ekran va alohida yuklagich bosqichi yo'q.
+SplashScreen.preventAutoHideAsync();
+let splashHidden = false;
+const hideSplash = () => {
+  if (splashHidden) return;
+  splashHidden = true;
+  SplashScreen.hide();
+  markStartup('splash yopildi (birinchi ekran tayyor)');
+};
 
 // Ilova ildizi: providerlar va asosiy Stack. Marshrutlar `src/app/` papkasidagi fayllardan olinadi.
 //  - mehmon:   index (landing), login
@@ -57,25 +67,23 @@ function RootNavigator() {
     return { ...base, colors: { ...base.colors, background: t.bg, card: t.bg } };
   }, [t]);
 
-  if (!checked) {
-    return (
-      <View style={styles.center}>
-        <StatusBar style="light" />
-        <AfishLoader size={160} />
-      </View>
-    );
-  }
+  useEffect(() => {
+    if (checked) markStartup(`sessiya tekshirildi (signedIn=${signedIn})`);
+  }, [checked, signedIn]);
+
+  // Sessiya tekshirilguncha native splash ko'rinib turadi, shuning uchun bu yerda hech narsa chizilmaydi.
+  if (!checked) return null;
 
   if (locked) {
     return (
-      <>
+      <View style={{ flex: 1, backgroundColor: t.bg }} onLayout={hideSplash}>
         <StatusBar style="light" />
         <BiometricLockScreen
           unlocking={unlocking}
           onRetry={retryUnlock}
           onUseOtherAccount={abandonSession}
         />
-      </>
+      </View>
     );
   }
 
@@ -83,7 +91,7 @@ function RootNavigator() {
     <UserProvider enabled={signedIn}>
       <WalletProvider>
         <NavigationThemeProvider value={navTheme}>
-          <View style={{ flex: 1, backgroundColor: t.bg }}>
+          <View style={{ flex: 1, backgroundColor: t.bg }} onLayout={hideSplash}>
             <StatusBar style="light" />
             <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.bg } }}>
               <Stack.Protected guard={signedIn}>
@@ -146,7 +154,3 @@ function AuthRedirect() {
 
   return null;
 }
-
-const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.bg },
-});

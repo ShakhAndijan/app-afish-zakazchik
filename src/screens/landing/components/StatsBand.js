@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { COLORS } from '../../../constants/colors';
-import { ENDPOINTS } from '../../../constants/config';
+import { ENDPOINTS, CLIENT_HEADERS } from '../../../constants/config';
 import { useLanguage } from '../../../context/LanguageContext';
 import { DEFAULT_STATS } from '../constants';
 
@@ -19,7 +19,7 @@ export default function StatsBand() {
   const [stats, setStats] = useState(DEFAULT_STATS);
 
   useEffect(() => {
-    fetch(ENDPOINTS.SYSTEM_STATS)
+    fetch(ENDPOINTS.SYSTEM_STATS, { headers: CLIENT_HEADERS })
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.response_data) {

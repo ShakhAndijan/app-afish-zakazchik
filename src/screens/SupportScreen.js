@@ -17,16 +17,18 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useUser } from '../context/UserContext';
-import AfishLoader from '../components/AfishLoader';
+import AppLoader from '../components/AppLoader';
 import SectionError from './zakazchi-main/components/SectionError';
 import SupportItemCard from './support/SupportItemCard';
 import { useSendSupportItem, useSupportItems } from '../queries/support';
 import { SUPPORT_MAX_LENGTH, SUPPORT_MIN_LENGTH } from '../api/support';
 import { getErrorMessage } from '../utils/errors';
+import useBottomInset from '../hooks/useBottomInset';
 
 // "Murojaatlarim" va "Takliflarim" (saytdagi /support va kabinet): yangi murojaat/taklif yozish va
 // yuborilganlar ro'yxati; jamoa javobi shu yerda va bildirishnomalarda ko'rinadi.
 export default function SupportScreen({ kind: initialKind = 'question', onBack }) {
+  const bottomInset = useBottomInset();
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
   const { user } = useUser();
@@ -103,7 +105,7 @@ export default function SupportScreen({ kind: initialKind = 'question', onBack }
           contentContainerStyle={{
             paddingHorizontal: 20,
             paddingTop: 14,
-            paddingBottom: 40,
+            paddingBottom: 40 + bottomInset,
             gap: 14,
           }}
         >
@@ -177,7 +179,7 @@ export default function SupportScreen({ kind: initialKind = 'question', onBack }
           </Text>
           {items.isPending ? (
             <View style={s.center}>
-              <AfishLoader size={100} />
+              <AppLoader size={100} />
             </View>
           ) : items.isError ? (
             <SectionError onRetry={items.refetch} />

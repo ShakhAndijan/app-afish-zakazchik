@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, Share } from 'react-native';
+import { View, ScrollView, Share } from 'react-native';
 import { appAlert } from '../components/AppAlert';
 import * as Linking from 'expo-linking';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,14 +19,18 @@ import PriceCard from './orders/components/PriceCard';
 import PhotoGallery from './orders/components/PhotoGallery';
 import { MasterNoteCard, CustomerReviewCard } from './orders/components/NoteCard';
 import OrderActions from './orders/components/OrderActions';
+import ContactsCard from './orders/components/ContactsCard';
+import DescriptionCard from './orders/components/DescriptionCard';
 import PromptModal from './requests/components/PromptModal';
 import RepostModal from './requests/components/RepostModal';
 import useOrderActions from './requests/hooks/useOrderActions';
 import { isOpenOrder } from './requests/utils';
+import useBottomInset from '../hooks/useBottomInset';
 
 // Buyurtma tafsiloti. Backendda yo'q qiymatlar (usta reytingi, narx bo'linishi, izohlar)
 // `extras` dan olinadi va "Namuna ma'lumot" belgisi bilan ko'rsatiladi.
 export default function OrderDetailScreen({ order: listOrder, onBack, onSelectUsta, onReorder }) {
+  const bottomInset = useBottomInset();
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
   const { order, extras, refresh } = useOrderDetail(listOrder);
@@ -41,7 +45,7 @@ export default function OrderDetailScreen({ order: listOrder, onBack, onSelectUs
   const label = statusLabel(tr, order);
   const isCancelled = order.status === 'cancelled';
   const isDone = order.status === 'done';
-  const title = order.task || order.service || tr('orderDetail.orderNumber', { id: order.id });
+  const title = order.taskNames || order.service || tr('orderDetail.orderNumber', { id: order.id });
 
   const beforePhotos = order.beforePhotos;
   // Bekor qilingan buyurtmada ish bajarilmagani uchun "keyin" rasmlari bo'lmaydi.
@@ -76,10 +80,15 @@ export default function OrderDetailScreen({ order: listOrder, onBack, onSelectUs
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32 }}
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingTop: 16,
+          paddingBottom: 32 + bottomInset,
+        }}
       >
         <StatusBanner meta={meta} label={label} subtext={statusSubtext(tr, order)} order={order} />
         <OrderSummary order={order} title={title} />
+        <DescriptionCard text={order.description} style={{ marginTop: 12 }} />
 
         {/* Usta hali tayinlanmagan (kutilayotgan) buyurtmada bo'lim ko'rsatilmaydi */}
         {!!order.master && (
@@ -93,6 +102,9 @@ export default function OrderDetailScreen({ order: listOrder, onBack, onSelectUs
               onPress={openUstaProfile}
               t={t}
             />
+            <View style={{ marginTop: 12 }}>
+              <ContactsCard order={order} />
+            </View>
           </>
         )}
 
