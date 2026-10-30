@@ -5,6 +5,7 @@ import { setSessionExpiredHandler } from '../utils/apiClient';
 import { revokeSession } from '../api/auth';
 import { clearCachedUser } from './UserContext';
 import { queryClient } from '../queries/client';
+import { forgetPush, unregisterPush } from '../utils/push';
 
 const AuthContext = createContext({
   signedIn: false,
@@ -13,6 +14,7 @@ const AuthContext = createContext({
   unlocking: false,
   signIn: () => {},
   signOut: async () => {},
+  accountDeleted: async () => {},
   retryUnlock: () => {},
   abandonSession: () => {},
 });
@@ -35,7 +37,15 @@ export function AuthProvider({ children }) {
 
   // Foydalanuvchi o'zi chiqadi: refresh token serverda ham bekor qilinadi.
   const signOut = useCallback(async () => {
+    // Token hali yaroqli paytda: shu qurilmaga keyingi foydalanuvchi xabari kelmasin.
+    await unregisterPush();
     await revokeSession();
+    await endSession();
+  }, [endSession]);
+
+  // Hisob o'chirildi: server sessiyani o'zi yopgan, shuning uchun tarmoq so'rovisiz faqat mahalliy tozalash.
+  const accountDeleted = useCallback(async () => {
+    await forgetPush();
     await endSession();
   }, [endSession]);
 
@@ -56,6 +66,7 @@ export function AuthProvider({ children }) {
       abandonSession: gate.abandonSession,
       signIn,
       signOut,
+      accountDeleted,
     }),
     [
       signedIn,
@@ -66,6 +77,7 @@ export function AuthProvider({ children }) {
       gate.abandonSession,
       signIn,
       signOut,
+      accountDeleted,
     ]
   );
 

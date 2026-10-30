@@ -36,6 +36,7 @@ export const queryClient = new QueryClient({
 const isPersistable = (query) => {
   const [root, second] = query.queryKey;
   if (root === 'categories') return true;
+  if (root === 'legal' || root === 'articles') return true; // hujjatlar hamma uchun bir xil; oflaynda ham ochilsin
   if (root === 'workers' && second === 'top') return true;
   if (root === 'home' && ['works', 'reviews', 'stats'].includes(second)) return true;
   return false;

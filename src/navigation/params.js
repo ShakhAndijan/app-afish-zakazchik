@@ -34,7 +34,16 @@ export const supportRoute = (kind = 'question') => ({
   params: { kind: kind === 'suggestion' ? 'suggestion' : 'question' },
 });
 
-// Hujjat sahifasi: 'about' | 'privacy' | 'terms'.
+// Foydali maqola (sayt: /maqolalar/{slug}).
+export const articleRoute = (slug) => ({ pathname: '/article/[slug]', params: { slug } });
+
+// Usta haqida shikoyat yozish ekrani.
+export const complaintRoute = ({ id, name }) => ({
+  pathname: '/complaint',
+  params: { workerId: String(id), name: name ?? '' },
+});
+
+// Hujjat sahifasi: 'about' (statik) | 'privacy' | 'terms' | 'consent' | 'delete-account' (backend /legal/{key}).
 export const documentRoute = (key) => ({ pathname: '/document', params: { key } });
 
 // Ochiq buyurtma (kutilmoqda / kelishilmoqda / jarayonda) jonli kuzatuv ekranida ochiladi,

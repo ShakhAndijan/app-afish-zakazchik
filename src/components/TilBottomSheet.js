@@ -12,23 +12,25 @@ import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 
 const LANG_SUB = {
-  uz: { uz: "O'zbekcha", ru: 'узбекский', en: 'Uzbek' },
-  ru: { uz: 'Ruscha', ru: 'русский', en: 'Russian' },
-  en: { uz: 'Inglizcha', ru: 'английский', en: 'English' },
+  uz: { uz: "O'zbekcha", cr: 'Ўзбекча (лотин)', ru: 'узбекский (латиница)', en: 'Uzbek (Latin)' },
+  cr: {
+    uz: 'Kirilcha',
+    cr: 'Ўзбекча (кирилл)',
+    ru: 'узбекский (кириллица)',
+    en: 'Uzbek (Cyrillic)',
+  },
+  ru: { uz: 'Ruscha', cr: 'Русча', ru: 'русский', en: 'Russian' },
+  en: { uz: 'Inglizcha', cr: 'Инглизча', ru: 'английский', en: 'English' },
 };
 
 export const LANGS = [
   { code: 'uz', name: "O'zbek", flag: '🇺🇿' },
+  { code: 'cr', name: 'Ўзбекча', flag: '🇺🇿' },
   { code: 'ru', name: 'Русский', flag: '🇷🇺' },
   { code: 'en', name: 'English', flag: '🇬🇧' },
 ];
 
-export default function TilBottomSheet({
-  visible,
-  currentLang,
-  onSelect,
-  onClose,
-}) {
+export default function TilBottomSheet({ visible, currentLang, onSelect, onClose }) {
   const { theme: t } = useTheme();
   const { language, t: tr } = useLanguage();
   const [selected, setSelected] = useState(currentLang);
@@ -75,9 +77,7 @@ export default function TilBottomSheet({
             <MaterialCommunityIcons name="close" size={17} color={t.muted} />
           </TouchableOpacity>
         </View>
-        <Text style={[s.subtitle, { color: t.muted }]}>
-          {tr('languagePicker.subtitle')}
-        </Text>
+        <Text style={[s.subtitle, { color: t.muted }]}>{tr('languagePicker.subtitle')}</Text>
 
         {/* Options */}
         <View style={s.options}>
@@ -98,26 +98,13 @@ export default function TilBottomSheet({
               >
                 <Text style={s.flag}>{l.flag}</Text>
                 <View style={{ flex: 1 }}>
-                  <Text
-                    style={{ fontWeight: '700', fontSize: 15, color: '#fff' }}
-                  >
-                    {l.name}
-                  </Text>
-                  <Text
-                    style={{ fontSize: 11.5, color: t.muted, marginTop: 1 }}
-                  >
+                  <Text style={{ fontWeight: '700', fontSize: 15, color: '#fff' }}>{l.name}</Text>
+                  <Text style={{ fontSize: 11.5, color: t.muted, marginTop: 1 }}>
                     {LANG_SUB[l.code][language]}
                   </Text>
                 </View>
-                <View
-                  style={[
-                    s.radio,
-                    { borderColor: on ? t.orange : 'rgba(255,255,255,0.2)' },
-                  ]}
-                >
-                  {on && (
-                    <View style={[s.radioDot, { backgroundColor: t.orange }]} />
-                  )}
+                <View style={[s.radio, { borderColor: on ? t.orange : 'rgba(255,255,255,0.2)' }]}>
+                  {on && <View style={[s.radioDot, { backgroundColor: t.orange }]} />}
                 </View>
               </TouchableOpacity>
             );
@@ -125,14 +112,8 @@ export default function TilBottomSheet({
         </View>
 
         {/* Confirm */}
-        <View
-          style={{ paddingHorizontal: 22, paddingTop: 12, paddingBottom: 6 }}
-        >
-          <TouchableOpacity
-            style={s.confirmBtn}
-            onPress={handleConfirm}
-            activeOpacity={0.85}
-          >
+        <View style={{ paddingHorizontal: 22, paddingTop: 12, paddingBottom: 6 }}>
+          <TouchableOpacity style={s.confirmBtn} onPress={handleConfirm} activeOpacity={0.85}>
             <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>
               {tr('languagePicker.confirm')}
             </Text>

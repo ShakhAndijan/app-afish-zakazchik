@@ -20,6 +20,7 @@ import WorksSection from './usta-detail/components/WorksSection';
 import ListingsSection from './usta-detail/components/ListingsSection';
 import RatingSection from './usta-detail/components/RatingSection';
 import ReviewsSection from './usta-detail/components/ReviewsSection';
+import ComplaintsSection from './usta-detail/components/ComplaintsSection';
 import BottomCta from './usta-detail/components/BottomCta';
 
 // Usta profili ekrani. Har bir bo'lim `usta-detail/components/` ichida alohida komponent;
@@ -38,6 +39,7 @@ function UstaDetailContent({
   onGoToLogin,
   onOrderWorker,
   onSelectWork,
+  onReport,
   isLoggedIn = false,
 }) {
   const insets = useSafeAreaInsets();
@@ -90,6 +92,7 @@ function UstaDetailContent({
         isLoggedIn={isLoggedIn}
         liked={liked}
         onToggleLike={toggleLike}
+        onReport={onReport ? () => onReport({ id: usta?.id ?? detail?.id, name }) : undefined}
       />
 
       <ScrollView
@@ -153,6 +156,7 @@ function UstaDetailContent({
             filter={reviewFilter}
             onFilterChange={setReviewFilter}
           />
+          <ComplaintsSection workerId={usta?.id ?? detail?.id} />
         </View>
       </ScrollView>
 

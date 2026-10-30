@@ -1,3 +1,5 @@
+import { translitDeep } from './translit';
+
 // Saytdagi (dev.harna.uz) "Ko'p so'raladigan savollar" va hujjatlar ("Biz haqimizda", "Maxfiylik siyosati",
 // "Foydalanish shartlari") matnlari — uz / ru / en. Sayt xuddi shu matnlarni ko'rsatadi; FAQ backenddan
 // (/faq) kelsa o'sha, bo'sh bo'lsa shu zaxira ro'yxat ishlatiladi.
@@ -492,3 +494,15 @@ export const DOCUMENTS = {
     },
   },
 };
+
+// Kirill (cr) matnlari — o'zbekcha matnlardan birinchi so'ralganda o'giriladi.
+for (const texts of [FAQ_ITEMS, DOCUMENTS]) {
+  let cr;
+  Object.defineProperty(texts, 'cr', {
+    enumerable: true,
+    get() {
+      cr ??= translitDeep(texts.uz);
+      return cr;
+    },
+  });
+}

@@ -62,11 +62,11 @@ export async function uploadImageToPresignedUrl(uploadUrl, imageUri, contentType
   });
 }
 
-export async function loginCustomer(phone, password) {
+export async function loginCustomer(phone, password, consentVersion) {
   return authPost(
     'loginCustomer',
     ENDPOINTS.CUSTOMER_LOGIN,
-    { phone, password },
+    { phone, password, consent_version: consentVersion },
     'Kirishda xatolik yuz berdi'
   );
 }
@@ -98,11 +98,11 @@ export async function startCustomerAuth(identifier, channel = 'sms') {
  *   completeCustomerAuth chaqiriladi.
  * @returns {Promise<{ access_token: string|null, refresh_token: string|null, status?: string, ticket?: string, suggested_first_name?: string, suggested_last_name?: string }>}
  */
-export async function verifyCustomerAuth(identifier, code) {
+export async function verifyCustomerAuth(identifier, code, consentVersion) {
   return authPost(
     'verifyCustomerAuth',
     ENDPOINTS.AUTH_CUSTOMER_VERIFY,
-    { identifier, code },
+    { identifier, code, consent_version: consentVersion },
     'Kodni tasdiqlashda xatolik yuz berdi'
   );
 }
@@ -111,13 +111,15 @@ export async function verifyCustomerAuth(identifier, code) {
  * Yangi mijoz hisobini yaratadi va kirishni yakunlaydi. Faqat verify hisobni
  * topa olmagan holatda chaqiriladi — `ticket` allaqachon tasdiqlangan kodning
  * isboti bo'lgani uchun kod qayta so'ralmaydi, faqat ism-familiya kerak.
+ * `consentVersion` — foydalanuvchi belgilagan shaxsiy ma'lumotlarga rozilik matni versiyasi; yangi hisob
+ * uchun majburiy (400 `consent_required` / `consent_outdated`).
  * @returns {Promise<{ access_token: string, refresh_token: string }>}
  */
-export async function completeCustomerAuth(ticket, firstName, lastName) {
+export async function completeCustomerAuth(ticket, firstName, lastName, consentVersion) {
   return authPost(
     'completeCustomerAuth',
     ENDPOINTS.AUTH_CUSTOMER_COMPLETE,
-    { ticket, first_name: firstName, last_name: lastName },
+    { ticket, first_name: firstName, last_name: lastName, consent_version: consentVersion },
     'Hisob yaratishda xatolik yuz berdi'
   );
 }

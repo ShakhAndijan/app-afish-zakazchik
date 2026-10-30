@@ -6,6 +6,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '../context/ThemeContext';
 import NotificationsList from './notifications/NotificationsList';
+import PushPermissionBanner from './notifications/PushPermissionBanner';
 import { useUnreadNotifications } from '../queries/notifications';
 import { useLanguage } from '../context/LanguageContext';
 import useBottomInset from '../hooks/useBottomInset';
@@ -118,6 +119,8 @@ export default function ZakazchiNotifScreen({ onBack }) {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[s.scroll, { paddingBottom: 40 + bottomInset }]}
         >
+          <PushPermissionBanner />
+
           {/* Master hero card */}
           <TouchableOpacity
             onPress={() => setMaster((m) => !m)}

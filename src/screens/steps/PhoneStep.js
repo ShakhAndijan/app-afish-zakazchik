@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -11,13 +12,11 @@ import {
 import Feather from '@expo/vector-icons/Feather';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useRouter } from 'expo-router';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import PhoneInput from '../../components/login/PhoneInput';
-import ThemeSwitch from '../../components/ThemeSwitch';
 import EmailInput from '../../components/login/EmailInput';
-import { documentRoute } from '../../navigation/params';
+import ConsentCheck from '../../components/login/ConsentCheck';
 import BrandLogo from '../../components/BrandLogo';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -35,9 +34,19 @@ export default function PhoneStep({
   googleLoading,
   onBack,
   actorType = 'customer',
+  consent = false,
+  onConsentChange,
 }) {
-  const router = useRouter();
   const { theme } = useTheme();
+  // Rozilik belgisiz kod yuborish, Telegram va Google ishlamaydi: belgi qizarib turadi.
+  const [consentError, setConsentError] = useState(false);
+  const guarded = (action) => () => {
+    if (!consent) {
+      setConsentError(true);
+      return;
+    }
+    action();
+  };
   const { t } = useLanguage();
   const isDark = theme.isDark !== false;
   const isUsta = actorType === 'worker';
@@ -68,8 +77,6 @@ export default function PhoneStep({
           >
             <Feather name="arrow-left" size={20} color={theme.text} />
           </TouchableOpacity>
-
-          <ThemeSwitch />
         </View>
 
         <View style={s.body}>
@@ -164,7 +171,7 @@ export default function PhoneStep({
           {/* ── CTA ── */}
           <TouchableOpacity
             style={[s.cta, !isReady && s.ctaDisabled]}
-            onPress={isReady ? handleCta : undefined}
+            onPress={isReady ? guarded(handleCta) : undefined}
             activeOpacity={0.85}
           >
             {loginLoading ? (
@@ -197,6 +204,27 @@ export default function PhoneStep({
             </Text>
           </TouchableOpacity>
 
+          {/* ── Shaxsiy ma'lumotlarga rozilik (saytdagi kirish oynasidagi kabi) ── */}
+          <View style={s.consentWrap}>
+            <ConsentCheck
+              checked={consent}
+              error={consentError}
+              onToggle={() => {
+                setConsentError(false);
+                onConsentChange?.(!consent);
+              }}
+              colors={{
+                text: theme.muted,
+                link: theme.text,
+                border: theme.faint ?? theme.muted,
+                active: theme.orange,
+              }}
+            />
+            {consentError && !consent && (
+              <Text style={[s.consentErr, { color: theme.red }]}>{t('legal.check.required')}</Text>
+            )}
+          </View>
+
           {/* ── Social ── */}
           <View style={s.orWrap}>
             <View style={[s.line, { backgroundColor: theme.border }]} />
@@ -210,7 +238,7 @@ export default function PhoneStep({
                 s.socBtn,
                 { borderColor: theme.border, backgroundColor: isDark ? theme.card : '#fff' },
               ]}
-              onPress={googleLoading ? undefined : onGoogle}
+              onPress={googleLoading ? undefined : guarded(onGoogle)}
               activeOpacity={0.85}
             >
               {googleLoading ? (
@@ -227,7 +255,11 @@ export default function PhoneStep({
                 { borderColor: theme.border, backgroundColor: theme.card },
                 !telegramReady && s.socBtnDisabled,
               ]}
-              onPress={anyOtpLoading || !telegramReady ? undefined : () => onRequestOtp('telegram')}
+              onPress={
+                anyOtpLoading || !telegramReady
+                  ? undefined
+                  : guarded(() => onRequestOtp('telegram'))
+              }
               activeOpacity={0.85}
             >
               {telegramLoading ? (
@@ -238,27 +270,6 @@ export default function PhoneStep({
               <Text style={[s.socTxt, { color: theme.text }]}>Telegram</Text>
             </TouchableOpacity>
           </View>
-
-          {/* ── Footer ── */}
-          <View style={s.footer}>
-            <Text style={[s.terms, { color: theme.muted }]}>
-              {t('login.phoneStep.termsPrefix')}{' '}
-              <Text
-                style={{ color: theme.text, fontWeight: '700' }}
-                onPress={() => router.push(documentRoute('terms'))}
-              >
-                {t('login.phoneStep.termsLink')}
-              </Text>
-              {' ' + t('login.phoneStep.termsAnd') + ' '}
-              <Text
-                style={{ color: theme.text, fontWeight: '700' }}
-                onPress={() => router.push(documentRoute('privacy'))}
-              >
-                {t('login.phoneStep.privacyLink')}
-              </Text>
-              {t('login.phoneStep.termsSuffix')}
-            </Text>
-          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -268,6 +279,8 @@ export default function PhoneStep({
 const s = StyleSheet.create({
   flex: { flex: 1 },
   scroll: { flexGrow: 1 },
+  consentWrap: { marginTop: 18, gap: 6 },
+  consentErr: { fontSize: 12.5, fontWeight: '600', marginLeft: 36 },
 
   topBar: {
     flexDirection: 'row',

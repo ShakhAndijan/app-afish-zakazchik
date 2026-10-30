@@ -10,13 +10,13 @@
     "backgroundColor": "#0c1828",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "uz.afish.zakazchik",
+      "bundleIdentifier": "uz.harna.customer",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "uz.afish.zakazchik",
+      "package": "uz.harna.customer",
       "versionCode": 3,
       "softwareKeyboardLayoutMode": "resize",
       "usesCleartextTraffic": true,
@@ -58,6 +58,14 @@
             "enableMinifyInReleaseBuilds": true,
             "enableShrinkResourcesInReleaseBuilds": true
           }
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#f97316",
+          "defaultChannel": "default"
         }
       ],
       [

@@ -33,6 +33,7 @@ import PricingSection from './new-order/sections/PricingSection';
 import ContactSection, { BackupPhoneSection } from './new-order/sections/ContactSection';
 import StepHeader from './new-order/components/StepHeader';
 import ExtraSection from './new-order/sections/ExtraSection';
+import CompanySiteSection from './new-order/sections/CompanySiteSection';
 import SubmitButton from './new-order/sections/SubmitButton';
 import useOrderPhotos from './new-order/hooks/useOrderPhotos';
 import useOrderLocation from './new-order/hooks/useOrderLocation';
@@ -81,6 +82,8 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
   const paymentMethod = 'cash';
   const [phone, setPhone] = useState(stripCountryCode(user?.phone));
   const [backupPhone, setBackupPhone] = useState('');
+  // Kompaniya obyekti (korporativ hisob): tanlansa buyurtma kompaniya hisobotiga tushadi.
+  const [orgSiteId, setOrgSiteId] = useState(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   // Bir xil so'rov qayta yuborilsa (masalan tarmoq xatosidan keyin "Tasdiqlash"
@@ -97,6 +100,7 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
     districtId,
     setDistrictId,
     autoSelectLocation,
+    presetLocation,
   } = useOrderLocation();
 
   const { categories } = useAllCategoriesQuery();
@@ -174,6 +178,16 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
     estimatedHours,
     fixedPrice,
     paymentMethod,
+    orgSiteId,
+  };
+
+  // Obyekt tanlanganda uning manzili va aloqa telefoni forma maydonlariga olinadi (keyin tahrirlash mumkin).
+  const handleSiteSelect = (site) => {
+    setOrgSiteId(site?.id ?? null);
+    if (!site) return;
+    presetLocation(site.regionId, site.districtId);
+    if (site.address) setStreet(site.address);
+    if (site.contactPhone) setPhone(stripCountryCode(site.contactPhone));
   };
 
   const openReview = () => {
@@ -266,6 +280,8 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
         <Text style={[s.subtitle, { color: t.muted }]}>{tr('newOrder.headerSubtitle')}</Text>
 
         <TargetWorkerCard orderWorker={orderWorker} setOrderWorker={setOrderWorker} />
+
+        <CompanySiteSection siteId={orgSiteId} onSelect={handleSiteSelect} />
 
         {/* Tartib saytdagi (dev.harna.uz/buyurtma) bilan bir xil:
             1) tafsilotlar — tavsif, narx, sana, rasm;

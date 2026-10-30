@@ -18,10 +18,18 @@ const formatPhone = (raw = '') => {
   return s;
 };
 
-export default function CompleteProfileStep({ onBack, onSubmit, loading, error, identifier = '' }) {
+export default function CompleteProfileStep({
+  onBack,
+  onSubmit,
+  loading,
+  error,
+  identifier = '',
+  initialFirstName = '',
+  initialLastName = '',
+}) {
   const { t } = useLanguage();
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [firstName, setFirstName] = useState(initialFirstName);
+  const [lastName, setLastName] = useState(initialLastName);
 
   const ready = firstName.trim() && lastName.trim() && !loading;
   const identifierMode = detectIdentifierMode(identifier);

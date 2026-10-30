@@ -22,6 +22,9 @@ import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { UserProvider } from '../context/UserContext';
 import { WalletProvider } from '../context/WalletContext';
 import { markStartup } from '../utils/startup';
+import usePushNotifications from '../hooks/usePushNotifications';
+import usePreferencesSync from '../hooks/usePreferencesSync';
+import ConsentGate from '../components/ConsentGate';
 
 // Native splash birinchi ekran tayyor bo'lguncha turadi: bo'sh ekran va alohida yuklagich bosqichi yo'q.
 SplashScreen.preventAutoHideAsync();
@@ -115,6 +118,15 @@ function RootNavigator() {
                 <Stack.Screen name="chat" />
                 <Stack.Screen name="support" />
                 <Stack.Screen name="support-chat" />
+                <Stack.Screen name="delete-account" />
+                <Stack.Screen name="complaint" />
+                <Stack.Screen name="my-complaints" />
+                <Stack.Screen name="company" />
+                <Stack.Screen name="company-form" />
+                <Stack.Screen name="company-site" />
+                <Stack.Screen name="company-plan" />
+                <Stack.Screen name="company-member" />
+                <Stack.Screen name="company-statement" />
               </Stack.Protected>
               <Stack.Protected guard={!signedIn}>
                 <Stack.Screen name="index" />
@@ -127,13 +139,31 @@ function RootNavigator() {
               <Stack.Screen name="reels" options={{ animation: 'fade' }} />
               <Stack.Screen name="workers" />
               <Stack.Screen name="document" />
+              <Stack.Screen name="articles" />
+              <Stack.Screen name="article/[slug]" />
             </Stack>
             <AuthRedirect />
+            <PushNotifications />
+            <PreferencesSync />
+            <ConsentGate />
           </View>
         </NavigationThemeProvider>
       </WalletProvider>
     </UserProvider>
   );
+}
+
+// Push: token yuborish va bildirishnoma bosilganda ekran ochish. AuthRedirect'dan keyin turadi,
+// shunda uning effekti avval ishlab, push ochgan ekran bosh sahifa ustida qoladi.
+function PushNotifications() {
+  usePushNotifications();
+  return null;
+}
+
+// Til va mavzu hisob bilan sinxronlanadi (boshqa qurilmada ham shu tanlov chiqadi).
+function PreferencesSync() {
+  usePreferencesSync();
+  return null;
 }
 
 // Kirish/chiqish holati o'zgarganda tegishli bosh ekranga o'tkazadi (masalan, mehmon sifatida

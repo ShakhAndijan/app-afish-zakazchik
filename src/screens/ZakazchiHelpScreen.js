@@ -12,7 +12,9 @@ import { SUPPORT_CONTACT } from '../constants/config';
 import { documentRoute, supportRoute } from '../navigation/params';
 import useBottomInset from '../hooks/useBottomInset';
 
-const DOCS = ['about', 'terms', 'privacy'];
+const DOCS = ['about', 'terms', 'privacy', 'consent'];
+// Eski hujjatlar nomi `support.*` da, backenddan keladigan yangilari `legal.docs.*` da.
+const docLabelKey = (key) => (key === 'consent' ? 'legal.docs.consent' : `support.${key}`);
 
 function FaqItem({ item, isOpen, onToggle }) {
   const { theme: t } = useTheme();
@@ -228,6 +230,24 @@ export default function ZakazchiHelpScreen({ onBack }) {
           </View>
         </View>
 
+        {/* ── Foydali maqolalar (saytda ham yordam bo'limida) ── */}
+        <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
+          <TouchableOpacity
+            style={[s.faqCard, s.faqRow, { backgroundColor: t.card, borderColor: t.border }]}
+            activeOpacity={0.7}
+            onPress={() => router.push('/articles')}
+          >
+            <MaterialCommunityIcons name="newspaper-variant-outline" size={22} color={t.orange} />
+            <View style={{ flex: 1 }}>
+              <Text style={[s.faqQ, { color: t.text }]}>{tr('articles.menu')}</Text>
+              <Text style={{ fontSize: 12.5, color: t.muted, marginTop: 2 }}>
+                {tr('articles.menuHint')}
+              </Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={18} color={t.faint} />
+          </TouchableOpacity>
+        </View>
+
         {/* ── Hujjatlar ── */}
         <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
           <Text style={{ fontWeight: '700', fontSize: 15, color: t.text, marginBottom: 12 }}>
@@ -242,7 +262,7 @@ export default function ZakazchiHelpScreen({ onBack }) {
                   activeOpacity={0.7}
                   onPress={() => router.push(documentRoute(key))}
                 >
-                  <Text style={[s.faqQ, { color: t.text, flex: 1 }]}>{tr(`support.${key}`)}</Text>
+                  <Text style={[s.faqQ, { color: t.text, flex: 1 }]}>{tr(docLabelKey(key))}</Text>
                   <MaterialCommunityIcons name="chevron-right" size={18} color={t.faint} />
                 </TouchableOpacity>
               </View>

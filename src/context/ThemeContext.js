@@ -1,4 +1,7 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+export const THEME_KEY = 'app_theme';
 
 const dark = {
   isDark: true,
@@ -50,17 +53,46 @@ const light = {
   red: '#e0473a',
 };
 
-const ThemeContext = createContext({ theme: dark, toggleTheme: () => {} });
+const ThemeContext = createContext({
+  theme: dark,
+  mode: 'dark',
+  setThemeMode: () => {},
+  toggleTheme: () => {},
+});
 
 export function ThemeProvider({ children }) {
   const [isDark, setIsDark] = useState(true);
-  return (
-    <ThemeContext.Provider
-      value={{ theme: isDark ? dark : light, toggleTheme: () => setIsDark((v) => !v) }}
-    >
-      {children}
-    </ThemeContext.Provider>
+  const [ready, setReady] = useState(false);
+
+  // Saqlangan mavzu birinchi renderdan oldin qo'yiladi (ekran avval qorong'i, keyin o'zgarib ko'rinmasin);
+  // shu vaqtgacha native splash ko'rinib turadi.
+  useEffect(() => {
+    AsyncStorage.getItem(THEME_KEY)
+      .then((saved) => {
+        if (saved === 'light' || saved === 'dark') setIsDark(saved === 'dark');
+      })
+      .catch(() => {})
+      .finally(() => setReady(true));
+  }, []);
+
+  const setThemeMode = useCallback((mode) => {
+    if (mode !== 'light' && mode !== 'dark') return;
+    setIsDark(mode === 'dark');
+    AsyncStorage.setItem(THEME_KEY, mode).catch(() => {});
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      theme: isDark ? dark : light,
+      mode: isDark ? 'dark' : 'light',
+      setThemeMode,
+      toggleTheme: () => setThemeMode(isDark ? 'light' : 'dark'),
+    }),
+    [isDark, setThemeMode]
   );
+
+  if (!ready) return null;
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 export const useTheme = () => useContext(ThemeContext);

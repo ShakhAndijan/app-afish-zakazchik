@@ -14,6 +14,8 @@ import {
   requestResetPasswordOtp,
   verifyResetPasswordOtp,
 } from '../api/auth';
+import { acceptConsent } from '../api/legal';
+import { useConsentVersion, useLegalIndex } from '../queries/legal';
 import { saveSession, saveActorType } from '../utils/token';
 import { buildIdentifier } from '../utils/identifier';
 import PhoneStep from './steps/PhoneStep';
@@ -51,6 +53,11 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
   // Kirish usuli: telefon yoki qo'lda yoziladigan email.
   const [identifierMode, setIdentifierMode] = useState('phone');
   const [ticket, setTicket] = useState('');
+  const [suggestedName, setSuggestedName] = useState({ firstName: '', lastName: '' });
+  // Shaxsiy ma'lumotlarga rozilik belgisi (birinchi qadamda qo'yiladi, keyingi qadamlarda versiya bilan yuboriladi).
+  const [consent, setConsent] = useState(false);
+  const legalIndex = useLegalIndex();
+  const consentVersion = useConsentVersion();
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpChannel, setOtpChannel] = useState('sms');
   const [otpError, setOtpError] = useState('');
@@ -60,10 +67,12 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
   const [completeLoading, setCompleteLoading] = useState(false);
   const [completeError, setCompleteError] = useState('');
 
-  const finishLogin = async (data) => {
+  const finishLogin = async (data, { recordConsent = false } = {}) => {
     if (data?.access_token) {
       await saveSession({ accessToken: data.access_token, refreshToken: data.refresh_token });
     }
+    // Google (mobil oqim) rozilikni o'zi qabul qilmaydi: belgi kirishdan oldin qo'yilgan, shuni shu yerda qayd etamiz.
+    if (recordConsent) await acceptConsent(consentVersion).catch(() => {});
     await saveActorType(actorType);
     (onLoginSuccess ?? onBack)(actorType);
   };
@@ -88,22 +97,23 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
     try {
       setVerifyLoading(true);
       setVerifyError('');
-      const data = await verifyCustomerAuth(buildIdentifier(identifier, identifierMode), code);
+      const data = await verifyCustomerAuth(
+        buildIdentifier(identifier, identifierMode),
+        code,
+        consentVersion
+      );
       devLog('[login] verify status:', data?.status);
       if (data?.access_token) {
         await finishLogin(data);
-      } else if (data?.suggested_first_name && data?.suggested_last_name) {
-        // Ism-familiya boshqa hisobdan (masalan usta sifatida avval ro'yxatdan
-        // o'tgan bo'lsa) allaqachon ma'lum — foydalanuvchidan qayta so'ramasdan
-        // avtomatik /complete chaqirib kirgazamiz.
-        const completed = await completeCustomerAuth(
-          data?.ticket || '',
-          data.suggested_first_name,
-          data.suggested_last_name
-        );
-        await finishLogin(completed);
-      } else if (data?.status === 'needs_name') {
+      } else if (data?.status === 'needs_name' || data?.ticket) {
+        // Yangi hisob: ism-familiya va shaxsiy ma'lumotlarga rozilik belgisi shu qadamda olinadi.
+        // Ism boshqa hisobdan (masalan usta sifatida avval ro'yxatdan o'tgan bo'lsa) ma'lum bo'lsa,
+        // maydonlar tayyor to'ldirilgan holda chiqadi — rozilikni esa foydalanuvchi o'zi belgilashi shart.
         setTicket(data?.ticket || '');
+        setSuggestedName({
+          firstName: data?.suggested_first_name || '',
+          lastName: data?.suggested_last_name || '',
+        });
         setCompleteError('');
         setStep('completeProfile');
       } else {
@@ -120,9 +130,11 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
     try {
       setCompleteLoading(true);
       setCompleteError('');
-      const data = await completeCustomerAuth(ticket, firstName, lastName);
+      const data = await completeCustomerAuth(ticket, firstName, lastName, consentVersion);
       await finishLogin(data);
     } catch (e) {
+      // Rozilik matni yangilangan bo'lsa, amaldagi versiyani qayta olamiz va foydalanuvchi qayta urinadi.
+      if (e?.code === 'consent_outdated') legalIndex.refetch();
       setCompleteError(getErrorMessage(e, t, 'login.registerStep.errors.finishFailed'));
     } finally {
       setCompleteLoading(false);
@@ -134,7 +146,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
       setLoginLoading(true);
       setLoginError('');
       const fullPhone = '+998' + phone.replace(/\D/g, '');
-      const data = await loginCustomer(fullPhone, password);
+      const data = await loginCustomer(fullPhone, password, consentVersion);
       await finishLogin(data);
     } catch (e) {
       setLoginError(getErrorMessage(e, t, 'login.errors.loginFailed'));
@@ -190,7 +202,10 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
     try {
       setGoogleLoading(true);
       const { token, refreshToken } = await googleLogin(actorType);
-      await finishLogin({ access_token: token, refresh_token: refreshToken });
+      await finishLogin(
+        { access_token: token, refresh_token: refreshToken },
+        { recordConsent: true }
+      );
     } catch (e) {
       if (e.message !== 'cancelled') {
         appAlert(t('common.errorTitle'), getErrorMessage(e, t, 'login.errors.googleFailed'));
@@ -222,6 +237,8 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
         onGoogle={handleGoogle}
         googleLoading={googleLoading}
         actorType={actorType}
+        consent={consent}
+        onConsentChange={setConsent}
       />
     ),
     code: (
@@ -267,6 +284,8 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
     completeProfile: (
       <CompleteProfileStep
         identifier={identifier}
+        initialFirstName={suggestedName.firstName}
+        initialLastName={suggestedName.lastName}
         onBack={() => setStep('code')}
         onSubmit={handleCompleteProfile}
         loading={completeLoading}

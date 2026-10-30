@@ -224,12 +224,30 @@ export default function ZakazchiProfileScreen() {
               label: tr('support.mineSuggestions'),
               onPress: () => router.push(supportRoute('suggestion')),
             },
+            {
+              icon: 'domain',
+              label: tr('business.menu'),
+              onPress: go('/company'),
+            },
+            {
+              icon: 'flag-outline',
+              label: tr('complaints.mine.menu'),
+              onPress: go('/my-complaints'),
+            },
           ]}
         />
 
         <MenuCard
           style={{ paddingTop: 16 }}
-          rows={[{ icon: 'logout', label: tr('profile.logout'), danger: true, onPress: signOut }]}
+          rows={[
+            { icon: 'logout', label: tr('profile.logout'), danger: true, onPress: signOut },
+            {
+              icon: 'account-remove-outline',
+              label: tr('legal.deleteAccount.menu'),
+              danger: true,
+              onPress: go('/delete-account'),
+            },
+          ]}
         />
         <Text
           style={{

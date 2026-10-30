@@ -33,6 +33,7 @@ export default function buildOrderPayload({
   estimatedHours,
   fixedPrice,
   paymentMethod,
+  orgSiteId,
 }) {
   // Aniq ustaga buyurtma berilganda ishchiga talablar yuborilmaydi (faqat "boshqa talablar" matni).
   const targeted = orderWorker?.id != null;
@@ -70,5 +71,6 @@ export default function buildOrderPayload({
       pricingType === 'hourly' && estimatedHours.trim() ? Number(estimatedHours) : null,
     budget: pricingType === 'fixed' && fixedPrice.trim() ? Number(fixedPrice) : null,
     payment_method: paymentMethod,
+    org_site_id: orgSiteId ?? null,
   };
 }
