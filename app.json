@@ -56,7 +56,8 @@
               "armeabi-v7a"
             ],
             "enableMinifyInReleaseBuilds": true,
-            "enableShrinkResourcesInReleaseBuilds": true
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "extraProguardRules": "-dontwarn expo.modules.kotlin.types.ColorCompat**"
           }
         }
       ],
