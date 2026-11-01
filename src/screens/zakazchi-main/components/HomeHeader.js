@@ -1,27 +1,15 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import Feather from '@expo/vector-icons/Feather';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../../../context/ThemeContext';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useUser } from '../../../context/UserContext';
 import Avatar from '../../../components/Avatar';
 import { useUnreadNotifications } from '../../../queries/notifications';
 
-const AVATAR = 46;
-const RING = 2;
-const GRADIENT = ['#f28d56', '#e87a45', '#c9552a'];
+const BTN = 42;
 
-// Kun vaqtiga qarab salomlashuv kaliti.
-function greetingKey(hour) {
-  if (hour >= 5 && hour < 12) return 'morning';
-  if (hour >= 12 && hour < 18) return 'day';
-  if (hour >= 18 && hour < 23) return 'evening';
-  return 'night';
-}
-
-// Bosh sahifa sarlavhasi: brend gradientli ixcham karta — avatar, salomlashuv, ism, manzil va qidiruv.
+// Bosh sahifa sarlavhasi: manzil, bildirishnoma, avatar va qidiruv paneli.
 export default function HomeHeader() {
   const router = useRouter();
   const { theme: t } = useTheme();
@@ -30,145 +18,130 @@ export default function HomeHeader() {
   const unread = useUnreadNotifications();
 
   const name = user?.first_name || user?.last_name || '';
-  const location = user?.district || user?.region || '';
-  const hello = tr(`zakazchiMain.header.${greetingKey(new Date().getHours())}`);
+  const location = user?.district || user?.region || tr('zakazchiMain.header.noLocation');
+  const openSearch = () => router.navigate('/services');
 
   return (
     <View style={s.wrap}>
-      <LinearGradient
-        colors={GRADIENT}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[s.card, { shadowColor: t.orange }]}
-      >
-        {/* Bezak doiralar */}
-        <View style={[s.blob, s.blobA]} />
-        <View style={[s.blob, s.blobB]} />
-
+      <View style={s.top}>
         <TouchableOpacity
-          activeOpacity={0.85}
+          activeOpacity={0.8}
           onPress={() => router.navigate('/profile')}
           accessibilityRole="button"
-          accessibilityLabel={tr('zakazchiMain.header.openProfile')}
-          style={s.ring}
+          accessibilityLabel={location}
+          style={s.location}
         >
-          <Avatar
-            size={AVATAR}
-            letter={name.charAt(0).toUpperCase()}
-            bgColor="#c9552a"
-            uri={user?.profile_photo}
-          />
-        </TouchableOpacity>
-
-        <View style={s.texts}>
-          <Text style={s.hello} numberOfLines={1}>
-            {hello} 👋
+          <Feather name="map-pin" size={20} color={t.muted} />
+          <Text style={[s.locationTxt, { color: t.text }]} numberOfLines={1}>
+            {location}
           </Text>
-          {!!name && (
-            <Text style={s.name} numberOfLines={1}>
-              {name}
-            </Text>
-          )}
-          {!!location && (
-            <View style={s.chip}>
-              <MaterialCommunityIcons name="map-marker" size={12} color="#fff" />
-              <Text style={s.chipTxt} numberOfLines={1}>
-                {location}
-              </Text>
-            </View>
-          )}
-        </View>
+          <Feather name="chevron-down" size={18} color={t.muted} />
+        </TouchableOpacity>
 
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={() => router.push('/notifications')}
           accessibilityRole="button"
           accessibilityLabel={tr('notifList.title')}
-          style={s.iconBtn}
+          style={[s.circle, { backgroundColor: t.card, borderColor: t.border }]}
         >
-          <Feather name="bell" size={19} color="#fff" />
+          <Feather name="bell" size={20} color={t.muted} />
           {unread > 0 && (
-            <View style={s.badge}>
+            <View style={[s.badge, { backgroundColor: t.orange, borderColor: t.bg }]}>
               <Text style={s.badgeTxt}>{unread > 99 ? '99+' : unread}</Text>
             </View>
           )}
         </TouchableOpacity>
 
         <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => router.navigate('/services')}
+          activeOpacity={0.85}
+          onPress={() => router.navigate('/profile')}
           accessibilityRole="button"
-          accessibilityLabel={tr('zakazchiMain.header.search')}
-          style={s.iconBtn}
+          accessibilityLabel={tr('zakazchiMain.header.openProfile')}
+          style={[s.avatarRing, { borderColor: t.border }]}
         >
-          <Feather name="search" size={19} color="#fff" />
+          <Avatar
+            size={BTN}
+            letter={name.charAt(0).toUpperCase()}
+            bgColor="#2d3d58"
+            uri={user?.profile_photo}
+          />
         </TouchableOpacity>
-      </LinearGradient>
+      </View>
+
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={openSearch}
+        accessibilityRole="search"
+        accessibilityLabel={tr('zakazchiMain.header.search')}
+        style={[s.search, { backgroundColor: t.card, borderColor: t.border }]}
+      >
+        <Feather name="search" size={20} color={t.muted} />
+        <Text style={[s.placeholder, { color: t.muted }]} numberOfLines={1}>
+          {tr('zakazchiMain.header.searchPlaceholder')}
+        </Text>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={openSearch}
+          accessibilityRole="button"
+          accessibilityLabel={tr('zakazchiMain.header.voiceSearch')}
+          style={[s.mic, { backgroundColor: t.border }]}
+        >
+          <Feather name="mic" size={19} color={t.muted} />
+        </TouchableOpacity>
+      </TouchableOpacity>
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  wrap: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 16 },
-  card: {
-    flexDirection: 'row',
+  wrap: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16, gap: 14 },
+  top: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  location: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 9 },
+  locationTxt: { flexShrink: 1, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 },
+  circle: {
+    width: BTN,
+    height: BTN,
+    borderRadius: BTN / 2,
+    borderWidth: 1,
     alignItems: 'center',
-    gap: 13,
-    borderRadius: 22,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    overflow: 'hidden',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.28,
-    shadowRadius: 14,
-    elevation: 6,
+    justifyContent: 'center',
   },
-  blob: { position: 'absolute', backgroundColor: '#fff', borderRadius: 999 },
-  blobA: { width: 120, height: 120, top: -55, right: -25, opacity: 0.12 },
-  blobB: { width: 70, height: 70, bottom: -35, right: 70, opacity: 0.08 },
-  ring: {
-    padding: RING,
-    borderRadius: AVATAR * 0.32 + RING + 1,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.75)',
-  },
-  texts: { flex: 1 },
-  hello: { fontSize: 12.5, fontWeight: '600', color: 'rgba(255,255,255,0.82)' },
-  name: { fontSize: 19, fontWeight: '800', letterSpacing: -0.3, color: '#fff', marginTop: 1 },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 3,
-    marginTop: 6,
-    paddingVertical: 3,
-    paddingLeft: 6,
-    paddingRight: 9,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    maxWidth: '100%',
-  },
-  chipTxt: { fontSize: 11.5, fontWeight: '700', color: '#fff', flexShrink: 1 },
   badge: {
     position: 'absolute',
     top: -3,
     right: -3,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    paddingHorizontal: 4,
-    backgroundColor: '#e0473a',
-    borderWidth: 1.5,
-    borderColor: '#e87a45',
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    paddingHorizontal: 5,
+    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  badgeTxt: { color: '#fff', fontSize: 10, fontWeight: '800' },
-  iconBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+  badgeTxt: { color: '#fff', fontSize: 11, fontWeight: '800' },
+  avatarRing: {
+    width: BTN + 4,
+    height: BTN + 4,
+    borderRadius: (BTN + 4) / 2,
+    borderWidth: 2,
+    overflow: 'hidden',
+  },
+  search: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    height: 56,
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingLeft: 16,
+    paddingRight: 8,
+  },
+  placeholder: { flex: 1, fontSize: 16 },
+  mic: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
