@@ -15,9 +15,10 @@ const ROUTE_TO_KEY = {
 };
 const KEY_TO_ROUTE = { home: 'home', newOrder: 'new-order', ads: 'ads', profile: 'profile' };
 
+// Expo Router 58: tabBar props'da `navigation` yo'q, o'rniga `emitter` va `navigateToTab` keladi.
 // Mavjud suzuvchi BottomNav dizayni Tabs navigatoriga `tabBar` sifatida ulanadi.
 // O'ram oynasi ixtiyoriy balandlikda: Android o'ram chegarasidan tashqaridagi bosishlarni o'tkazmaydi.
-export default function AppTabBar({ state, navigation }) {
+export default function AppTabBar({ state, emitter, navigateToTab }) {
   const { theme: t } = useTheme();
   const activeRoute = state.routes[state.index];
   const bottomInset = useSafeAreaInsets().bottom;
@@ -30,9 +31,9 @@ export default function AppTabBar({ state, navigation }) {
   const onTabChange = (key) => {
     const route = state.routes.find((r) => r.name === KEY_TO_ROUTE[key]);
     if (!route) return;
-    const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+    const event = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
     if (!event.defaultPrevented && route.key !== activeRoute.key) {
-      navigation.navigate(route.name);
+      navigateToTab(route.key);
     }
   };
 
