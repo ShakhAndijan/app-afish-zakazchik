@@ -26,6 +26,7 @@ async function ensureChannel() {
   if (Platform.OS !== 'android') return;
   await Notifications.setNotificationChannelAsync(PUSH_CHANNEL_ID, {
     name: 'harna.uz',
+    // eslint-disable-next-line import/namespace -- enum build/*.types.js dan `export *` orqali chiqadi
     importance: Notifications.AndroidImportance.HIGH,
     vibrationPattern: [0, 250, 250, 250],
     lightColor: '#f97316',
