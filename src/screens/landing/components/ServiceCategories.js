@@ -4,7 +4,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { useCategoriesQuery } from '../../../queries/categories';
 import CategoryPills from '../../zakazchi-main/components/ServiceCategories';
 
-// "Taklif xizmatlar": yo'nalishlar rangli kartalarda, ikki qatorda (bosh sahifadagi bilan bir xil).
+// "Mavjud xizmatlar": yo'nalishlar rangli kartalarda, ikki qatorda (bosh sahifadagi bilan bir xil).
 // Ma'lumot bo'lmasa — chizilmaydi.
 export default function ServiceCategories() {
   const { t } = useLanguage();

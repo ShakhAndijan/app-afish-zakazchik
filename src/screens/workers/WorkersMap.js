@@ -36,7 +36,18 @@ const HTML = `
     return id === selectedId ? 'islands#redCircleDotIcon' : 'islands#orangeCircleDotIcon';
   }
 
-  // data: { pins: [{id, lat, lon}], me: {lat, lon} | null, fit: boolean }
+  // Tanlangan viloyat/tuman markazi: koordinata bo'lsa o'sha joyga, bo'lmasa nomi bo'yicha qidirib, topilmasa zaxira nuqtaga.
+  function focusArea(a) {
+    function fallback() { map.setCenter([a.fallback.lat, a.fallback.lon], a.fallback.zoom); }
+    if (a.lat != null) { map.setCenter([a.lat, a.lon], a.zoom); return; }
+    ymaps.geocode(a.query, { results: 1 }).then(function (res) {
+      var o = res.geoObjects.get(0);
+      if (o && o.properties.get('boundedBy')) map.setBounds(o.properties.get('boundedBy'), { checkZoomRange: true });
+      else fallback();
+    }, fallback);
+  }
+
+  // data: { pins: [{id, lat, lon}], me: {lat, lon} | null, area: {...} | null, fit: boolean }
   function setData(data) {
     if (!ready) { pending = data; return; }
     if (group) map.geoObjects.remove(group);
@@ -65,7 +76,9 @@ const HTML = `
     }
 
     if (!data.fit) return;
-    if (data.pins.length > 1) {
+    if (data.area) {
+      focusArea(data.area);
+    } else if (data.pins.length > 1) {
       map.setBounds(group.getBounds(), { checkZoomRange: true, zoomMargin: 50 });
     } else if (data.pins.length === 1) {
       map.setCenter([data.pins[0].lat, data.pins[0].lon], 14);
@@ -105,7 +118,9 @@ const HTML = `
 // xaritaning bo'sh joyi bosilsa `onSelect(null)`. `me` — foydalanuvchi joylashuvi (ko'k nuqta).
 // `fitKey` o'zgarganda xarita nuqtalarga moslab qayta markazlanadi (filtr/tartib o'zgarganda);
 // "yana yuklash" kabi qo'shimcha nuqtalar kelganda ko'rinish o'zgarmaydi.
-export default function WorkersMap({ pins, me, selectedId, onSelect, fitKey, style }) {
+// `area` (tanlangan viloyat/tuman) berilsa, xarita nuqtalar bo'lmasa ham o'sha hududga markazlanadi:
+// { lat, lon, zoom } yoki koordinatasiz bo'lsa { query, fallback: { lat, lon, zoom } }.
+export default function WorkersMap({ pins, me, area, selectedId, onSelect, fitKey, style }) {
   const webRef = useRef(null);
   const [ready, setReady] = useState(false);
   const lastFit = useRef(null);
@@ -114,12 +129,12 @@ export default function WorkersMap({ pins, me, selectedId, onSelect, fitKey, sty
     if (!ready) return;
     const fit = lastFit.current !== fitKey;
     lastFit.current = fitKey;
-    const payload = JSON.stringify({ pins, me: me ?? null, fit });
+    const payload = JSON.stringify({ pins, me: me ?? null, area: area ?? null, fit });
     webRef.current?.injectJavaScript(`setData(${payload}); true;`);
     // Nuqtalar qayta chizilgach tanlangan nuqta rangi ham qayta qo'llanadi.
     webRef.current?.injectJavaScript(`select(${selectedId ?? 'null'}); true;`);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- tanlov alohida effektda
-  }, [ready, pins, me, fitKey]);
+  }, [ready, pins, me, area, fitKey]);
 
   useEffect(() => {
     if (!ready) return;

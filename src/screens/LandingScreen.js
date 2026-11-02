@@ -38,10 +38,11 @@ export default function LandingScreen({ onLogin, onSelectUsta }) {
           <ServiceCategories />
           <SeasonalSection onLogin={onLogin} />
 
+          <TopWorkers onSelectUsta={onSelectUsta} />
+
           <SectionHead title={t('app.sectionHead.howItWorks')} />
           <HowItWorks />
 
-          <TopWorkers onSelectUsta={onSelectUsta} />
           {/* Mehmon uchun e'lonlar ochiq; "Barchasi" kirish oynasiga olib boradi */}
           <ListingsCarousel style={{ marginTop: 28 }} onSeeAll={onLogin} />
 

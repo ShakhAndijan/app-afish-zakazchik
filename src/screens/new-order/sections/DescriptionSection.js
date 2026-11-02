@@ -1,11 +1,18 @@
+import { useState } from 'react';
 import { Text, TextInput, StyleSheet } from 'react-native';
 import { useTheme } from '../../../context/ThemeContext';
 import { useLanguage } from '../../../context/LanguageContext';
 import { common } from '../styles';
 
+const MIN_HEIGHT = 100;
+const V_PADDING = 14;
+const BORDER = 1.5;
+
+// Tavsif maydoni: boshida 100 px, matn ko'paygan sari balandligi o'sadi (ichida aylantirish yo'q).
 export default function DescriptionSection({ description, setDescription }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
+  const [height, setHeight] = useState(MIN_HEIGHT);
 
   return (
     <>
@@ -20,8 +27,19 @@ export default function DescriptionSection({ description, setDescription }) {
         placeholder={tr('newOrder.descriptionPlaceholder')}
         placeholderTextColor={t.faint}
         multiline
-        numberOfLines={4}
-        style={[s.textarea, { backgroundColor: t.card, borderColor: t.border, color: t.text }]}
+        scrollEnabled={false}
+        onContentSizeChange={(e) =>
+          setHeight(
+            Math.max(
+              MIN_HEIGHT,
+              Math.ceil(e.nativeEvent.contentSize.height) + V_PADDING * 2 + BORDER * 2
+            )
+          )
+        }
+        style={[
+          s.textarea,
+          { backgroundColor: t.card, borderColor: t.border, color: t.text, height },
+        ]}
       />
     </>
   );
@@ -29,11 +47,10 @@ export default function DescriptionSection({ description, setDescription }) {
 
 const s = StyleSheet.create({
   textarea: {
-    borderWidth: 1.5,
+    borderWidth: BORDER,
     borderRadius: 14,
-    padding: 14,
+    padding: V_PADDING,
     fontSize: 14,
-    minHeight: 100,
     textAlignVertical: 'top',
   },
 });

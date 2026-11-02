@@ -17,10 +17,3 @@ export const TRUST_ITEMS = [
   { icon: 'check-decagram', color: '#3b82f6', key: 'verified' },
   { icon: 'lightning-bolt', color: '#f5b81f', key: 'service247' },
 ];
-
-// Statistika yuklanmaguncha (yoki xatoda) ko'rinadigan boshlang'ich qiymatlar.
-export const DEFAULT_STATS = [
-  { value: '1 200+', key: 'workers' },
-  { value: '8 500+', key: 'completedJobs' },
-  { value: '4.8★', key: 'avgRating' },
-];

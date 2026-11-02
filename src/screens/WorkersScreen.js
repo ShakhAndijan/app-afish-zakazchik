@@ -24,6 +24,8 @@ import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import LocationMapPicker from '../components/LocationMapPicker';
 import { useWorkersFeed } from '../queries/workers';
+import { useRegions, useDistricts } from '../queries/reference';
+import { useCategoryTreeQuery } from '../queries/categories';
 import { ustaRoute, newOrderRoute } from '../navigation/params';
 import EmptyCard from './zakazchi-main/components/EmptyCard';
 import SectionError from './zakazchi-main/components/SectionError';
@@ -40,8 +42,8 @@ const LIST_PAGE = 20;
 const MAP_PAGE = 50;
 const formatKm = (km) => (km < 10 ? km.toFixed(1) : String(Math.round(km)));
 const NO_FILTERS = {
-  parentId: null,
-  subId: null,
+  parentIds: [],
+  subIds: [],
   regionId: null,
   districtId: null,
   minRating: null,
@@ -79,19 +81,57 @@ export default function WorkersScreen({ onBack }) {
     return () => clearTimeout(id);
   }, [queryInput]);
 
+  // Tanlangan yo'nalishlar: asosiy yo'nalishning quyi turlari tanlangan bo'lsa shular, aks holda yo'nalishning o'zi.
+  const { tree } = useCategoryTreeQuery();
+  const categoryIds = useMemo(
+    () =>
+      filter.parentIds.flatMap((pid) => {
+        const subs = tree.find((c) => c.id === pid)?.children ?? [];
+        const chosen = subs.filter((c) => filter.subIds.includes(c.id)).map((c) => c.id);
+        return chosen.length > 0 ? chosen : [pid];
+      }),
+    [tree, filter.parentIds, filter.subIds]
+  );
+
   const filters = useMemo(
     () => ({
       q,
       sort,
       ...filter,
-      categoryId: filter.subId ?? filter.parentId,
+      categoryIds,
       nearLat: coords?.lat ?? null,
       nearLon: coords?.lon ?? null,
     }),
-    [q, sort, filter, coords]
+    [q, sort, filter, categoryIds, coords]
   );
   const mapMode = view === 'map';
   const feed = useWorkersFeed(filters, mapMode ? MAP_PAGE : LIST_PAGE);
+
+  // Viloyat/tuman tanlangan bo'lsa xarita shu hududga markazlanadi (ustalar bo'lmasa ham boshqa shaharda qolib ketmaydi).
+  const regions = useRegions().data;
+  const districts = useDistricts(filter.regionId).data;
+  const mapArea = useMemo(() => {
+    const region = regions?.find((r) => r.id === filter.regionId);
+    if (!region) return null;
+    const hasPoint = (x) => x?.latitude != null && x?.longitude != null;
+    const regionZoom = region.code === 'toshkent-shahri' ? 11 : 8;
+    const regionPoint = hasPoint(region)
+      ? { lat: Number(region.latitude), lon: Number(region.longitude), zoom: regionZoom }
+      : null;
+    const district = districts?.find((d) => d.id === filter.districtId);
+    if (district) {
+      if (hasPoint(district)) {
+        return { lat: Number(district.latitude), lon: Number(district.longitude), zoom: 11 };
+      }
+      return {
+        query: `${district.name}, ${region.name}, Uzbekistan`,
+        fallback: regionPoint
+          ? { ...regionPoint, zoom: 9 }
+          : { lat: 41.2995, lon: 69.2401, zoom: 9 },
+      };
+    }
+    return regionPoint;
+  }, [regions, districts, filter.regionId, filter.districtId]);
 
   const mapPins = useMemo(
     () =>
@@ -187,7 +227,7 @@ export default function WorkersScreen({ onBack }) {
     return card;
   };
   const activeCount =
-    (filter.parentId != null ? 1 : 0) +
+    (filter.parentIds.length > 0 ? 1 : 0) +
     (filter.regionId != null ? 1 : 0) +
     (filter.minRating != null ? 1 : 0) +
     (filter.badge != null ? 1 : 0) +
@@ -340,9 +380,10 @@ export default function WorkersScreen({ onBack }) {
           style={StyleSheet.absoluteFill}
           pins={mapPins}
           me={coords}
+          area={mapArea}
           selectedId={selected ? selected.id : null}
           onSelect={setSelectedId}
-          fitKey={JSON.stringify(filters)}
+          fitKey={JSON.stringify([filters, mapArea])}
         />
       )}
       <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']} pointerEvents="box-none">
@@ -432,7 +473,7 @@ export default function WorkersScreen({ onBack }) {
                 <View style={s.mapEmpty} pointerEvents="none">
                   <View style={[s.mapEmptyBox, { backgroundColor: t.card, borderColor: t.border }]}>
                     <Text style={[s.mapNoteTxt, { color: t.text, textAlign: 'center' }]}>
-                      {tr('workersList.map.empty')}
+                      {tr(mapArea ? 'workersList.map.emptyArea' : 'workersList.map.empty')}
                     </Text>
                   </View>
                 </View>

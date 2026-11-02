@@ -4,11 +4,13 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { COLORS } from '../../../constants/colors';
 import { getTopComments } from '../../../api/reviews';
 import { useLanguage } from '../../../context/LanguageContext';
+import { formatTimeAgo } from '../../../utils/timeAgo';
 import useAutoScroll from '../hooks/useAutoScroll';
 import SectionHead from './SectionHead';
 
 const CARD_W = 240;
 const GAP = 12;
+const CARD_H = 194;
 const SLOT = CARD_W + GAP;
 
 // "Mijozlar fikri": sarlavha va eng yaxshi sharhlar karuseli (o'zi aylanadi). Sharhlar bo'lmasa
@@ -46,10 +48,14 @@ export default function ReviewsCarousel() {
 }
 
 function ReviewCard({ review: r }) {
+  const { t } = useLanguage();
+  const when = formatTimeAgo(r.createdAt, t);
   return (
     <View
       style={{
         width: CARD_W,
+        // Bir xil balandlik: komment qisqa bo'lsa ham avatar va ism hamma kartada bir chiziqda, pastda turadi.
+        height: CARD_H,
         backgroundColor: COLORS.card,
         borderRadius: 18,
         padding: 16,
@@ -62,9 +68,11 @@ function ReviewCard({ review: r }) {
           <Ionicons key={j} name="star" size={14} color={j < r.stars ? '#f5b81f' : '#2a3a4a'} />
         ))}
       </View>
-      <Text style={{ color: '#c4cdd8', fontSize: 13.5, lineHeight: 20, marginBottom: 14 }}>
-        {r.text}
-      </Text>
+      <View style={{ flex: 1, marginBottom: 14 }}>
+        <Text style={{ color: '#c4cdd8', fontSize: 13.5, lineHeight: 20 }} numberOfLines={4}>
+          {r.text}
+        </Text>
+      </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <View
           style={{
@@ -78,9 +86,14 @@ function ReviewCard({ review: r }) {
         >
           <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>{r.initial}</Text>
         </View>
-        <View>
-          <Text style={{ color: COLORS.white, fontWeight: '600', fontSize: 13 }}>{r.name}</Text>
-          <Text style={{ color: COLORS.gray, fontSize: 11.5, marginTop: 1 }}>{r.location}</Text>
+        {/* Pastki qator faqat ma'lumot bo'lsa chiziladi: bo'sh matn ham joy olib, ismni tepaga surib yuboradi */}
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <Text style={{ color: COLORS.white, fontWeight: '600', fontSize: 13 }} numberOfLines={1}>
+            {r.name}
+          </Text>
+          {!!when && (
+            <Text style={{ color: COLORS.gray, fontSize: 11.5, marginTop: 1 }}>{when}</Text>
+          )}
         </View>
       </View>
     </View>

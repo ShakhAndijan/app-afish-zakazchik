@@ -3,7 +3,6 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../../../context/ThemeContext';
 import { useLanguage } from '../../../context/LanguageContext';
 import { formatNumber } from '../../../utils/format';
-import MockBadge from '../../orders/components/MockBadge';
 import SectionHeader from './SectionHeader';
 
 const BENEFITS = [
@@ -29,9 +28,8 @@ function describe(key, stats, tr) {
 }
 
 // "Nega HARNA?" bo'limi (yangi mijozlar uchun). Kartalar haqiqiy statistikaga bog'langan:
-//  - "Kafolatlangan ish" bosilsa — yordam ekrani (`onOpenGuarantee`),
+//  - "Haqiqiy baholar" bosilsa — yordam ekrani (`onOpenGuarantee`),
 //  - "Tekshirilgan ustalar" bosilsa — faqat tasdiqlangan ustalar filtri (`onOpenVerified`).
-// "Tezkor javob" uchun backendda umumiy ko'rsatkich yo'q, shuning uchun namunaviy belgi bilan.
 export default function BenefitsSection({ stats, onOpenGuarantee, onOpenVerified }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
@@ -60,7 +58,6 @@ export default function BenefitsSection({ stats, onOpenGuarantee, onOpenVerified
                   <Text style={{ fontWeight: '700', fontSize: 14, color: t.text, flexShrink: 1 }}>
                     {tr(`app.benefits.${b.key}Title`)}
                   </Text>
-                  {b.key === 'fast' && <MockBadge />}
                 </View>
                 <Text style={{ fontSize: 12.5, color: t.muted, lineHeight: 18, marginTop: 3 }}>
                   {describe(b.key, stats, tr)}

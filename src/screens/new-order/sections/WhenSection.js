@@ -9,6 +9,12 @@ import { common } from '../styles';
 import OptionSheet from '../components/OptionSheet';
 import ToggleSwitch from '../components/ToggleSwitch';
 
+// Tanlangan variantga mos ikonka: bugun — bugungi kun belgisi, sana — oylik taqvim.
+const WHEN_ICONS = {
+  today: 'calendar-today',
+  date: 'calendar-month-outline',
+};
+
 // "Qachon kerak?": bitta maydon, odatda "Bugun". Bosilganda boshqa variant tanlanadi
 // (sana / erkin), "Shoshilinch" esa shu kartaning ichidagi alohida tugma.
 export default function WhenSection({ when, setWhen, whenDate, setWhenDate }) {
@@ -47,12 +53,8 @@ export default function WhenSection({ when, setWhen, whenDate, setWhenDate }) {
   };
 
   const options = [
-    { id: 'today', name: tr('newOrder.when.today') },
-    { id: 'date', name: tr('newOrder.when.date') },
-    {
-      id: 'flexible',
-      name: `${tr('newOrder.when.flexible')} · ${tr('newOrder.when.flexibleSubtitle')}`,
-    },
+    { id: 'today', name: tr('newOrder.when.today'), icon: WHEN_ICONS.today },
+    { id: 'date', name: tr('newOrder.when.date'), icon: WHEN_ICONS.date },
   ];
 
   const onSelect = (id) => {
@@ -62,17 +64,7 @@ export default function WhenSection({ when, setWhen, whenDate, setWhenDate }) {
 
   const urgent = when === 'urgent';
   const valueText =
-    when === 'date' && whenDate
-      ? formatWhenDate(whenDate)
-      : when === 'flexible'
-        ? tr('newOrder.when.flexible')
-        : tr('newOrder.when.today');
-  const subText =
-    urgent || when === 'today' || !when
-      ? null
-      : when === 'flexible'
-        ? tr('newOrder.when.flexibleSubtitle')
-        : null;
+    when === 'date' && whenDate ? formatWhenDate(whenDate) : tr('newOrder.when.today');
 
   return (
     <>
@@ -93,7 +85,7 @@ export default function WhenSection({ when, setWhen, whenDate, setWhenDate }) {
         >
           <View style={[s.icon, { backgroundColor: t.orange + '1f' }]}>
             <MaterialCommunityIcons
-              name={when === 'date' ? 'calendar-month-outline' : 'white-balance-sunny'}
+              name={WHEN_ICONS[when] ?? WHEN_ICONS.today}
               size={20}
               color={t.orange}
             />
@@ -102,11 +94,6 @@ export default function WhenSection({ when, setWhen, whenDate, setWhenDate }) {
             <Text style={[s.value, { color: t.text }]} numberOfLines={1}>
               {valueText}
             </Text>
-            {!!subText && (
-              <Text style={[s.sub, { color: t.muted }]} numberOfLines={1}>
-                {subText}
-              </Text>
-            )}
           </View>
           <Text style={[s.change, { color: t.orange }]}>{tr('newOrder.when.change')}</Text>
           <MaterialCommunityIcons name="chevron-right" size={18} color={t.faint} />

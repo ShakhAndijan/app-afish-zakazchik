@@ -195,12 +195,12 @@ export default function NewOrderScreen({ onOrderCreated, targetWorker, onBack })
     setReviewOpen(true);
   };
 
-  const handleMapChange = (lat, lng) => {
+  const handleMapChange = (lat, lng, opts) => {
     const nLat = Number(lat);
     const nLng = Number(lng);
     setGpsLat(nLat);
     setGpsLng(nLng);
-    autoSelectLocation(nLat, nLng);
+    if (!opts?.fromSearch) autoSelectLocation(nLat, nLng);
   };
 
   const handleSubmit = async () => {

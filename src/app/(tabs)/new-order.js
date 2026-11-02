@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useNavigation, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import NewOrderScreen from '../../screens/NewOrderScreen';
 import { decodeParam } from '../../navigation/params';
@@ -11,10 +11,20 @@ export default function NewOrderRoute() {
   const { worker } = useLocalSearchParams();
   const [formKey, setFormKey] = useState(0);
 
+  // Ekran butunlay olib tashlanganda (chiqish, qayta yuklash) marshrut yo'q — `setParams` "hech bir navigator
+  // qayta ishlamadi" ogohlantirishini beradi. Bayroq fokus tozalashidan oldin o'rnatilishi uchun shu yerda.
+  const unmounted = useRef(false);
+  useEffect(() => {
+    unmounted.current = false;
+    return () => {
+      unmounted.current = true;
+    };
+  }, []);
+
   useFocusEffect(
     useCallback(
       () => () => {
-        navigation.setParams({ worker: undefined });
+        if (!unmounted.current) navigation.setParams({ worker: undefined });
         setFormKey((k) => k + 1);
       },
       [navigation]

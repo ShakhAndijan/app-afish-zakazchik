@@ -4,7 +4,6 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { COLORS } from '../../../constants/colors';
 import { ENDPOINTS, CLIENT_HEADERS } from '../../../constants/config';
 import { useLanguage } from '../../../context/LanguageContext';
-import { DEFAULT_STATS } from '../constants';
 
 const LOOK = {
   workers: { icon: 'account-group', color: '#3b82f6' },
@@ -13,10 +12,11 @@ const LOOK = {
 };
 
 // Umumiy statistika: ustalar, bajarilgan ishlar, o'rtacha reyting (GET /system/stats).
-// Javob kelguncha yoki xatoda — DEFAULT_STATS ko'rinadi. Uch alohida rangli kartochka.
+// Faqat serverdan kelgan haqiqiy raqamlar ko'rsatiladi: javob kelguncha yoki xatoda blok chizilmaydi.
+// Uch alohida rangli kartochka.
 export default function StatsBand() {
   const { t } = useLanguage();
-  const [stats, setStats] = useState(DEFAULT_STATS);
+  const [stats, setStats] = useState(null);
 
   useEffect(() => {
     fetch(ENDPOINTS.SYSTEM_STATS, { headers: CLIENT_HEADERS })
@@ -33,6 +33,8 @@ export default function StatsBand() {
       })
       .catch(() => {});
   }, []);
+
+  if (!stats) return null;
 
   return (
     <View style={s.row}>

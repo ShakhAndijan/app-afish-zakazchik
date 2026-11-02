@@ -24,12 +24,12 @@ export default function AddressEditor({ mode, initial, onClose, onSave, t, tr })
     if (initial?.regionId) loc.presetLocation(initial.regionId, initial.districtId);
   }, []);
 
-  const handleMapChange = (lat, lng) => {
+  const handleMapChange = (lat, lng, opts) => {
     const nLat = Number(lat);
     const nLng = Number(lng);
     setGpsLat(nLat);
     setGpsLng(nLng);
-    loc.autoSelectLocation(nLat, nLng);
+    if (!opts?.fromSearch) loc.autoSelectLocation(nLat, nLng);
   };
 
   // Ro'yxat hali yuklanmagan bo'lsa, avval saqlangan nomni ishlatamiz.

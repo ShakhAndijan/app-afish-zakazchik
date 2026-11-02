@@ -54,7 +54,13 @@ export default function buildOrderPayload({
     entrance: entrance.trim() || null,
     floor: floor.trim() || null,
     timing_kind: when ? TIMING_KIND_MAP[when] : null,
-    scheduled_date: when === 'date' && whenDate ? toISODate(whenDate) : null,
+    // "Bugun" tanlanganda ham sana yuboriladi (telefondagi bugungi sana), "Sana tanlash"da — tanlangan kun.
+    scheduled_date:
+      when === 'date' && whenDate
+        ? toISODate(whenDate)
+        : when === 'today'
+          ? toISODate(new Date())
+          : null,
     tools_provided_by:
       toolsOption === 'has' ? 'customer' : toolsOption === 'needed' ? 'worker' : null,
     workers_needed: workerCount,

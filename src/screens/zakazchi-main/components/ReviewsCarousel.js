@@ -32,38 +32,47 @@ export default function ReviewsCarousel({ state }) {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
-        renderItem={({ item: r }) => (
-          <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
-            <View style={{ flexDirection: 'row', gap: 3, marginBottom: 10 }}>
-              {[0, 1, 2, 3, 4].map((j) => (
-                <Ionicons key={j} name="star" size={13} color={j < r.stars ? t.gold : t.border} />
-              ))}
-            </View>
-            <Text
-              style={{ color: t.muted, fontSize: 13, lineHeight: 19, marginBottom: 14 }}
-              numberOfLines={4}
-            >
-              {r.text}
-            </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <Avatar letter={r.initial} size={34} bgColor={r.color} />
-              <View>
-                <Text style={{ color: t.text, fontWeight: '600', fontSize: 13 }}>{r.name}</Text>
-                <Text style={{ color: t.faint, fontSize: 11, marginTop: 1 }}>
-                  {formatTimeAgo(r.createdAt, tr)}
+        renderItem={({ item: r }) => {
+          const when = formatTimeAgo(r.createdAt, tr);
+          return (
+            <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
+              <View style={{ flexDirection: 'row', gap: 3, marginBottom: 10 }}>
+                {[0, 1, 2, 3, 4].map((j) => (
+                  <Ionicons key={j} name="star" size={13} color={j < r.stars ? t.gold : t.border} />
+                ))}
+              </View>
+              <View style={{ flex: 1, marginBottom: 14 }}>
+                <Text style={{ color: t.muted, fontSize: 13, lineHeight: 19 }} numberOfLines={4}>
+                  {r.text}
                 </Text>
               </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Avatar letter={r.initial} size={34} bgColor={r.color} />
+                <View style={{ flex: 1, justifyContent: 'center' }}>
+                  <Text
+                    style={{ color: t.text, fontWeight: '600', fontSize: 13 }}
+                    numberOfLines={1}
+                  >
+                    {r.name}
+                  </Text>
+                  {!!when && (
+                    <Text style={{ color: t.faint, fontSize: 11, marginTop: 1 }}>{when}</Text>
+                  )}
+                </View>
+              </View>
             </View>
-          </View>
-        )}
+          );
+        }}
       />
     </View>
   );
 }
 
 const s = StyleSheet.create({
+  // Bir xil balandlik: komment qisqa bo'lsa ham avatar va ism hamma kartada pastda, bir chiziqda turadi.
   card: {
     width: 240,
+    height: 190,
     borderRadius: 18,
     padding: 16,
     borderWidth: 1,

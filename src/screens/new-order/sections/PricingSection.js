@@ -71,7 +71,7 @@ export default function PricingSection({
             <Text style={[s.title, { color: t.text }]} numberOfLines={1}>
               {current.title}
             </Text>
-            <Text style={[s.sub, { color: t.muted }]} numberOfLines={2}>
+            <Text style={[s.sub, { color: t.muted }]} numberOfLines={3}>
               {current.subtitle}
             </Text>
           </View>

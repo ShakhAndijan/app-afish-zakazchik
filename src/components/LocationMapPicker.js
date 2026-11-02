@@ -32,13 +32,30 @@ const buildMapHtml = (initLat, initLng) => `
   var myMap = null;
   var placemark = null;
 
+  // Belgi (SVG): yumaloq kvadratda odamcha, pastida tayoqcha va halqa. Halqaning markazi — tanlangan nuqta.
+  var PIN_SVG =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="92" viewBox="0 0 64 92">' +
+    '<defs><filter id="s" x="-30%" y="-30%" width="160%" height="160%">' +
+    '<feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#000" flood-opacity="0.28"/></filter></defs>' +
+    '<g filter="url(#s)">' +
+    '<rect x="4" y="4" width="56" height="56" rx="17" fill="#ffffff"/>' +
+    '<rect x="8" y="8" width="48" height="48" rx="14" fill="#e87a45"/>' +
+    '<g stroke="#ffffff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" fill="none">' +
+    '<path d="M31 29 L31 40"/><path d="M31 40 L26 49"/><path d="M31 40 L36 49"/>' +
+    '<path d="M31 32 L41 27"/><path d="M31 32 L23 37"/></g>' +
+    '<circle cx="31" cy="22" r="5" fill="#ffffff"/>' +
+    '<rect x="30.5" y="60" width="3" height="16" rx="1.5" fill="#2b2b2b"/>' +
+    '<circle cx="32" cy="80" r="7" fill="#ffffff" stroke="#2b2b2b" stroke-width="3.5"/>' +
+    '</g></svg>';
+  var PIN_HREF = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(PIN_SVG);
+
   // Geokodlash (manzil matnini topish) endi shu WebView ichida emas,
   // React Native tomonida (native fetch, CORS cheklovisiz) amalga oshiriladi —
   // WebView'ning brauzer konteksti Yandex'ning standalone Geocoder API'siga
   // cross-origin fetch yuborganda CORS bilan rad etilardi.
-  function post(lat, lng) {
+  function post(lat, lng, source) {
     window.ReactNativeWebView.postMessage(JSON.stringify({
-      lat: lat.toFixed(6), lng: lng.toFixed(6)
+      lat: lat.toFixed(6), lng: lng.toFixed(6), source: source || 'user'
     }));
   }
 
@@ -46,7 +63,12 @@ const buildMapHtml = (initLat, initLng) => `
     if (placemark) {
       placemark.geometry.setCoordinates(coords);
     } else {
-      placemark = new ymaps.Placemark(coords, {}, { preset: 'islands#redDotIcon' });
+      placemark = new ymaps.Placemark(coords, {}, {
+        iconLayout: 'default#image',
+        iconImageHref: PIN_HREF,
+        iconImageSize: [64, 92],
+        iconImageOffset: [-32, -80]
+      });
       myMap.geoObjects.add(placemark);
     }
   }
@@ -58,14 +80,23 @@ const buildMapHtml = (initLat, initLng) => `
     setPlacemark([lat, lng]);
   }
 
-  function goTo(lat, lng, zoom) {
-    myMap.setCenter([lat, lng], zoom || 16);
-    post(lat, lng);
+  function goTo(lat, lng, zoom, source) {
+    myMap.setCenter([lat, lng], zoom || 18);
+    post(lat, lng, source);
   }
 
   // Faqat ko'rinishni suradi — pin/placemark qo'ymaydi. Viloyat/tuman
   // tanlangandagina xarita shu tomonga qaraydi, aniq nuqta hali belgilanmagan
   // bo'ladi — foydalanuvchi bosgandagina (yoki "hozirgi joylashuv"da) pin chiqadi.
+  // Xarita hali tayyor bo'lmasa, tayyor bo'lgach nuqtaga o'tadi.
+  function goToSafe(lat, lng, zoom) {
+    if (!myMap) {
+      ymaps.ready(function () { goTo(lat, lng, zoom); });
+      return;
+    }
+    goTo(lat, lng, zoom);
+  }
+
   function panTo(lat, lng, zoom) {
     myMap.setCenter([lat, lng], zoom || 10);
   }
@@ -92,7 +123,7 @@ const buildMapHtml = (initLat, initLng) => `
 
     ${
       initLat && initLng
-        ? `setPlacemark([${initLat}, ${initLng}]); myMap.setCenter([${initLat}, ${initLng}], 15);`
+        ? `setPlacemark([${initLat}, ${initLng}]); myMap.setCenter([${initLat}, ${initLng}], 17);`
         : ''
     }
 
@@ -107,9 +138,13 @@ const buildMapHtml = (initLat, initLng) => `
 
 // Ikkalasi ham React Native'ning o'z `fetch`'i orqali (native tarmoq so'rovi,
 // brauzer emas) chaqiriladi — shuning uchun CORS cheklovi umuman ishlamaydi.
+// Geokoder o'zbek tilida (lotin) javob beradi — aks holda ko'cha nomlari ruscha (kirill) yoziladi.
+// Uning "ʻ" belgilari ilovadagi oddiy apostrofga almashtiriladi ("ko'chasi").
+const normalizeApostrophes = (v) => (v ? v.replace(/[ʻʼ’‘`]/g, "'") : v);
+
 async function reverseGeocodeAddress(lat, lng) {
   try {
-    const url = `https://geocode-maps.yandex.ru/1.x/?apikey=${YANDEX_GEOCODER_API_KEY}&format=json&geocode=${lng},${lat}`;
+    const url = `https://geocode-maps.yandex.ru/1.x/?apikey=${YANDEX_GEOCODER_API_KEY}&format=json&lang=uz_UZ&geocode=${lng},${lat}`;
     const res = await fetch(url);
     const json = await res.json();
     const obj = json?.response?.GeoObjectCollection?.featureMember?.[0]?.GeoObject;
@@ -122,18 +157,31 @@ async function reverseGeocodeAddress(lat, lng) {
     });
     return {
       addressResolved: true,
-      addressLine: meta.text || obj.name,
-      street: parts.street || null,
+      addressLine: normalizeApostrophes(meta.text || obj.name),
+      street: normalizeApostrophes(parts.street) || null,
       house: parts.house || null,
-      district: parts.district || null,
-      locality: parts.locality || null,
-      area: parts.area || null,
-      province: parts.province || null,
+      district: normalizeApostrophes(parts.district) || null,
+      locality: normalizeApostrophes(parts.locality) || null,
+      area: normalizeApostrophes(parts.area) || null,
+      province: normalizeApostrophes(parts.province) || null,
     };
   } catch {
     return null;
   }
 }
+
+const withTimeout = (promise, ms) =>
+  Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
+  ]);
+
+// Ikki nuqta orasidagi taxminiy masofa (metr) — kichik farqlar uchun yetarli aniqlikda.
+const metersBetween = (a, b) => {
+  const dLat = (a.latitude - b.latitude) * 111320;
+  const dLng = (a.longitude - b.longitude) * 111320 * Math.cos((a.latitude * Math.PI) / 180);
+  return Math.hypot(dLat, dLng);
+};
 
 async function forwardGeocode(query) {
   try {
@@ -145,6 +193,78 @@ async function forwardGeocode(query) {
     if (!pos) return null;
     const [lng, lat] = pos.split(' ').map(Number);
     return { lat, lng };
+  } catch {
+    return null;
+  }
+}
+
+// Nomlarni solishtirish uchun: kichik harf, apostroflarsiz, "tumani/viloyati" kabi so'zlarsiz.
+const normName = (v) =>
+  (v || '')
+    .toLowerCase()
+    .replace(/[ʻʼ’‘`']/g, '')
+    .replace(/\b(tumani|tuman|shahri|shahar|viloyati|viloyat)\b/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const areaCenterCache = new Map();
+async function areaCenter(query) {
+  if (!areaCenterCache.has(query)) areaCenterCache.set(query, await forwardGeocode(query));
+  return areaCenterCache.get(query);
+}
+
+const STREET_KINDS = ['house', 'street'];
+const FALLBACK_KINDS = ['locality', 'district'];
+
+/**
+ * Yozilgan ko'cha bo'yicha joy qidirish. Yandex bir nechta javob qaytaradi (tuman markazi,
+ * boshqa tumandagi bir xil nomli ko'cha, metro...), shuning uchun birinchisini ko'r-ko'rona olmay:
+ *  - faqat uy/ko'cha olinadi (topilmasa — mahalla/aholi punkti, lekin tumanning o'zi emas);
+ *  - tanlangan tuman/viloyat markazidan uzoqdagilar tashlanadi;
+ *  - yozilgan so'zlar topilgan manzil matnida bo'lishi shart (aks holda Yandex tuman nomiga o'xshash
+ *    boshqa ko'chani qaytarib, xarita noto'g'ri joyga sakrardi);
+ *  - matnida tanlangan tuman/viloyat nomi bor javob oldinga chiqadi.
+ * Mos javob bo'lmasa null qaytadi — xarita boshqa joyga sakramaydi.
+ */
+async function searchAddress({ query, street, district, region }, area) {
+  try {
+    const url = `https://geocode-maps.yandex.ru/1.x/?apikey=${YANDEX_GEOCODER_API_KEY}&format=json&results=10&lang=uz_UZ&geocode=${encodeURIComponent(query)}`;
+    const res = await fetch(url);
+    const json = await res.json();
+    const members = json?.response?.GeoObjectCollection?.featureMember || [];
+    const items = members
+      .map((f, order) => {
+        const o = f.GeoObject;
+        const meta = o?.metaDataProperty?.GeocoderMetaData;
+        const [lng, lat] = (o?.Point?.pos || '').split(' ').map(Number);
+        return { lat, lng, order, kind: meta?.kind, text: normName(meta?.text) };
+      })
+      .filter((i) => Number.isFinite(i.lat) && Number.isFinite(i.lng));
+
+    const areaPoint = area ? { latitude: area.lat, longitude: area.lng } : null;
+    const distTo = (i) =>
+      areaPoint ? metersBetween(areaPoint, { latitude: i.lat, longitude: i.lng }) : 0;
+    const limit = district ? 40000 : region ? 150000 : Infinity;
+    // Raqamlar va "ko'cha" so'zlari tekshirilmaydi; qolgan so'zlarning hammasi manzil matnida bo'lsin.
+    const words = normName(street)
+      .split(' ')
+      .filter((w) => w.length >= 3 && !/^\d+$/.test(w) && !/^(kocha|kucha|kuch)/.test(w));
+    const near = items.filter((i) => distTo(i) <= limit && words.every((w) => i.text.includes(w)));
+
+    let pool = near.filter((i) => STREET_KINDS.includes(i.kind));
+    if (!pool.length) {
+      // Tumanning o'zi (markazi) "joy" emas — uni o'tkazib yuboramiz.
+      pool = near.filter(
+        (i) => FALLBACK_KINDS.includes(i.kind) && (!areaPoint || distTo(i) > 1500)
+      );
+    }
+    if (!pool.length) return null;
+
+    const nd = normName(district);
+    const nr = normName(region);
+    const score = (i) => (nd && i.text.includes(nd) ? 0 : 2) + (nr && i.text.includes(nr) ? 0 : 1);
+    pool.sort((a, b) => score(a) - score(b) || a.order - b.order);
+    return { lat: pool[0].lat, lng: pool[0].lng };
   } catch {
     return null;
   }
@@ -174,6 +294,12 @@ export default function LocationMapPicker({
   searchQuery,
   searchZoom,
   onAddressResolved,
+  // true bo'lsa, xarita yuklangach hozirgi joylashuv o'zi tanlanadi (ruxsat berilmasa — indamay o'tkazib yuboriladi).
+  autoLocate = false,
+  // Yumaloq oq tugma (faqat belgi, yozuvsiz): `locateBg` — fon, `locateColor` — belgi rangi.
+  locateRound = false,
+  locateBg = '#ffffff',
+  locateColor = '#1a1a1a',
   locateLabel,
   locatingLabel,
   tapHint,
@@ -188,23 +314,58 @@ export default function LocationMapPicker({
   const [locating, setLocating] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
 
-  const locate = async (ref) => {
+  const autoLocated = useRef(false);
+  const geocodeSeq = useRef(0);
+  const geocodeQueryRef = useRef(geocodeQuery);
+  useEffect(() => {
+    geocodeQueryRef.current = geocodeQuery;
+  }, [geocodeQuery]);
+  // Xaritadagi nuqta (bosish / joylashuv / qidiruv) oxirgi marta qachon o'zgargani. Shundan keyin
+  // avtomatik tanlangan viloyat/tuman xaritani uzoqqa qaytarib yubormasligi uchun ishlatiladi.
+  const mapDrivenAt = useRef(0);
+  const recentlyMapDriven = () => Date.now() - mapDrivenAt.current < 6000;
+
+  // `silent` — avtomatik urinishda ruxsat berilmasa yoki xato bo'lsa oyna chiqarilmaydi.
+  const locate = async (ref, silent = false) => {
     setLocating(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        if (permissionTitle) appAlert(permissionTitle, permissionMessage);
+        if (!silent && permissionTitle) appAlert(permissionTitle, permissionMessage);
         return;
       }
-      const pos = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-      ref.current?.injectJavaScript(`goTo(${pos.coords.latitude}, ${pos.coords.longitude}); true;`);
+      let shown = null;
+      const show = (coords) => {
+        shown = coords;
+        ref.current?.injectJavaScript(`goToSafe(${coords.latitude}, ${coords.longitude}); true;`);
+      };
+      // 1) Oxirgi ma'lum joylashuv — deyarli darhol; xarita shu zahoti o'tadi.
+      const last = await Location.getLastKnownPositionAsync({ maxAge: 10 * 60 * 1000 }).catch(
+        () => null
+      );
+      if (last) show(last.coords);
+      // 2) Yangi aniqlash: tarmoq/Wi-Fi orqali (GPS'ni kutmasdan, yopiq joyda ham tez), 12 soniyadan oshmaydi.
+      //    Natija avvalgidan sezilarli farq qilsagina xarita qayta suriladi.
+      try {
+        const pos = await withTimeout(
+          Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+          12000
+        );
+        if (!shown || metersBetween(shown, pos.coords) > 40) show(pos.coords);
+      } catch (e) {
+        if (!shown) throw e;
+      }
     } catch {
-      if (errorTitle) appAlert(errorTitle, errorMessage);
+      if (!silent && errorTitle) appAlert(errorTitle, errorMessage);
     } finally {
       setLocating(false);
     }
+  };
+
+  const handleLoadEnd = () => {
+    if (!autoLocate || autoLocated.current) return;
+    autoLocated.current = true;
+    locate(webRef, true);
   };
 
   // Pin darhol emas — manzil (ko'cha/uy) matni topilib, formaga yozilgandan
@@ -217,9 +378,15 @@ export default function LocationMapPicker({
         devLog('[LocationMapPicker]', data.debug, data);
         return;
       }
-      onChange?.(data.lat, data.lng);
+      mapDrivenAt.current = Date.now();
+      // Yozilgan ko'cha bo'yicha qidiruvdan kelgan nuqtada faqat koordinata saqlanadi: kiritilgan matn
+      // ustidan yozilmaydi, viloyat/tuman ham o'zgartirilmaydi.
+      const fromSearch = data.source === 'search';
+      onChange?.(data.lat, data.lng, { fromSearch });
+      if (fromSearch) return;
+      const seq = ++geocodeSeq.current;
       reverseGeocodeAddress(data.lat, data.lng).then((resolved) => {
-        if (!resolved) return;
+        if (!resolved || seq !== geocodeSeq.current) return;
         onAddressResolved?.(resolved);
         if (resolved.addressLine || resolved.street) {
           ref.current?.injectJavaScript(`dropPin(${data.lat}, ${data.lng}); true;`);
@@ -235,7 +402,7 @@ export default function LocationMapPicker({
     if (!geocodeQuery) return;
     let cancelled = false;
     forwardGeocode(geocodeQuery).then((coords) => {
-      if (cancelled || !coords) return;
+      if (cancelled || !coords || recentlyMapDriven()) return;
       webRef.current?.injectJavaScript(
         `panTo(${coords.lat}, ${coords.lng}, ${geocodeZoom || 13}); true;`
       );
@@ -250,12 +417,14 @@ export default function LocationMapPicker({
   useEffect(() => {
     if (!searchQuery) return;
     let cancelled = false;
-    forwardGeocode(searchQuery).then((coords) => {
+    (async () => {
+      const area = geocodeQueryRef.current ? await areaCenter(geocodeQueryRef.current) : null;
+      const coords = await searchAddress(searchQuery, area);
       if (cancelled || !coords) return;
       webRef.current?.injectJavaScript(
-        `goTo(${coords.lat}, ${coords.lng}, ${searchZoom || 16}); dropPin(${coords.lat}, ${coords.lng}); true;`
+        `goTo(${coords.lat}, ${coords.lng}, ${searchZoom || 18}, 'search'); dropPin(${coords.lat}, ${coords.lng}); true;`
       );
-    });
+    })();
     return () => {
       cancelled = true;
     };
@@ -266,7 +435,7 @@ export default function LocationMapPicker({
   // obyekt bo'lsa har renderda yangi reference hosil bo'lib, effekt
   // keraksiz qayta ishga tushib ketardi.
   useEffect(() => {
-    if (panLat == null || panLng == null) return;
+    if (panLat == null || panLng == null || recentlyMapDriven()) return;
     const js = `panToSafe(${panLat}, ${panLng}, ${panZoom || 10}); true;`;
     webRef.current?.injectJavaScript(js);
   }, [panLat, panLng, panZoom]);
@@ -279,6 +448,7 @@ export default function LocationMapPicker({
           style={styles.map}
           source={{ html: buildMapHtml(lat, lng), baseUrl: MAP_BASE_URL }}
           onMessage={makeOnMessage(webRef)}
+          onLoadEnd={handleLoadEnd}
           javaScriptEnabled
           originWhitelist={['*']}
           scrollEnabled={false}
@@ -301,17 +471,23 @@ export default function LocationMapPicker({
             </TouchableOpacity>
           )}
           <TouchableOpacity
-            style={styles.locateBtn}
+            style={
+              locateRound ? [styles.locateRound, { backgroundColor: locateBg }] : styles.locateBtn
+            }
             onPress={() => locate(webRef)}
             activeOpacity={0.85}
             disabled={locating}
+            accessibilityRole="button"
+            accessibilityLabel={locateLabel}
           >
             {locating ? (
-              <ActivityIndicator size="small" color="#fff" />
+              <ActivityIndicator size="small" color={locateRound ? locateColor : '#fff'} />
+            ) : locateRound ? (
+              <Ionicons name="navigate-outline" size={26} color={locateColor} />
             ) : (
               <Ionicons name="navigate" size={15} color="#fff" />
             )}
-            {!!locateLabel && (
+            {!locateRound && !!locateLabel && (
               <Text style={styles.locateTxt}>{locating ? locatingLabel : locateLabel}</Text>
             )}
           </TouchableOpacity>
@@ -399,6 +575,18 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     paddingHorizontal: 12,
     elevation: 4,
+  },
+  locateRound: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 5,
   },
   locateTxt: { color: '#fff', fontSize: 12.5, fontWeight: '600' },
   fullWrap: { flex: 1, backgroundColor: '#000' },

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { View, Text, Pressable, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../../context/ThemeContext';
@@ -8,6 +9,7 @@ import { useCategoryTreeQuery } from '../../queries/categories';
 const RATINGS = [3, 4, 4.5];
 const BADGES = ['gold', 'silver', 'bronze'];
 const EMPTY = [];
+const FALLBACK_ICON = '\u{1F6E0}\uFE0F';
 
 function Chip({ label, active, onPress }) {
   const { theme: t } = useTheme();
@@ -27,34 +29,185 @@ function Chip({ label, active, onPress }) {
   );
 }
 
-function Toggle({ label, icon, value, onChange }) {
+// Yo'nalish kartochkasi: tepada emoji, pastda nomi (gorizontal aylantiriladigan qatorda).
+// Tanlangan bo'lsa burchagida "x" belgisi chiqadi — bosilsa tanlov olib tashlanadi.
+function CategoryTile({ label, icon, active, onPress }) {
+  const { theme: t } = useTheme();
+  return (
+    <View style={s.tileWrap}>
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.85}
+        accessibilityRole="button"
+        accessibilityState={{ selected: active }}
+        style={[
+          s.tile,
+          {
+            backgroundColor: active ? `${t.orange}1F` : t.card,
+            borderColor: active ? t.orange : t.border,
+          },
+        ]}
+      >
+        <Text style={s.tileEmoji} allowFontScaling={false}>
+          {icon || FALLBACK_ICON}
+        </Text>
+        <Text
+          style={[s.tileTxt, { color: active ? t.orange : t.text }]}
+          numberOfLines={2}
+          allowFontScaling={false}
+        >
+          {label}
+        </Text>
+      </TouchableOpacity>
+      {active && (
+        <TouchableOpacity
+          onPress={onPress}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={`${label}: ×`}
+          style={[s.tileX, { backgroundColor: t.orange, borderColor: t.bg }]}
+        >
+          <MaterialCommunityIcons name="close" size={12} color="#fff" />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
+// Tanlash maydoni (select): bosilsa ro'yxat ochiladi. Qiymat tanlangan bo'lsa to'q sariq ramka bilan.
+function SelectField({ label, icon, value, placeholder, onPress }) {
+  const { theme: t } = useTheme();
+  const filled = value != null;
+  return (
+    <View>
+      <Text style={[s.label, { color: t.muted }]}>{label}</Text>
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.85}
+        accessibilityRole="button"
+        accessibilityLabel={`${label}: ${filled ? value : placeholder}`}
+        style={[
+          s.select,
+          {
+            backgroundColor: filled ? `${t.orange}14` : t.card,
+            borderColor: filled ? t.orange : t.border,
+          },
+        ]}
+      >
+        <MaterialCommunityIcons name={icon} size={19} color={filled ? t.orange : t.muted} />
+        <Text style={[s.selectTxt, { color: filled ? t.text : t.muted }]} numberOfLines={1}>
+          {filled ? value : placeholder}
+        </Text>
+        <MaterialCommunityIcons name="chevron-down" size={22} color={t.muted} />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+function OptionRow({ label, selected, onPress, multi }) {
   const { theme: t } = useTheme();
   return (
     <TouchableOpacity
-      onPress={() => onChange(!value)}
-      activeOpacity={0.85}
-      accessibilityRole="switch"
-      accessibilityState={{ checked: value }}
+      onPress={onPress}
+      activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
       style={[
-        s.toggle,
-        {
-          backgroundColor: value ? 'rgba(232,122,69,0.12)' : t.card,
-          borderColor: value ? t.orange : t.border,
-        },
+        s.option,
+        { backgroundColor: selected ? `${t.orange}14` : 'transparent', borderColor: t.border },
       ]}
     >
-      <MaterialCommunityIcons name={icon} size={18} color={value ? t.orange : t.muted} />
-      <Text style={[s.toggleTxt, { color: t.text }]}>{label}</Text>
-      <MaterialCommunityIcons
-        name={value ? 'check-circle' : 'circle-outline'}
-        size={20}
-        color={value ? t.orange : t.faint}
-      />
+      <Text
+        style={[
+          s.optionTxt,
+          { color: selected ? t.orange : t.text, fontWeight: selected ? '800' : '600' },
+        ]}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
+      {multi ? (
+        <MaterialCommunityIcons
+          name={selected ? 'checkbox-marked' : 'checkbox-blank-outline'}
+          size={22}
+          color={selected ? t.orange : t.faint}
+        />
+      ) : (
+        selected && <MaterialCommunityIcons name="check" size={20} color={t.orange} />
+      )}
     </TouchableOpacity>
   );
 }
 
-// Ustalar filtri: viloyat/tuman, minimal reyting, status, onlayn va tasdiqlangan.
+// Select ro'yxati: filtr oynasi ustida ochiladigan pastki oyna. Birinchi qator — "Hammasi".
+// `selectedIds` berilsa — ko'p tanlov (katakchalar, oyna ochiq qoladi, "Qo'llash" bilan yopiladi);
+// aks holda bitta tanlov (`selectedId`) va tanlagan zahoti yopiladi.
+function OptionPicker({
+  title,
+  options,
+  selectedId,
+  selectedIds,
+  allLabel,
+  applyLabel,
+  onSelect,
+  onClose,
+  maxHeight,
+  bottomInset,
+}) {
+  const { theme: t } = useTheme();
+  const multi = selectedIds != null;
+
+  return (
+    <View style={StyleSheet.absoluteFill}>
+      <Pressable style={s.backdrop} onPress={onClose} accessibilityLabel={title} />
+      <View
+        style={[
+          s.sheet,
+          {
+            backgroundColor: t.bg,
+            borderColor: t.border,
+            maxHeight: maxHeight * 0.85,
+            paddingBottom: bottomInset + 16,
+          },
+        ]}
+      >
+        <View style={s.head}>
+          <Text style={[s.title, { color: t.text }]}>{title}</Text>
+          <TouchableOpacity onPress={onClose} hitSlop={12} accessibilityRole="button">
+            <MaterialCommunityIcons name="close" size={22} color={t.muted} />
+          </TouchableOpacity>
+        </View>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+          <OptionRow
+            label={allLabel}
+            selected={multi ? selectedIds.length === 0 : selectedId == null}
+            onPress={() => onSelect(null)}
+          />
+          {options.map((o) => (
+            <OptionRow
+              key={o.id}
+              label={o.name}
+              multi={multi}
+              selected={multi ? selectedIds.includes(o.id) : selectedId === o.id}
+              onPress={() => onSelect(o.id)}
+            />
+          ))}
+        </ScrollView>
+        {multi && (
+          <TouchableOpacity
+            onPress={onClose}
+            activeOpacity={0.85}
+            style={[s.applyBtn, { backgroundColor: t.orange }]}
+          >
+            <Text style={[s.btnTxt, { color: '#fff' }]}>{applyLabel}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </View>
+  );
+}
+
+// Ustalar filtri: yo'nalish, viloyat/tuman, minimal reyting, status, onlayn va tasdiqlangan.
 // Tanlov darrov qo'llanadi (`value` ekran holati, `onChange` uni yangilaydi).
 export default function WorkersFilterSheet({
   value,
@@ -69,8 +222,37 @@ export default function WorkersFilterSheet({
   const regions = useRegions().data ?? EMPTY;
   const districts = useDistricts(value.regionId).data ?? EMPTY;
   const { tree } = useCategoryTreeQuery();
-  const subCategories = tree.find((c) => c.id === value.parentId)?.children ?? EMPTY;
+  const selectedParents = tree.filter((c) => value.parentIds.includes(c.id));
+  const [picker, setPicker] = useState(null); // null | 'region' | 'district' | { type: 'subs', id }
+  const subsParent = picker?.type === 'subs' ? tree.find((c) => c.id === picker.id) : null;
   const set = (patch) => onChange({ ...value, ...patch });
+
+  // Yo'nalishni qo'shish/olib tashlash; olib tashlanganda uning quyi yo'nalishlari ham tozalanadi.
+  const toggleParent = (p) => {
+    if (value.parentIds.includes(p.id)) {
+      const childIds = (p.children ?? EMPTY).map((c) => c.id);
+      set({
+        parentIds: value.parentIds.filter((id) => id !== p.id),
+        subIds: value.subIds.filter((id) => !childIds.includes(id)),
+      });
+    } else {
+      set({ parentIds: [...value.parentIds, p.id] });
+    }
+  };
+  const toggleSub = (id) =>
+    set({
+      subIds: value.subIds.includes(id)
+        ? value.subIds.filter((x) => x !== id)
+        : [...value.subIds, id],
+    });
+  const clearSubs = (p) => {
+    const childIds = (p.children ?? EMPTY).map((c) => c.id);
+    set({ subIds: value.subIds.filter((id) => !childIds.includes(id)) });
+  };
+
+  const regionName = regions.find((r) => r.id === value.regionId)?.name ?? null;
+  const districtName = districts.find((d) => d.id === value.districtId)?.name ?? null;
+  const all = tr('workersList.filters.all');
 
   return (
     <View style={StyleSheet.absoluteFill}>
@@ -101,84 +283,62 @@ export default function WorkersFilterSheet({
           <Text style={[s.label, { color: t.muted, marginTop: 8 }]}>
             {tr('workersList.filters.category')}
           </Text>
-          <View style={s.wrap}>
-            <Chip
-              label={tr('workersList.filters.all')}
-              active={value.parentId == null}
-              onPress={() => set({ parentId: null, subId: null })}
-            />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={s.tiles}
+          >
             {tree.map((c) => (
-              <Chip
+              <CategoryTile
                 key={c.id}
-                label={c.icon ? `${c.icon} ${c.name}` : c.name}
-                active={value.parentId === c.id}
-                onPress={() => set({ parentId: c.id, subId: null })}
+                label={c.name}
+                icon={c.icon}
+                active={value.parentIds.includes(c.id)}
+                onPress={() => toggleParent(c)}
               />
             ))}
-          </View>
+          </ScrollView>
 
-          {subCategories.length > 0 && (
-            <View style={[s.wrap, { marginTop: 12 }]}>
-              <Chip
-                label={tr('listings.allInDirection')}
-                active={value.subId == null}
-                onPress={() => set({ subId: null })}
-              />
-              {subCategories.map((c) => (
-                <Chip
-                  key={c.id}
-                  label={c.name}
-                  active={value.subId === c.id}
-                  onPress={() => set({ subId: c.id })}
+          {selectedParents
+            .filter((p) => (p.children ?? EMPTY).length > 0)
+            .map((p) => {
+              const names = p.children
+                .filter((c) => value.subIds.includes(c.id))
+                .map((c) => c.name);
+              return (
+                <SelectField
+                  key={p.id}
+                  label={p.name}
+                  icon="shape-outline"
+                  value={names.length > 0 ? names.join(', ') : null}
+                  placeholder={tr('listings.allInDirection')}
+                  onPress={() => setPicker({ type: 'subs', id: p.id })}
                 />
-              ))}
-            </View>
-          )}
+              );
+            })}
 
-          <Text style={[s.label, { color: t.muted }]}>{tr('workersList.filters.region')}</Text>
-          <View style={s.wrap}>
-            <Chip
-              label={tr('workersList.filters.all')}
-              active={value.regionId == null}
-              onPress={() => set({ regionId: null, districtId: null })}
-            />
-            {regions.map((r) => (
-              <Chip
-                key={r.id}
-                label={r.name}
-                active={value.regionId === r.id}
-                onPress={() => set({ regionId: r.id, districtId: null })}
-              />
-            ))}
-          </View>
+          <SelectField
+            label={tr('workersList.filters.region')}
+            icon="map-marker-outline"
+            value={regionName}
+            placeholder={all}
+            onPress={() => setPicker('region')}
+          />
 
           {value.regionId != null && districts.length > 0 && (
-            <>
-              <Text style={[s.label, { color: t.muted }]}>
-                {tr('workersList.filters.district')}
-              </Text>
-              <View style={s.wrap}>
-                <Chip
-                  label={tr('workersList.filters.all')}
-                  active={value.districtId == null}
-                  onPress={() => set({ districtId: null })}
-                />
-                {districts.map((d) => (
-                  <Chip
-                    key={d.id}
-                    label={d.name}
-                    active={value.districtId === d.id}
-                    onPress={() => set({ districtId: d.id })}
-                  />
-                ))}
-              </View>
-            </>
+            <SelectField
+              label={tr('workersList.filters.district')}
+              icon="map-marker-radius-outline"
+              value={districtName}
+              placeholder={all}
+              onPress={() => setPicker('district')}
+            />
           )}
 
           <Text style={[s.label, { color: t.muted }]}>{tr('workersList.filters.rating')}</Text>
           <View style={s.wrap}>
             <Chip
-              label={tr('workersList.filters.all')}
+              label={all}
               active={value.minRating == null}
               onPress={() => set({ minRating: null })}
             />
@@ -194,11 +354,7 @@ export default function WorkersFilterSheet({
 
           <Text style={[s.label, { color: t.muted }]}>{tr('workersList.filters.status')}</Text>
           <View style={s.wrap}>
-            <Chip
-              label={tr('workersList.filters.all')}
-              active={value.badge == null}
-              onPress={() => set({ badge: null })}
-            />
+            <Chip label={all} active={value.badge == null} onPress={() => set({ badge: null })} />
             {BADGES.map((b) => (
               <Chip
                 key={b}
@@ -231,6 +387,7 @@ export default function WorkersFilterSheet({
             activeOpacity={0.85}
             style={[s.btn, { backgroundColor: t.card, borderColor: t.border, borderWidth: 1 }]}
           >
+            <MaterialCommunityIcons name="filter-remove-outline" size={19} color={t.text} />
             <Text style={[s.btnTxt, { color: t.text }]}>{tr('workersList.filters.reset')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -242,7 +399,80 @@ export default function WorkersFilterSheet({
           </TouchableOpacity>
         </View>
       </View>
+
+      {picker === 'region' && (
+        <OptionPicker
+          title={tr('workersList.filters.region')}
+          options={regions}
+          selectedId={value.regionId}
+          allLabel={all}
+          onSelect={(id) => {
+            set({ regionId: id, districtId: null });
+            setPicker(null);
+          }}
+          onClose={() => setPicker(null)}
+          maxHeight={maxHeight}
+          bottomInset={bottomInset}
+        />
+      )}
+      {subsParent && (
+        <OptionPicker
+          title={subsParent.name}
+          options={subsParent.children ?? EMPTY}
+          selectedIds={value.subIds.filter((id) =>
+            (subsParent.children ?? EMPTY).some((c) => c.id === id)
+          )}
+          allLabel={tr('listings.allInDirection')}
+          applyLabel={tr('workersList.filters.apply')}
+          onSelect={(id) => (id == null ? clearSubs(subsParent) : toggleSub(id))}
+          onClose={() => setPicker(null)}
+          maxHeight={maxHeight}
+          bottomInset={bottomInset}
+        />
+      )}
+      {picker === 'district' && (
+        <OptionPicker
+          title={tr('workersList.filters.district')}
+          options={districts}
+          selectedId={value.districtId}
+          allLabel={all}
+          onSelect={(id) => {
+            set({ districtId: id });
+            setPicker(null);
+          }}
+          onClose={() => setPicker(null)}
+          maxHeight={maxHeight}
+          bottomInset={bottomInset}
+        />
+      )}
     </View>
+  );
+}
+
+function Toggle({ label, icon, value, onChange }) {
+  const { theme: t } = useTheme();
+  return (
+    <TouchableOpacity
+      onPress={() => onChange(!value)}
+      activeOpacity={0.85}
+      accessibilityRole="switch"
+      accessibilityState={{ checked: value }}
+      style={[
+        s.toggle,
+        {
+          backgroundColor: value ? 'rgba(232,122,69,0.12)' : t.card,
+          borderColor: value ? t.orange : t.border,
+        },
+      ]}
+    >
+      <MaterialCommunityIcons name={icon} size={18} color={value ? t.orange : t.muted} />
+      <Text style={[s.toggleTxt, { color: t.text }]}>{label}</Text>
+      <MaterialCommunityIcons
+        name={value ? 'check-circle' : 'circle-outline'}
+        size={20}
+        color={value ? t.orange : t.faint}
+      />
+    </TouchableOpacity>
   );
 }
 
@@ -275,6 +505,38 @@ const s = StyleSheet.create({
     marginBottom: 10,
   },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  tiles: { gap: 2, paddingRight: 4 },
+  tileWrap: { paddingTop: 8, paddingRight: 8 },
+  tileX: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  applyBtn: {
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 14,
+  },
+  tile: {
+    width: 84,
+    height: 82,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    paddingHorizontal: 6,
+  },
+  tileEmoji: { fontSize: 25, lineHeight: 30 },
+  tileTxt: { fontSize: 11.5, fontWeight: '700', textAlign: 'center', lineHeight: 14 },
   chip: {
     height: 38,
     paddingHorizontal: 14,
@@ -283,6 +545,26 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   chipTxt: { fontSize: 13, fontWeight: '700' },
+  select: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    height: 52,
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+  },
+  selectTxt: { flex: 1, fontSize: 14.5, fontWeight: '700' },
+  option: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: 50,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 14,
+  },
+  optionTxt: { flex: 1, fontSize: 14.5 },
   toggle: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -294,6 +576,14 @@ const s = StyleSheet.create({
   },
   toggleTxt: { flex: 1, fontSize: 14.5, fontWeight: '700' },
   actions: { flexDirection: 'row', gap: 10, marginTop: 18 },
-  btn: { flex: 1, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  btn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 24,
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   btnTxt: { fontSize: 14.5, fontWeight: '800' },
 });

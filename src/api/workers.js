@@ -45,23 +45,58 @@ export function mapWorker(w) {
   };
 }
 
+const UNION_PAGE_SIZE = 100;
+// Bir nechta yo'nalish tanlanganda har biri uchun ko'pi bilan shuncha sahifa olinadi (xavfsizlik chegarasi).
+const UNION_MAX_PAGES = 5;
+
+// Bir nechta yo'nalish birlashtirilganda tartib mijoz tomonda tiklanadi (server faqat bitta `category_id` biladi).
+const UNION_SORTERS = {
+  rating: (a, b) => b.rating - a.rating,
+  newest: (a, b) => b.id - a.id,
+  price: (a, b) => a.minPrice - b.minPrice,
+  experience: (a, b) => b.experienceYears - a.experienceYears,
+  distance: (a, b) =>
+    (a.distanceKm ?? Number.POSITIVE_INFINITY) - (b.distanceKm ?? Number.POSITIVE_INFINITY),
+};
+
 /**
- * @param {{ page?: number, size?: number, categoryId?: number|string|null, sort?: string,
+ * @param {{ page?: number, size?: number, categoryId?: number|string|null,
+ *   categoryIds?: Array<number|string>, sort?: string,
  *   regionId?: number|null, districtId?: number|null, minRating?: number|null,
  *   verifiedOnly?: boolean, isOnline?: boolean, badge?: 'gold'|'silver'|'bronze'|null, q?: string,
  *   nearLat?: number|null, nearLon?: number|null }} params
- * `sort`: 'rating' | 'price' | 'newest' | 'experience' | 'distance' ('distance' faqat nearLat/nearLon bilan).
- * @returns {Promise<ReturnType<mapWorker>[]>}
- */
-export async function getWorkers(params) {
-  return (await getWorkersPage(params)).items;
-}
-
-/**
- * Xuddi getWorkers, lekin sahifalashdagi umumiy sonni (`pagination.total`) ham qaytaradi.
+ *   `categoryIds` — bir nechta yo'nalish: har biri alohida so'raladi, natija birlashtiriladi (takrorlarsiz)
+ *   va bitta sahifada qaytadi (server bir nechta `category_id` ni qo'llamaydi).
  * @returns {Promise<{ items: ReturnType<mapWorker>[], total: number|null }>}
  */
-export async function getWorkersPage({
+export async function getWorkersPage({ categoryIds, ...rest } = {}) {
+  if (categoryIds?.length > 1) return getWorkersUnion(categoryIds, rest);
+  return getWorkersSingle({ ...rest, categoryId: categoryIds?.[0] ?? rest.categoryId });
+}
+
+async function getWorkersUnion(categoryIds, params) {
+  const { page = 1, size: _size, ...filters } = params;
+  if (page > 1) return { items: [], total: null };
+  const byId = new Map();
+  await Promise.all(
+    categoryIds.map(async (categoryId) => {
+      for (let p = 1; p <= UNION_MAX_PAGES; p += 1) {
+        const res = await getWorkersSingle({
+          ...filters,
+          categoryId,
+          page: p,
+          size: UNION_PAGE_SIZE,
+        });
+        res.items.forEach((w) => byId.set(w.id, w));
+        if (res.items.length < UNION_PAGE_SIZE) break;
+      }
+    })
+  );
+  const items = [...byId.values()].sort(UNION_SORTERS[filters.sort] ?? UNION_SORTERS.rating);
+  return { items, total: items.length };
+}
+
+async function getWorkersSingle({
   page = 1,
   size = 5,
   categoryId,

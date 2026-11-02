@@ -4,6 +4,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { REGION_COORDS } from '../constants';
 
+// Foydalanuvchi yozishni to'xtatgandan keyin xarita qidiruvi qancha kutib boshlanadi: yozuv
+// tugamagan paytda xarita boshqa joyga sakrab ketmasligi uchun.
+const SEARCH_DEBOUNCE_MS = 2000;
+
 export default function useAddressMapSync({
   regions,
   regionId,
@@ -33,27 +37,33 @@ export default function useAddressMapSync({
 
   // ── Ikki tomonlama moslashuv: xaritaga bosilsa manzil maydonlariga
   // yoziladi, ko'cha nomi yozilsa esa xaritada shu joy topiladi ──
-  const skipNextSearchRef = useRef(false);
+  // Xaritadan topilgan matn (`lastResolvedRef`) qayta qidirilmaydi: aks holda xarita topilgan manzilni
+  // matn bo'yicha qayta izlab, boshqa joyga sakrab ketardi. Viloyat/tuman o'zgarishi ham qidiruvni
+  // ishga tushirmaydi (ular avtomatik tanlanadi) — faqat foydalanuvchi ko'cha matnini o'zgartirganda.
+  const lastResolvedRef = useRef(null);
+  const areaRef = useRef({ district: selectedDistrictName, region: selectedRegionName });
   const [searchQuery, setSearchQuery] = useState(null);
 
   useEffect(() => {
-    if (skipNextSearchRef.current) {
-      skipNextSearchRef.current = false;
-      return;
-    }
+    areaRef.current = { district: selectedDistrictName, region: selectedRegionName };
+  }, [selectedDistrictName, selectedRegionName]);
+
+  useEffect(() => {
+    if (street === lastResolvedRef.current) return;
     if (!street || street.trim().length < 4) {
       setSearchQuery(null);
       return;
     }
     const handle = setTimeout(() => {
+      const { district, region } = areaRef.current;
       const parts = [street.trim()];
-      if (selectedDistrictName) parts.push(selectedDistrictName);
-      if (selectedRegionName) parts.push(selectedRegionName);
+      if (district) parts.push(district);
+      if (region) parts.push(region);
       parts.push("O'zbekiston");
-      setSearchQuery(parts.join(', '));
-    }, 900);
+      setSearchQuery({ query: parts.join(', '), street: street.trim(), district, region });
+    }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(handle);
-  }, [street, selectedDistrictName, selectedRegionName]);
+  }, [street]);
 
   const handleAddressResolved = (data) => {
     const text = data.street
@@ -62,7 +72,7 @@ export default function useAddressMapSync({
         : data.street
       : data.addressLine;
     if (text) {
-      skipNextSearchRef.current = true;
+      lastResolvedRef.current = text;
       onStreetChange(text);
     }
   };

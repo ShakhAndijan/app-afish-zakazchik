@@ -7,23 +7,43 @@ import {
   Modal,
   StyleSheet,
 } from 'react-native';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { common } from '../styles';
 
-export default function OptionSheet({ visible, onClose, title, options, selectedId, onSelect, t, tr }) {
+// Android'da Modal alohida oyna: tizim tugmalari (orqaga, bosh sahifa) ustiga chiqib qolmasligi uchun
+// `navigationBarTranslucent` + o'zining SafeAreaProvider'i kerak (bosh ilovaning insetlari Modal ichida kelmaydi).
+export default function OptionSheet(props) {
   return (
     <Modal
-      visible={visible}
+      visible={props.visible}
       transparent
       animationType="fade"
       statusBarTranslucent
-      onRequestClose={onClose}
+      navigationBarTranslucent
+      onRequestClose={props.onClose}
     >
+      <SafeAreaProvider>
+        <OptionSheetContent {...props} />
+      </SafeAreaProvider>
+    </Modal>
+  );
+}
+
+function OptionSheetContent({ onClose, title, options, selectedId, onSelect, t, tr }) {
+  const bottomInset = useSafeAreaInsets().bottom;
+  return (
+    <>
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={s.overlay} />
       </TouchableWithoutFeedback>
 
-      <View style={[s.optionSheet, { backgroundColor: t.card, borderColor: t.border }]}>
+      <View
+        style={[
+          s.optionSheet,
+          { backgroundColor: t.card, borderColor: t.border, paddingBottom: 24 + bottomInset },
+        ]}
+      >
         <View style={[common.sheetHandle, { backgroundColor: t.border, alignSelf: 'center' }]} />
         <View style={s.sheetHeaderRow}>
           <Text style={[common.modalTitle, { color: t.text }]}>{title}</Text>
@@ -53,6 +73,11 @@ export default function OptionSheet({ visible, onClose, title, options, selected
                 activeOpacity={0.7}
                 style={common.categoryRow}
               >
+                {!!item.icon && (
+                  <View style={[s.rowIcon, { backgroundColor: t.orange + '1f' }]}>
+                    <MaterialCommunityIcons name={item.icon} size={19} color={t.orange} />
+                  </View>
+                )}
                 <Text style={[common.categoryRowTxt, { color: t.text }]} numberOfLines={1}>
                   {item.name}
                 </Text>
@@ -64,7 +89,7 @@ export default function OptionSheet({ visible, onClose, title, options, selected
           }}
         />
       </View>
-    </Modal>
+    </>
   );
 }
 
@@ -80,7 +105,13 @@ const s = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 20,
     paddingTop: 10,
-    paddingBottom: 24,
+  },
+  rowIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sheetHeaderRow: {
     flexDirection: 'row',
