@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, Share } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Feather from '@expo/vector-icons/Feather';
-import * as Linking from 'expo-linking';
+import { SITE_URL } from '../../../constants/config';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useUstaStyles } from '../styles';
 
@@ -18,10 +18,10 @@ export default function DetailHeader({
   const { t: tr } = useLanguage();
   const { C, st } = useUstaStyles();
 
-  // Havola ilovada shu ustaning profilini ochadi (/usta/[id]).
+  // Havola saytdagi shu usta sahifasini ochadi (har kim bosa oladigan oddiy https havola).
   const share = () => {
     const text = tr('ustaDetail.shareMessage', shareInfo);
-    const link = workerId ? Linking.createURL(`/usta/${workerId}`) : '';
+    const link = workerId ? `${SITE_URL}/mutaxassis/${workerId}` : '';
     Share.share({
       message: link
         ? `${text}

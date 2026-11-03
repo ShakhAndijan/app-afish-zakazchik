@@ -42,7 +42,7 @@ export const uz = {
     confirm: 'Tasdiqlash',
   },
   listingCard: {
-    priceLine: "{price} so'm",
+    priceLine: "{price} so'm.",
     priceCaption: 'dan boshlab',
     contact: "Bog'lanish",
     viewProfile: "Profilni ko'rish",
@@ -632,7 +632,7 @@ export const uz = {
   },
   ustaDetail: {
     headerTitle: 'Usta profili',
-    shareMessage: "{name} — {trade} ustasi, reyting {rating} ★. Ilovada ko'ring!",
+    shareMessage: '{name} — {trade} ustasi, reyting {rating} ★',
     online: 'Onlayn',
     avgResponse: '· ~{time} ichida javob',
     time: { min: '{n} daq', hour: '{n} soat', day: '{n} kun' },
@@ -1865,7 +1865,7 @@ export const uz = {
     allPhotos: 'Barcha suratlar ({count})',
     beforePhotos: 'Ishdan oldingi holat ({count})',
     shareByline: '{worker} tomonidan bajarilgan, ',
-    shareMessage: '"{title}" — {byline}reyting {rating} ★. Ilovada ko\'ring!',
+    shareMessage: '"{title}" — {byline}reyting {rating} ★',
   },
   requests: {
     statusWorkDoneTitle: 'Ish bajarildi — tasdiqlang',

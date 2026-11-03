@@ -42,7 +42,7 @@ export const en = {
     confirm: 'Confirm',
   },
   listingCard: {
-    priceLine: 'from {price} UZS',
+    priceLine: 'from {price} UZS.',
     priceCaption: 'starting price',
     contact: 'Contact',
     viewProfile: 'View profile',
@@ -629,7 +629,7 @@ export const en = {
   },
   ustaDetail: {
     headerTitle: 'Pro profile',
-    shareMessage: '{name} — {trade} pro, rating {rating} ★. Check them out in the app!',
+    shareMessage: '{name} — {trade} pro, rating {rating} ★',
     online: 'Online',
     avgResponse: '· replies in ~{time}',
     time: { min: '{n} min', hour: '{n} h', day: '{n} d' },
@@ -1847,7 +1847,7 @@ export const en = {
     allPhotos: 'All photos ({count})',
     beforePhotos: 'Before the work ({count})',
     shareByline: 'done by {worker}, ',
-    shareMessage: '"{title}" — {byline}rating {rating} ★. Check it out in the app!',
+    shareMessage: '"{title}" — {byline}rating {rating} ★',
   },
   requests: {
     statusWorkDoneTitle: 'Work done — please confirm',

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { View, ScrollView, Share } from 'react-native';
+import { SITE_URL } from '../constants/config';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '../context/ThemeContext';
@@ -42,13 +43,17 @@ export default function WorkDetailScreen({ work, onBack, onSelectUsta }) {
   };
 
   const share = () => {
-    Share.share({
-      message: tr('workDetail.shareMessage', {
-        title,
-        byline: worker ? tr('workDetail.shareByline', { worker }) : '',
-        rating: rating.toFixed(1),
-      }),
-    }).catch(() => {});
+    const text = tr('workDetail.shareMessage', {
+      title,
+      byline: worker ? tr('workDetail.shareByline', { worker }) : '',
+      rating: rating.toFixed(1),
+    });
+    // Ish alohida sahifaga ega emas: havola shu ishni bajargan ustaning saytdagi sahifasiga olib boradi.
+    const link = work?.workerId
+      ? `
+${SITE_URL}/mutaxassis/${work.workerId}`
+      : '';
+    Share.share({ message: `${text}${link}` }).catch(() => {});
   };
 
   return (

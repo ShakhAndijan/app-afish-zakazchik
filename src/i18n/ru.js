@@ -42,7 +42,7 @@ export const ru = {
     confirm: 'Подтвердить',
   },
   listingCard: {
-    priceLine: 'от {price} сум',
+    priceLine: 'от {price} сум.',
     priceCaption: 'минимальная цена',
     contact: 'Связаться',
     viewProfile: 'Смотреть профиль',
@@ -630,7 +630,7 @@ export const ru = {
   },
   ustaDetail: {
     headerTitle: 'Профиль мастера',
-    shareMessage: '{name} — мастер {trade}, рейтинг {rating} ★. Смотрите в приложении!',
+    shareMessage: '{name} — мастер {trade}, рейтинг {rating} ★',
     online: 'Онлайн',
     avgResponse: '· ответ ~за {time}',
     time: { min: '{n} мин', hour: '{n} ч', day: '{n} дн' },
@@ -1853,7 +1853,7 @@ export const ru = {
     allPhotos: 'Все фото ({count})',
     beforePhotos: 'Состояние до работы ({count})',
     shareByline: 'выполнено мастером {worker}, ',
-    shareMessage: '"{title}" — {byline}рейтинг {rating} ★. Смотрите в приложении!',
+    shareMessage: '"{title}" — {byline}рейтинг {rating} ★',
   },
   requests: {
     statusWorkDoneTitle: 'Работа выполнена — подтвердите',

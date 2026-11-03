@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, ScrollView, Share } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as WebBrowser from 'expo-web-browser';
 import { appAlert } from '../components/AppAlert';
-import * as Linking from 'expo-linking';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '../context/ThemeContext';
@@ -149,9 +148,8 @@ export default function OrderDetailScreen({ order: listOrder, onBack, onSelectUs
       order.price != null
         ? tr('orderDetail.shareMessage', { ...vars, price: formatNumber(Math.round(order.price)) })
         : tr('orderDetail.shareMessageNoPrice', vars);
-    // Havola ilovaning o'zida shu buyurtma tafsilotini ochadi (faqat buyurtma egasi uchun).
-    const link = Linking.createURL(`/order/${order.id}`);
-    Share.share({ message: `${message}\n${link}` }).catch(() => {});
+    // Buyurtma shaxsiy: faqat matn ulashiladi (ilova ichidagi havola boshqalarda ochilmaydi va SMS'da bosilmaydi).
+    Share.share({ message }).catch(() => {});
   };
 
   const openUstaProfile = () => {

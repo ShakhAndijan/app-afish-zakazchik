@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -33,7 +33,30 @@ export default function NotificationsList() {
   const markRead = useMarkNotificationRead();
   const markAll = useMarkAllNotificationsRead();
 
-  const [selected, setSelected] = useState(null);
+  const [picked, setPicked] = useState(null);
+  const [pushClosed, setPushClosed] = useState(false);
+
+  // Push bosilib kelgan bo'lsa (parametrlar bilan), shu xabar darhol ochiladi.
+  const { pushType, pushPayload } = useLocalSearchParams();
+  const fromPush = useMemo(() => {
+    if (!pushType) return null;
+    let payload = {};
+    try {
+      payload = JSON.parse(String(pushPayload ?? '{}'));
+    } catch {}
+    return {
+      id: payload.notification_id ?? null,
+      type: String(pushType),
+      payload,
+      isRead: true,
+      createdAt: new Date().toISOString(),
+    };
+  }, [pushType, pushPayload]);
+  const selected = picked ?? (pushClosed ? null : fromPush);
+  const setSelected = (n) => {
+    setPicked(n);
+    if (!n) setPushClosed(true);
+  };
 
   const open = (n) => {
     if (!n.isRead) markRead.mutate(n.id);

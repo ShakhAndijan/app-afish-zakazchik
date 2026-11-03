@@ -5,7 +5,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { markNotificationRead } from '../api/notifications';
-import { notificationHref } from '../screens/notifications/utils';
 import { pushData, registerPush } from '../utils/push';
 
 // Kirgan foydalanuvchi uchun push: tokenni backendga yuboradi, bildirishnomaga bosilganda kerakli
@@ -52,9 +51,13 @@ export default function usePushNotifications() {
         .then(() => queryClient.invalidateQueries({ queryKey: ['notifications'] }))
         .catch(() => {});
     }
-    // AuthRedirect bosh sahifaga o'tkazib bo'lgach, uning ustiga ochiladi.
+    // AuthRedirect bosh sahifaga o'tkazib bo'lgach, uning ustiga ochiladi: bildirishnomalar ekrani
+    // shu xabarning matni bilan (tegishli ekranga o'tish — oynadagi tugma orqali).
     setTimeout(() => {
-      router.push(notificationHref({ type: String(data.type ?? ''), payload: data }));
+      router.push({
+        pathname: '/notifications',
+        params: { pushType: String(data.type ?? ''), pushPayload: JSON.stringify(data) },
+      });
     }, 0);
     return undefined;
   }, [response, signedIn, locked, navState?.key, router, queryClient]);
