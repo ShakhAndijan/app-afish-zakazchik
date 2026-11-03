@@ -189,5 +189,5 @@ export const ENDPOINTS = {
 // https://engraver-garnet-scalded.ngrok-free.dev
 // http://10.240.8.109:9494
 
-// VAQTINCHA o'chirilgan: push-bildirishnomalar (expo-notifications). Expo Go da ochish uchun. Qaytarish: true.
-export const PUSH_ENABLED = false;
+// Push-bildirishnomalar (expo-notifications). Expo Go da ishlamaydi: development/production build kerak.
+export const PUSH_ENABLED = true;
