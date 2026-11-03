@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   LayoutAnimation,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import getReviewTexts from '../reviewTexts';
 import { common } from '../styles';
@@ -28,18 +28,16 @@ export default function ReviewModal({
   addressTitle,
   addressSubtitle,
   street,
+  mahalla,
   entrance,
   floor,
   when,
   whenDate,
   description,
   photos,
-  toolsOption,
   workerCount,
   requirePhoto,
   minRating,
-  ageFrom,
-  ageTo,
   pricingType,
   hourlyRate,
   estimatedHours,
@@ -63,30 +61,19 @@ export default function ReviewModal({
     setExtraOpen((v) => !v);
   };
 
-  const {
-    notSet,
-    whenText,
-    toolsText,
-    ratingText,
-    experienceText,
-    ageText,
-    pricingText,
-    addressText,
-  } = getReviewTexts(
+  const { notSet, whenText, ratingText, experienceText, pricingText, addressText } = getReviewTexts(
     {
       when,
       whenDate,
-      toolsOption,
       minRating,
       minExperience,
-      ageFrom,
-      ageTo,
       pricingType,
       hourlyRate,
       estimatedHours,
       fixedPrice,
       paymentMethod,
       street,
+      mahalla,
       entrance,
       floor,
       addressTitle,
@@ -164,120 +151,118 @@ export default function ReviewModal({
       label: tr('newOrder.requirements.experienceLabel'),
       value: experienceText,
     },
-    !orderWorker && {
-      icon: 'account-outline',
-      label: tr('newOrder.requirements.ageLabel'),
-      value: ageText,
-    },
     !!extraRequirements?.trim() && {
       icon: 'text-box-outline',
       label: tr('newOrder.requirements.otherLabel'),
       value: extraRequirements.trim(),
     },
-    { icon: 'toolbox-outline', label: tr('newOrder.toolsLabel'), value: toolsText },
   ].filter(Boolean);
 
   const renderRows = (list) =>
     list.map((row, i) => (
       <Fragment key={row.icon}>
-        {i > 0 && <View style={[common.requirementDivider, { backgroundColor: t.border }]} />}
+        {i > 0 && <View style={[s.divider, { backgroundColor: t.border }]} />}
         <SummaryRow icon={row.icon} label={row.label} value={row.value} t={t} />
       </Fragment>
     ));
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={handleClose}>
-      <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }} edges={['top', 'left', 'right']}>
-        <View style={s.reviewHeader}>
-          <TouchableOpacity
-            onPress={handleClose}
-            activeOpacity={0.85}
-            style={[common.mapBackBtn, { backgroundColor: t.card }]}
-          >
-            <MaterialCommunityIcons name="arrow-left" size={20} color={t.text} />
-          </TouchableOpacity>
-          <Text style={[s.reviewHeaderTitle, { color: t.text }]}>
-            {tr('newOrder.review.title')}
-          </Text>
-          <View style={{ width: 40 }} />
-        </View>
-
-        <ScrollView
-          contentContainerStyle={{ padding: 20, paddingBottom: 24 }}
-          showsVerticalScrollIndicator={false}
+    <Modal
+      visible={visible}
+      animationType="slide"
+      onRequestClose={handleClose}
+      statusBarTranslucent
+      navigationBarTranslucent
+    >
+      <SafeAreaProvider>
+        <SafeAreaView
+          style={{ flex: 1, backgroundColor: t.bg }}
+          edges={['top', 'left', 'right', 'bottom']}
         >
-          <Text style={[s.groupTitle, { color: t.muted }]}>{tr('newOrder.step1Title')}</Text>
-          <View
-            style={[common.requirementsBox, { backgroundColor: t.card, borderColor: t.border }]}
-          >
-            {renderRows(rows)}
+          <View style={s.reviewHeader}>
+            <TouchableOpacity
+              onPress={handleClose}
+              activeOpacity={0.85}
+              style={[common.mapBackBtn, { backgroundColor: t.card }]}
+            >
+              <MaterialCommunityIcons name="arrow-left" size={20} color={t.text} />
+            </TouchableOpacity>
+            <Text style={[s.reviewHeaderTitle, { color: t.text }]}>
+              {tr('newOrder.review.title')}
+            </Text>
+            <View style={{ width: 40 }} />
           </View>
 
-          <Text style={[s.groupTitle, { color: t.muted }]}>{tr('newOrder.step2Title')}</Text>
-          <View
-            style={[common.requirementsBox, { backgroundColor: t.card, borderColor: t.border }]}
+          <ScrollView
+            contentContainerStyle={{ padding: 16, paddingBottom: 12 }}
+            showsVerticalScrollIndicator={false}
           >
-            {renderRows(placeRows)}
-          </View>
+            <Text style={[s.groupTitle, { color: t.muted }]}>{tr('newOrder.step1Title')}</Text>
+            <View style={[s.box, { backgroundColor: t.card, borderColor: t.border }]}>
+              {renderRows(rows)}
+            </View>
 
-          <TouchableOpacity
-            onPress={toggleExtra}
-            activeOpacity={0.85}
-            accessibilityRole="button"
-            accessibilityState={{ expanded: extraOpen }}
-            style={[s.extraHeader, { backgroundColor: t.card, borderColor: t.border }]}
-          >
-            <MaterialCommunityIcons name="tune-variant" size={18} color={t.orange} />
-            <Text style={[s.extraTitle, { color: t.text }]}>{tr('newOrder.step3Title')}</Text>
-            <MaterialCommunityIcons
-              name={extraOpen ? 'chevron-up' : 'chevron-down'}
-              size={22}
-              color={t.faint}
-            />
-          </TouchableOpacity>
-          {extraOpen && (
-            <View
+            <Text style={[s.groupTitle, { color: t.muted }]}>{tr('newOrder.step2Title')}</Text>
+            <View style={[s.box, { backgroundColor: t.card, borderColor: t.border }]}>
+              {renderRows(placeRows)}
+            </View>
+
+            <TouchableOpacity
+              onPress={toggleExtra}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: extraOpen }}
+              style={[s.extraHeader, { backgroundColor: t.card, borderColor: t.border }]}
+            >
+              <MaterialCommunityIcons name="tune-variant" size={18} color={t.orange} />
+              <Text style={[s.extraTitle, { color: t.text }]}>{tr('newOrder.step3Title')}</Text>
+              <MaterialCommunityIcons
+                name={extraOpen ? 'chevron-up' : 'chevron-down'}
+                size={22}
+                color={t.faint}
+              />
+            </TouchableOpacity>
+            {extraOpen && (
+              <View
+                style={[s.box, { backgroundColor: t.card, borderColor: t.border, marginTop: 8 }]}
+              >
+                {renderRows(extraRows)}
+              </View>
+            )}
+          </ScrollView>
+
+          <View style={[s.reviewFooter, { backgroundColor: t.bg, borderTopColor: t.border }]}>
+            <TouchableOpacity
+              onPress={handleClose}
+              activeOpacity={0.85}
+              disabled={submitting}
               style={[
-                common.requirementsBox,
-                { backgroundColor: t.card, borderColor: t.border, marginTop: 10 },
+                s.reviewEditBtn,
+                { borderColor: t.border, backgroundColor: t.card },
+                submitting && { opacity: 0.5 },
               ]}
             >
-              {renderRows(extraRows)}
-            </View>
-          )}
-        </ScrollView>
-
-        <View style={[s.reviewFooter, { backgroundColor: t.bg, borderTopColor: t.border }]}>
-          <TouchableOpacity
-            onPress={handleClose}
-            activeOpacity={0.85}
-            disabled={submitting}
-            style={[
-              s.reviewEditBtn,
-              { borderColor: t.border, backgroundColor: t.card },
-              submitting && { opacity: 0.5 },
-            ]}
-          >
-            <MaterialCommunityIcons name="pencil-outline" size={16} color={t.text} />
-            <Text style={[s.reviewEditTxt, { color: t.text }]}>{tr('common.edit')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={onConfirm}
-            activeOpacity={0.85}
-            disabled={submitting}
-            style={[common.cta, { backgroundColor: t.orange, flex: 1, marginTop: 0 }]}
-          >
-            {submitting ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <>
-                <Text style={[common.ctaTxt, { color: '#fff' }]}>{tr('common.confirm')}</Text>
-                <MaterialCommunityIcons name="check" size={18} color="#fff" />
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
+              <MaterialCommunityIcons name="pencil-outline" size={16} color={t.text} />
+              <Text style={[s.reviewEditTxt, { color: t.text }]}>{tr('common.edit')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={onConfirm}
+              activeOpacity={0.85}
+              disabled={submitting}
+              style={[common.cta, { backgroundColor: t.orange, flex: 1, marginTop: 0 }]}
+            >
+              {submitting ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <Text style={[common.ctaTxt, { color: '#fff' }]}>{tr('common.confirm')}</Text>
+                  <MaterialCommunityIcons name="check" size={18} color="#fff" />
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </SafeAreaProvider>
     </Modal>
   );
 }
@@ -288,7 +273,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingVertical: 8,
   },
   reviewHeaderTitle: { fontSize: 16, fontWeight: '700' },
   extraHeader: {
@@ -298,17 +283,19 @@ const s = StyleSheet.create({
     borderWidth: 1.5,
     borderRadius: 16,
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginTop: 14,
+    paddingVertical: 11,
+    marginTop: 12,
   },
-  groupTitle: { fontSize: 12.5, fontWeight: '800', marginTop: 14, marginBottom: 8 },
+  box: { borderWidth: 1.5, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 2 },
+  divider: { height: 1 },
+  groupTitle: { fontSize: 12.5, fontWeight: '800', marginTop: 10, marginBottom: 6 },
   extraTitle: { flex: 1, fontSize: 14.5, fontWeight: '800' },
   reviewFooter: {
     flexDirection: 'row',
     gap: 10,
     paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 16,
+    paddingTop: 10,
+    paddingBottom: 12,
     borderTopWidth: 1,
   },
   reviewEditBtn: {

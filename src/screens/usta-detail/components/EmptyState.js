@@ -3,7 +3,12 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useUstaStyles } from '../styles';
 
 // Bo'sh bo'lim uchun ikonka + sarlavha + (ixtiyoriy) izoh kartochkasi.
-export default function EmptyState({ icon, iconSet: IconSet = MaterialCommunityIcons, title, subtitle }) {
+export default function EmptyState({
+  icon,
+  iconSet: IconSet = MaterialCommunityIcons,
+  title,
+  subtitle,
+}) {
   const { C, st } = useUstaStyles();
 
   return (

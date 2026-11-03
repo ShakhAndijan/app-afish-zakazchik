@@ -6,17 +6,15 @@ export default function getReviewTexts(
   {
     when,
     whenDate,
-    toolsOption,
     minRating,
     minExperience,
-    ageFrom,
-    ageTo,
     pricingType,
     hourlyRate,
     estimatedHours,
     fixedPrice,
     paymentMethod,
     street,
+    mahalla,
     entrance,
     floor,
     addressTitle,
@@ -39,21 +37,11 @@ export default function getReviewTexts(
             ? tr('newOrder.when.flexible')
             : notSet;
 
-  const toolsText =
-    toolsOption === 'has'
-      ? tr('newOrder.tools.has')
-      : toolsOption === 'needed'
-        ? tr('newOrder.tools.needed')
-        : notSet;
-
   const ratingText = minRating === 0 ? tr('newOrder.requirements.allRatings') : `${minRating}+ ★`;
 
   const experienceText = minExperience
     ? tr('newOrder.requirements.experienceYears', { n: minExperience })
     : tr('newOrder.requirements.allRatings');
-
-  const ageText =
-    ageFrom.trim() || ageTo.trim() ? `${ageFrom.trim() || '…'} – ${ageTo.trim() || '…'}` : notSet;
 
   const som = tr('common.currencySom');
   const pricingText =
@@ -68,17 +56,15 @@ export default function getReviewTexts(
   const paymentText =
     paymentMethod === 'cash' ? tr('newOrder.payment.cash') : tr('newOrder.payment.cashless');
 
-  const addressDetails = [street, entrance, floor].filter((v) => v && v.trim()).join(', ');
+  const addressDetails = [street, mahalla, entrance, floor].filter((v) => v && v.trim()).join(', ');
   const addressText =
     [addressTitle, addressSubtitle || addressDetails].filter(Boolean).join(' — ') || notSet;
 
   return {
     notSet,
     whenText,
-    toolsText,
     ratingText,
     experienceText,
-    ageText,
     pricingText,
     paymentText,
     addressText,

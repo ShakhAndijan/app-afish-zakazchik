@@ -1,12 +1,19 @@
 import { useState, useMemo } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, Modal, StyleSheet } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { common } from '../styles';
 
 const INK = '#1c1917';
 const HEX = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
 const bySort = (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0);
 const tint = (c) => (HEX.test(c ?? '') ? c : '#fde4d3');
+
+// Telefonning pastki tizim paneli "Tanlash" tugmasini yopib qo'ymasligi uchun. Modal alohida oyna
+// bo'lgani uchun u o'z SafeAreaProvider'i ichida o'lchanadi.
+function BottomPad() {
+  return <View style={{ height: useSafeAreaInsets().bottom }} />;
+}
 
 function Glyph({ icon, size }) {
   return icon ? (
@@ -134,78 +141,83 @@ export default function CategoryPickerModal({
       visible={visible}
       animationType="slide"
       transparent
+      statusBarTranslucent
+      navigationBarTranslucent
       onRequestClose={parent ? goBack : close}
     >
-      <View style={s.backdrop}>
-        <View style={[s.sheet, { backgroundColor: t.bg }]}>
-          <View style={[common.sheetHandle, s.handle, { backgroundColor: t.border }]} />
+      <SafeAreaProvider style={{ flex: 1 }}>
+        <View style={s.backdrop}>
+          <View style={[s.sheet, { backgroundColor: t.bg }]}>
+            <View style={[common.sheetHandle, s.handle, { backgroundColor: t.border }]} />
 
-          <View style={s.header}>
-            {parent && (
+            <View style={s.header}>
+              {parent && (
+                <TouchableOpacity
+                  onPress={goBack}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={[s.round, { backgroundColor: t.card, borderColor: t.border }]}
+                >
+                  <MaterialCommunityIcons name="chevron-left" size={22} color={t.text} />
+                </TouchableOpacity>
+              )}
+              {parent?.icon ? (
+                <View style={[s.headGlyph, { backgroundColor: tint(parent.color) }]}>
+                  <Text style={{ fontSize: 20 }}>{parent.icon}</Text>
+                </View>
+              ) : null}
+              <Text style={[s.title, { color: t.text }]} numberOfLines={2}>
+                {parent ? parent.name : tr('newOrder.categoryPickerTitle')}
+              </Text>
               <TouchableOpacity
-                onPress={goBack}
+                onPress={close}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 style={[s.round, { backgroundColor: t.card, borderColor: t.border }]}
               >
-                <MaterialCommunityIcons name="chevron-left" size={22} color={t.text} />
+                <MaterialCommunityIcons name="close" size={18} color={t.muted} />
               </TouchableOpacity>
-            )}
-            {parent?.icon ? (
-              <View style={[s.headGlyph, { backgroundColor: tint(parent.color) }]}>
-                <Text style={{ fontSize: 20 }}>{parent.icon}</Text>
-              </View>
-            ) : null}
-            <Text style={[s.title, { color: t.text }]} numberOfLines={2}>
-              {parent ? parent.name : tr('newOrder.categoryPickerTitle')}
-            </Text>
+            </View>
+
+            <View style={[s.search, { backgroundColor: t.card, borderColor: t.border }]}>
+              <MaterialCommunityIcons name="magnify" size={19} color={t.faint} />
+              <TextInput
+                value={search}
+                onChangeText={setSearch}
+                placeholder={tr('newOrder.categorySearchPlaceholder')}
+                placeholderTextColor={t.faint}
+                style={[s.searchInput, { color: t.text }]}
+              />
+            </View>
+
+            <FlatList
+              key={gridMode ? 'grid' : 'list'}
+              data={rows}
+              numColumns={gridMode ? 2 : 1}
+              keyExtractor={(c) => String(c.id)}
+              columnWrapperStyle={gridMode ? s.gridRow : undefined}
+              contentContainerStyle={{ paddingBottom: 12, gap: gridMode ? 12 : 10 }}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={
+                <Text style={{ color: t.muted, textAlign: 'center', marginTop: 24, fontSize: 13 }}>
+                  {tr('newOrder.categoryEmpty')}
+                </Text>
+              }
+              renderItem={gridMode ? renderCard : renderRow}
+            />
+
             <TouchableOpacity
               onPress={close}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              style={[s.round, { backgroundColor: t.card, borderColor: t.border }]}
+              activeOpacity={0.85}
+              style={[s.done, { backgroundColor: t.orange }]}
             >
-              <MaterialCommunityIcons name="close" size={18} color={t.muted} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={[s.search, { backgroundColor: t.card, borderColor: t.border }]}>
-            <MaterialCommunityIcons name="magnify" size={19} color={t.faint} />
-            <TextInput
-              value={search}
-              onChangeText={setSearch}
-              placeholder={tr('newOrder.categorySearchPlaceholder')}
-              placeholderTextColor={t.faint}
-              style={[s.searchInput, { color: t.text }]}
-            />
-          </View>
-
-          <FlatList
-            key={gridMode ? 'grid' : 'list'}
-            data={rows}
-            numColumns={gridMode ? 2 : 1}
-            keyExtractor={(c) => String(c.id)}
-            columnWrapperStyle={gridMode ? s.gridRow : undefined}
-            contentContainerStyle={{ paddingBottom: 12, gap: gridMode ? 12 : 10 }}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
-              <Text style={{ color: t.muted, textAlign: 'center', marginTop: 24, fontSize: 13 }}>
-                {tr('newOrder.categoryEmpty')}
+              <Text style={common.modalDoneTxt}>
+                {tr('newOrder.categoryDone', { n: selectedIds.length })}
               </Text>
-            }
-            renderItem={gridMode ? renderCard : renderRow}
-          />
-
-          <TouchableOpacity
-            onPress={close}
-            activeOpacity={0.85}
-            style={[s.done, { backgroundColor: t.orange }]}
-          >
-            <Text style={common.modalDoneTxt}>
-              {tr('newOrder.categoryDone', { n: selectedIds.length })}
-            </Text>
-          </TouchableOpacity>
+            </TouchableOpacity>
+            <BottomPad />
+          </View>
         </View>
-      </View>
+      </SafeAreaProvider>
     </Modal>
   );
 }

@@ -6,13 +6,10 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import AppLoader from '../components/AppLoader';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
-import { useWallet } from '../context/WalletContext';
-import { FEATURES } from '../constants/config';
 import { ustaRoute, newOrderRoute } from '../navigation/params';
 import useHomeData from './zakazchi-main/hooks/useHomeData';
 import HomeHeader from './zakazchi-main/components/HomeHeader';
 import QuickOrderCard from './zakazchi-main/components/QuickOrderCard';
-import WalletQuickCard from './zakazchi-main/components/WalletQuickCard';
 import ActiveOrdersSection from './requests/components/ActiveOrdersSection';
 import SectionHeader from './zakazchi-main/components/SectionHeader';
 import SectionLoader from './zakazchi-main/components/SectionLoader';
@@ -26,6 +23,8 @@ import FavoriteWorkers from './zakazchi-main/components/FavoriteWorkers';
 import BenefitsSection from './zakazchi-main/components/BenefitsSection';
 import ReturningCustomerSection from './zakazchi-main/components/ReturningCustomerSection';
 import ReviewsCarousel from './zakazchi-main/components/ReviewsCarousel';
+import TopCategoriesRow from './zakazchi-main/components/TopCategoriesRow';
+import ChampionsSection from './zakazchi-main/components/ChampionsSection';
 import useTabBarSpace from '../navigation/useTabBarSpace';
 
 // Mijoz bosh sahifasi (pastki menyudagi "home" tabi). Boshqa ekranlarga o'tish expo-router orqali.
@@ -34,7 +33,6 @@ export default function ZakazchiMainScreen() {
   const router = useRouter();
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
-  const { balance } = useWallet();
   const home = useHomeData();
 
   // Bosh sahifaga qaytilganda shaxsiy xulosa (faol buyurtmalar) yangilanadi.
@@ -90,15 +88,14 @@ export default function ZakazchiMainScreen() {
 
         <View style={{ paddingHorizontal: 20 }}>
           {showQuickOrder && <QuickOrderCard onPress={() => router.navigate('/new-order')} />}
-          {FEATURES.walletBalance && (
-            <WalletQuickCard balance={balance} onPress={() => router.push('/wallet')} />
-          )}
           <ActiveOrdersSection
             orders={home.summary.data?.activeOrders ?? []}
             categories={home.categories.data ?? []}
             style={{ marginBottom: 6 }}
           />
         </View>
+
+        <TopCategoriesRow style={{ marginTop: 6 }} />
 
         {home.initialLoading ? (
           <View style={{ paddingVertical: 140, alignItems: 'center', justifyContent: 'center' }}>
@@ -157,6 +154,9 @@ export default function ZakazchiMainScreen() {
                 onRetry={() => home.retry('workers')}
               />
             </View>
+
+            {/* ── Tuman g'oliblari ── */}
+            <ChampionsSection onSelectUsta={openUsta} style={{ marginTop: 24 }} />
 
             {/* ── Xizmat e'lonlari ── */}
             <ListingsCarousel style={{ marginTop: 24 }} />

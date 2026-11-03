@@ -2,6 +2,7 @@ import { View, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import PresenceBadge from '../../../components/PresenceBadge';
 import { useLanguage } from '../../../context/LanguageContext';
 import AppLoader from '../../../components/AppLoader';
 import { useUstaStyles } from '../styles';
@@ -21,7 +22,7 @@ export default function ProfileHero({
   bgColor,
   photo,
   bio,
-  isOnline,
+  presence,
   isIdentityVerified,
   avgResponseMin,
   showLoader,
@@ -74,12 +75,7 @@ export default function ProfileHero({
             <Ionicons name="star" size={13} color="#ffd25e" />
             <Text style={st.heroPillTxt}>{rating}</Text>
           </View>
-          {isOnline && (
-            <View style={st.heroPill}>
-              <View style={st.onlineDot} />
-              <Text style={st.heroPillTxt}>{tr('ustaDetail.online')}</Text>
-            </View>
-          )}
+          <PresenceBadge worker={presence} onDark />
           {avgResponseMin != null && (
             <View style={st.heroPill}>
               <Ionicons name="flash-outline" size={13} color="#fff" />

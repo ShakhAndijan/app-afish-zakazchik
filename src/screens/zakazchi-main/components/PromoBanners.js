@@ -11,7 +11,6 @@ import { useRouter } from 'expo-router';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../../../context/ThemeContext';
 import { useLanguage } from '../../../context/LanguageContext';
-import { FEATURES } from '../../../constants/config';
 
 const DEFAULT_H_PAD = 20;
 const GAP = 12;
@@ -29,12 +28,8 @@ const SLIDES = [
     go: { pathname: '/services', params: { verified: '1' } },
   },
   { key: 'order', bg: '#d8602a', icon: 'hammer-wrench', go: '/new-order' },
-  { key: 'wallet', bg: '#1f8f6e', icon: 'wallet-outline', go: '/wallet' },
   { key: 'help', bg: '#6d4bb8', icon: 'lifebuoy', go: '/help' },
 ];
-
-// Onlayn to'lov (v2) qo'shilguncha hamyon slaydi ko'rsatilmaydi.
-const ACTIVE_SLIDES = SLIDES.filter((slide) => slide.key !== 'wallet' || FEATURES.walletBalance);
 
 // `onSlidePress(slide)` berilsa, slayd bosilganda o'sha chaqiriladi (mehmon uchun — kirish oynasi);
 // berilmasa slaydning o'z yo'nalishiga o'tiladi.
@@ -55,7 +50,7 @@ export default function PromoBanners({ style, hPad = DEFAULT_H_PAD, onSlidePress
     const id = setInterval(() => {
       if (dragging.current) return;
       setIndex((i) => {
-        const next = (i + 1) % ACTIVE_SLIDES.length;
+        const next = (i + 1) % SLIDES.length;
         listRef.current?.scrollToOffset({ offset: next * step, animated: true });
         return next;
       });
@@ -107,7 +102,7 @@ export default function PromoBanners({ style, hPad = DEFAULT_H_PAD, onSlidePress
     <View style={style}>
       <FlatList
         ref={listRef}
-        data={ACTIVE_SLIDES}
+        data={SLIDES}
         keyExtractor={(item) => item.key}
         renderItem={renderItem}
         horizontal
@@ -123,7 +118,7 @@ export default function PromoBanners({ style, hPad = DEFAULT_H_PAD, onSlidePress
         getItemLayout={(_, i) => ({ length: itemW, offset: step * i, index: i })}
       />
       <View style={s.dots}>
-        {ACTIVE_SLIDES.map((slide, i) => (
+        {SLIDES.map((slide, i) => (
           <View
             key={slide.key}
             style={[

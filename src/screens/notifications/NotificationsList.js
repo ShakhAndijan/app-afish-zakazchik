@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -18,10 +19,11 @@ import {
   useNotificationsFeed,
   useUnreadNotifications,
 } from '../../queries/notifications';
+import NotificationDetailModal from './NotificationDetailModal';
 import { notificationDate, notificationDetail, notificationHref, notificationText } from './utils';
 
 // Bildirishnomalar ro'yxati (saytdagi qo'ng'iroqcha paneli): o'qilmaganlar ajratib ko'rsatiladi,
-// bosilsa o'qilgan bo'ladi va tegishli ekran ochiladi; tepada "Hammasini o'qildi".
+// bosilsa o'qilgan bo'ladi va bildirishnoma tafsiloti ochiladi (tegishli ekranga o'tish tugma bilan); tepada "Hammasini o'qildi".
 export default function NotificationsList() {
   const router = useRouter();
   const { theme: t } = useTheme();
@@ -31,8 +33,15 @@ export default function NotificationsList() {
   const markRead = useMarkNotificationRead();
   const markAll = useMarkAllNotificationsRead();
 
+  const [selected, setSelected] = useState(null);
+
   const open = (n) => {
     if (!n.isRead) markRead.mutate(n.id);
+    setSelected(n);
+  };
+
+  const openTarget = (n) => {
+    setSelected(null);
     router.push(notificationHref(n));
   };
 
@@ -48,66 +57,73 @@ export default function NotificationsList() {
   }
 
   return (
-    <FlatList
-      data={feed.items}
-      keyExtractor={(n) => String(n.id)}
-      contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40, gap: 8, flexGrow: 1 }}
-      onEndReached={feed.fetchMore}
-      onEndReachedThreshold={0.4}
-      refreshing={feed.refreshing}
-      onRefresh={feed.refetch}
-      ListHeaderComponent={
-        unread > 0 ? (
-          <TouchableOpacity
-            style={s.markAll}
-            activeOpacity={0.7}
-            disabled={markAll.isPending}
-            onPress={() => markAll.mutate()}
-          >
-            <MaterialCommunityIcons name="check-all" size={17} color={t.orange} />
-            <Text style={[s.markAllText, { color: t.orange }]}>{tr('notifList.markAll')}</Text>
-          </TouchableOpacity>
-        ) : null
-      }
-      ListEmptyComponent={
-        <View style={s.center}>
-          <MaterialCommunityIcons name="bell-outline" size={40} color={t.faint} />
-          <Text style={[s.empty, { color: t.muted }]}>{tr('notifList.empty')}</Text>
-        </View>
-      }
-      ListFooterComponent={
-        feed.fetchingMore ? (
-          <ActivityIndicator color={t.orange} style={{ marginVertical: 14 }} />
-        ) : null
-      }
-      renderItem={({ item }) => {
-        const detail = notificationDetail(item);
-        return (
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => open(item)}
-            style={[
-              s.row,
-              {
-                backgroundColor: item.isRead ? t.card : t.orange + '14',
-                borderColor: item.isRead ? t.border : t.orange + '55',
-              },
-            ]}
-          >
-            {!item.isRead && <View style={[s.dot, { backgroundColor: t.orange }]} />}
-            <View style={{ flex: 1 }}>
-              <Text style={[s.text, { color: t.text }]}>{notificationText(item, tr)}</Text>
-              {!!detail && (
-                <Text style={[s.detail, { color: t.muted }]} numberOfLines={1}>
-                  {detail}
-                </Text>
-              )}
-              <Text style={[s.date, { color: t.faint }]}>{notificationDate(item.createdAt)}</Text>
-            </View>
-          </TouchableOpacity>
-        );
-      }}
-    />
+    <>
+      <FlatList
+        data={feed.items}
+        keyExtractor={(n) => String(n.id)}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40, gap: 8, flexGrow: 1 }}
+        onEndReached={feed.fetchMore}
+        onEndReachedThreshold={0.4}
+        refreshing={feed.refreshing}
+        onRefresh={feed.refetch}
+        ListHeaderComponent={
+          unread > 0 ? (
+            <TouchableOpacity
+              style={s.markAll}
+              activeOpacity={0.7}
+              disabled={markAll.isPending}
+              onPress={() => markAll.mutate()}
+            >
+              <MaterialCommunityIcons name="check-all" size={17} color={t.orange} />
+              <Text style={[s.markAllText, { color: t.orange }]}>{tr('notifList.markAll')}</Text>
+            </TouchableOpacity>
+          ) : null
+        }
+        ListEmptyComponent={
+          <View style={s.center}>
+            <MaterialCommunityIcons name="bell-outline" size={40} color={t.faint} />
+            <Text style={[s.empty, { color: t.muted }]}>{tr('notifList.empty')}</Text>
+          </View>
+        }
+        ListFooterComponent={
+          feed.fetchingMore ? (
+            <ActivityIndicator color={t.orange} style={{ marginVertical: 14 }} />
+          ) : null
+        }
+        renderItem={({ item }) => {
+          const detail = notificationDetail(item);
+          return (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => open(item)}
+              style={[
+                s.row,
+                {
+                  backgroundColor: item.isRead ? t.card : t.orange + '14',
+                  borderColor: item.isRead ? t.border : t.orange + '55',
+                },
+              ]}
+            >
+              {!item.isRead && <View style={[s.dot, { backgroundColor: t.orange }]} />}
+              <View style={{ flex: 1 }}>
+                <Text style={[s.text, { color: t.text }]}>{notificationText(item, tr)}</Text>
+                {!!detail && (
+                  <Text style={[s.detail, { color: t.muted }]} numberOfLines={1}>
+                    {detail}
+                  </Text>
+                )}
+                <Text style={[s.date, { color: t.faint }]}>{notificationDate(item.createdAt)}</Text>
+              </View>
+            </TouchableOpacity>
+          );
+        }}
+      />
+      <NotificationDetailModal
+        notification={selected}
+        onClose={() => setSelected(null)}
+        onOpenTarget={openTarget}
+      />
+    </>
   );
 }
 

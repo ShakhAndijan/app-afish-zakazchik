@@ -16,10 +16,12 @@ import {
 } from '../../../api/orders';
 import MoneyInput from '../../new-order/components/MoneyInput';
 import FlowModal from './FlowModal';
+import EstimateCard from '../../orders/components/EstimateCard';
 import { parsePrice } from '../hooks/useOrderActions';
 import Avatar from '../../../components/Avatar';
 import SectionError from '../../zakazchi-main/components/SectionError';
 import { formatDay, formatDeadline, formatPrice } from '../utils';
+import { pollEvery } from '../../../utils/realtime';
 
 const AVATAR_COLORS = ['#2fa37a', '#e87a45', '#3f7fd4', '#ec4899', '#8b5cf6', '#f5c451', '#06b6d4'];
 
@@ -36,7 +38,7 @@ export default function OffersSection({ orderId, chooseUntil, onChanged }) {
   const query = useQuery({
     queryKey: ['orders', orderId, 'offers'],
     queryFn: () => getOrderOffers(orderId),
-    refetchInterval: 10 * 1000,
+    refetchInterval: pollEvery(10 * 1000, 30 * 1000),
   });
   const offers = (query.data ?? []).filter((o) => o.status === 'pending');
 
@@ -206,6 +208,33 @@ export default function OffersSection({ orderId, chooseUntil, onChanged }) {
               )}
               {!!offer.comment && (
                 <Text style={[s.comment, { color: t.subtext ?? t.muted }]}>{offer.comment}</Text>
+              )}
+              {!!offer.brigade && (
+                <View style={s.line}>
+                  <MaterialCommunityIcons name="account-group-outline" size={16} color={t.muted} />
+                  <Text style={[s.lineTxt, { color: t.text }]}>
+                    {tr('orderFlow.match.brigade', {
+                      name: offer.brigade.name,
+                      count: offer.brigade.size ?? '—',
+                    })}
+                  </Text>
+                </View>
+              )}
+              {offer.estimate.length > 0 && (
+                <View style={{ gap: 6 }}>
+                  <Text style={[s.label, { color: t.text }]}>
+                    {tr('orderFlow.match.estimateTitle')}
+                  </Text>
+                  <EstimateCard rows={offer.estimate} t={t} />
+                </View>
+              )}
+              {offer.unmet.length > 0 && (
+                <View style={s.line}>
+                  <MaterialCommunityIcons name="alert-outline" size={16} color={t.gold} />
+                  <Text style={[s.lineTxt, { color: t.gold, flex: 1 }]}>
+                    {tr('orderFlow.match.unmet', { list: offer.unmet.join(', ') })}
+                  </Text>
+                </View>
               )}
 
               <View style={s.actions}>

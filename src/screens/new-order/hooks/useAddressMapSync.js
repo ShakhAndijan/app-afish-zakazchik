@@ -3,10 +3,12 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { REGION_COORDS } from '../constants';
+import { areaCenter, searchAddresses } from '../../../utils/addressSearch';
 
-// Foydalanuvchi yozishni to'xtatgandan keyin xarita qidiruvi qancha kutib boshlanadi: yozuv
-// tugamagan paytda xarita boshqa joyga sakrab ketmasligi uchun.
-const SEARCH_DEBOUNCE_MS = 2000;
+// Foydalanuvchi yozishni to'xtatgandan keyin takliflar qancha kutib qidiriladi (har harfga so'rov
+// yuborilmasligi uchun). Xarita o'zi siljimaydi — joy faqat taklif tanlanganda ko'rsatiladi.
+const SEARCH_DEBOUNCE_MS = 700;
+const MIN_QUERY_LENGTH = 3;
 
 export default function useAddressMapSync({
   regions,
@@ -35,32 +37,49 @@ export default function useAddressMapSync({
       : null;
   const geocodeZoom = selectedDistrictName ? 12 : 9;
 
-  // ── Ikki tomonlama moslashuv: xaritaga bosilsa manzil maydonlariga
-  // yoziladi, ko'cha nomi yozilsa esa xaritada shu joy topiladi ──
-  // Xaritadan topilgan matn (`lastResolvedRef`) qayta qidirilmaydi: aks holda xarita topilgan manzilni
-  // matn bo'yicha qayta izlab, boshqa joyga sakrab ketardi. Viloyat/tuman o'zgarishi ham qidiruvni
-  // ishga tushirmaydi (ular avtomatik tanlanadi) — faqat foydalanuvchi ko'cha matnini o'zgartirganda.
+  // ── Ko'cha nomi yozilganda mos manzillar taklif qilinadi; xarita faqat taklif tanlanganda siljiydi ──
+  // Xaritadan topilgan matn (`lastResolvedRef`) qayta qidirilmaydi.
   const lastResolvedRef = useRef(null);
-  const areaRef = useRef({ district: selectedDistrictName, region: selectedRegionName });
-  const [searchQuery, setSearchQuery] = useState(null);
+  const areaRef = useRef({
+    district: selectedDistrictName,
+    region: selectedRegionName,
+    geocodeQuery,
+  });
+  const seqRef = useRef(0);
+  // `street` — qaysi matn uchun qidirilgani: matn o'zgarsa eski natija o'zi yashiriladi.
+  const [result, setResult] = useState({ street: null, list: [] });
+  const [searching, setSearching] = useState(false);
+  // Tanlangan taklif matni: shu matn turganda ro'yxat qayta chiqmaydi.
+  const [pickedText, setPickedText] = useState(null);
+  const [focusPoint, setFocusPoint] = useState(null);
 
   useEffect(() => {
-    areaRef.current = { district: selectedDistrictName, region: selectedRegionName };
-  }, [selectedDistrictName, selectedRegionName]);
+    areaRef.current = {
+      district: selectedDistrictName,
+      region: selectedRegionName,
+      geocodeQuery,
+    };
+  }, [selectedDistrictName, selectedRegionName, geocodeQuery]);
 
   useEffect(() => {
-    if (street === lastResolvedRef.current) return;
-    if (!street || street.trim().length < 4) {
-      setSearchQuery(null);
-      return;
-    }
-    const handle = setTimeout(() => {
-      const { district, region } = areaRef.current;
-      const parts = [street.trim()];
+    const text = street?.trim() || '';
+    if (street === lastResolvedRef.current || text.length < MIN_QUERY_LENGTH) return undefined;
+    const handle = setTimeout(async () => {
+      const seq = ++seqRef.current;
+      const { district, region, geocodeQuery: areaQuery } = areaRef.current;
+      const parts = [text];
       if (district) parts.push(district);
       if (region) parts.push(region);
       parts.push("O'zbekiston");
-      setSearchQuery({ query: parts.join(', '), street: street.trim(), district, region });
+      setSearching(true);
+      const area = areaQuery ? await areaCenter(areaQuery) : null;
+      const list = await searchAddresses(
+        { query: parts.join(', '), street: text, district, region },
+        area
+      );
+      if (seq !== seqRef.current) return;
+      setSearching(false);
+      setResult({ street, list });
     }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(handle);
   }, [street]);
@@ -77,5 +96,30 @@ export default function useAddressMapSync({
     }
   };
 
-  return { panLat, panLng, panZoom, geocodeQuery, geocodeZoom, searchQuery, handleAddressResolved };
+  // Taklif tanlandi: matn maydonga yoziladi, xarita shu joyga o'tib, pin qo'yiladi.
+  const selectSuggestion = (item) => {
+    lastResolvedRef.current = item.title;
+    setPickedText(item.title);
+    onStreetChange(item.title);
+    setFocusPoint({ lat: item.lat, lng: item.lng, zoom: 18, key: Date.now() });
+  };
+
+  const fresh = result.street === street && pickedText !== street;
+  const suggestions = fresh ? result.list : [];
+  const noResults = fresh && result.list.length === 0;
+  const isSearching = searching && !fresh && (street?.trim().length || 0) >= MIN_QUERY_LENGTH;
+
+  return {
+    panLat,
+    panLng,
+    panZoom,
+    geocodeQuery,
+    geocodeZoom,
+    focusPoint,
+    suggestions,
+    noResults,
+    isSearching,
+    selectSuggestion,
+    handleAddressResolved,
+  };
 }

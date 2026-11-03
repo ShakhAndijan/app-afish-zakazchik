@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 import { useLanguage } from '../context/LanguageContext';
+import PresenceBadge from './PresenceBadge';
 
 const DEFAULT_COLORS = {
   card: '#142639',
@@ -57,6 +58,7 @@ export default function ListingCard({ listing, accent, onPress, onContact, color
           <View>
             <Text style={[styles.name, { color: c.text }]}>{listing.name}</Text>
             {!!meta && <Text style={[styles.meta, { color: c.muted }]}>{meta}</Text>}
+            <PresenceBadge worker={listing} style={{ marginTop: 5 }} />
           </View>
         </View>
         <View style={[styles.ratingPill, { backgroundColor: c.ratingBg }]}>

@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import { appAlert } from '../../../components/AppAlert';
 import { useTheme } from '../../../context/ThemeContext';
 import { useLanguage } from '../../../context/LanguageContext';
 import { formatWhenDate } from '../utils';
 import { common } from '../styles';
 import OptionSheet from '../components/OptionSheet';
 import ToggleSwitch from '../components/ToggleSwitch';
+import WorkerDays, { useWorkerDays } from '../components/WorkerDays';
 
 // Tanlangan variantga mos ikonka: bugun — bugungi kun belgisi, sana — oylik taqvim.
 const WHEN_ICONS = {
@@ -17,14 +19,20 @@ const WHEN_ICONS = {
 
 // "Qachon kerak?": bitta maydon, odatda "Bugun". Bosilganda boshqa variant tanlanadi
 // (sana / erkin), "Shoshilinch" esa shu kartaning ichidagi alohida tugma.
-export default function WhenSection({ when, setWhen, whenDate, setWhenDate }) {
+export default function WhenSection({ when, setWhen, whenDate, setWhenDate, workerId }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
   const [showIosDatePicker, setShowIosDatePicker] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
 
   // Sana faqat tanlab bo'lingach o'rnatiladi: oyna yopilsa, oldingi tanlov saqlanib qoladi.
+  const { days, kindOf } = useWorkerDays(workerId);
   const applyDate = (date) => {
+    // Aniq ustaga buyurtmada usta dam olayotgan yoki to'la kunni tanlab bo'lmaydi.
+    if (kindOf(date) !== 'open') {
+      appAlert(tr('newOrder.when.pickedUnavailable'));
+      return;
+    }
     setWhenDate(date);
     setWhen('date');
   };
@@ -112,6 +120,8 @@ export default function WhenSection({ when, setWhen, whenDate, setWhenDate }) {
           <ToggleSwitch value={urgent} onChange={(on) => setWhen(on ? 'urgent' : 'today')} t={t} />
         </View>
       </View>
+
+      <WorkerDays days={days} whenDate={when === 'date' ? whenDate : null} onPick={applyDate} />
 
       <OptionSheet
         visible={sheetOpen}

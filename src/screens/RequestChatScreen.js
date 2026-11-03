@@ -12,12 +12,14 @@ import { getOrderChat, sendOrderChat, markOrderChatRead } from '../api/orders';
 import Avatar from '../components/Avatar';
 import OfferModal from './requests/components/OfferModal';
 import usePolling from './requests/hooks/usePolling';
+import { pollEvery } from '../utils/realtime';
 import useLiveOrder from './requests/hooks/useLiveOrder';
 import useOrderActions from './requests/hooks/useOrderActions';
 import { clockLabel, formatDay, formatPrice, isDayValid, offerDay } from './requests/utils';
 import { getErrorMessage } from '../utils/errors';
 
-const CHAT_POLL_MS = 5000;
+// Real vaqt ulangan bo'lsa chat zaxira sifatida siyrak so'raladi.
+const CHAT_POLL_MS = pollEvery(5000, 30000);
 
 // Buyurtma chati (backenddan): usta bilan suhbat, narx takliflari chatda alohida qator bo'lib
 // ko'rinadi. Tepada joriy taklif va "Qabul qilish" / "Narx taklif qilish" tugmalari turadi.

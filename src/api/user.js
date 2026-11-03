@@ -18,6 +18,22 @@ export async function getCustomerMe() {
 }
 
 /**
+ * Mijoz ko'p buyurtma qilgan yo'nalishlar (oxirgi `days` kun): tezkor yo'nalishlar uchun.
+ */
+export async function getTopCategories({ days = 90, limit = 8 } = {}) {
+  const data = await request(ENDPOINTS.CUSTOMER_TOP_CATEGORIES(days, limit), {
+    fallbackMessage: "Yo'nalishlar yuklanmadi",
+  });
+  return (data ?? []).map((c) => ({
+    id: c.id,
+    name: c.name ?? '',
+    color: c.color ?? null,
+    orderCount: c.order_count ?? 0,
+    lastUsedAt: c.last_used_at ?? null,
+  }));
+}
+
+/**
  * Profilni tahrirlash formasidagi o'zgarishlarni backendga saqlaydi.
  */
 export const updateCustomerMe = (payload) =>

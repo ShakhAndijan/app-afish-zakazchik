@@ -41,6 +41,14 @@ export function timeAgo(iso, tr) {
   return tr('listings.ago.months', { n: Math.floor(days / 30) });
 }
 
+/** Soniya → "1:05" (video davomiyligi). */
+export function formatVideoDuration(seconds) {
+  const total = Math.max(0, Math.round(Number(seconds) || 0));
+  const m = Math.floor(total / 60);
+  const s = String(total % 60).padStart(2, '0');
+  return `${m}:${s}`;
+}
+
 /** Matndan faqat raqamlarni qoldiradi (narx maydonlari uchun). */
 export const digitsOnly = (s) => String(s ?? '').replace(/\D/g, '');
 

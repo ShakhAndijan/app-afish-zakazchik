@@ -12,7 +12,13 @@ export default function ScheduleSection({ weekDays, workHours, offDates }) {
   const { C, st } = useUstaStyles();
   if (weekDays.length === 0) return null;
 
-  const infoRow = { marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12 };
+  const infoRow = {
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: 12,
+  };
 
   return (
     <>
@@ -21,7 +27,11 @@ export default function ScheduleSection({ weekDays, workHours, offDates }) {
         {weekDays.map((day) => (
           <View
             key={day.id}
-            style={[st.chip, { paddingHorizontal: 12 }, day.isWorking ? st.dayChipOn : st.dayChipOff]}
+            style={[
+              st.chip,
+              { paddingHorizontal: 12 },
+              day.isWorking ? st.dayChipOn : st.dayChipOff,
+            ]}
           >
             {day.isWorking && <View style={st.dayDot} />}
             <Text style={[st.dayChipTxt, { color: day.isWorking ? C.green : C.dim }]}>

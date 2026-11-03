@@ -9,6 +9,7 @@ export default function ProfileInfo({
   phone,
   location,
   onEdit,
+  onLocationPress,
   identityStatus,
   rating,
   onIdentityPress,
@@ -33,12 +34,19 @@ export default function ProfileInfo({
       </View>
       {!!phone && <Text style={{ fontSize: 12.5, color: t.muted, marginTop: 3 }}>{phone}</Text>}
       {!!location && (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
+        <TouchableOpacity
+          onPress={onLocationPress}
+          disabled={!onLocationPress}
+          activeOpacity={0.7}
+          hitSlop={8}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}
+        >
           <MaterialCommunityIcons name="map-marker-outline" size={12} color={t.faint} />
-          <Text style={{ fontSize: 11.5, color: t.faint }} numberOfLines={1}>
+          <Text style={{ fontSize: 11.5, color: t.faint, flexShrink: 1 }} numberOfLines={1}>
             {location}
           </Text>
-        </View>
+          {!!onLocationPress && <MaterialCommunityIcons name="pencil" size={11} color={t.faint} />}
+        </TouchableOpacity>
       )}
       <View style={styles.chips}>
         {identityStatus === 'approved' ? (

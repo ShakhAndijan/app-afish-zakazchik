@@ -141,6 +141,20 @@ export function mapOrder(o) {
     returnedWorkerId: o.returned_worker_id ?? null,
     returnedWorkerName: o.returned_worker_name ?? null,
     returnedRecalled: !!o.returned_recalled,
+    // Qaytarish sababi va muddat tugagani uchun avtomatik qaytarilganmi.
+    returnedReason: o.returned_reason?.trim() || null,
+    returnedLapsed: !!o.returned_lapsed,
+    // Kim bekor qilgan (customer | worker | system) va asosiy sanalar.
+    cancelledBy: o.cancelled_by ?? null,
+    agreedAt: o.agreed_at ?? null,
+    completedAt: o.completed_at ?? null,
+    // Smeta: ustaning ish/material qatorlari.
+    estimate: (o.estimate ?? []).map((row) => ({
+      name: row.name ?? '',
+      qty: toNumber(row.qty),
+      unit: row.unit ?? null,
+      price: toNumber(row.price),
+    })),
     // Saytdagi kelishuv jarayoni uchun: kelib chiqishi, muddatlar, sana va takliflar.
     origin: o.origin ?? null,
     offersCount: o.offers_count ?? 0,
@@ -154,7 +168,28 @@ export function mapOrder(o) {
     timingKind: o.timing_kind ?? null,
     budget,
     reposted: !!o.reposted,
-    customerRated: !!o.customer_rated,
+    // "Usta bog'lana olmadi" da'vosi (status: awaiting_customer | disputed | ...) va javob muddati.
+    matchComplaint: o.match_complaint
+      ? {
+          id: o.match_complaint.id ?? null,
+          status: o.match_complaint.status ?? null,
+          note: o.match_complaint.note?.trim() || null,
+          answerDeadline: o.match_complaint.answer_deadline ?? o.complaint_until ?? null,
+          customerReached: o.match_complaint.customer_reached ?? null,
+        }
+      : null,
+    // Usta reytingi faqat tafsilot javobida (`worker{}`) keladi.
+    workerRating: toNumber(o.worker?.overall_rating),
+    workerReviewCount: o.worker?.review_count ?? null,
+    workerBadge: o.worker?.reliability_badge ?? null,
+    // Yakuniy izohlar: mijozniki (`customer_*`) va ustaniki (`worker_*`).
+    customerFinalComment: o.customer_final_comment?.trim() || null,
+    workerFinalComment: o.worker_final_comment?.trim() || null,
+    // Mijoz ustaga baho berganmi (`customer_rated`/`customer_rating` — ustaning mijozga bahosi, bu yerga tegishli emas).
+    workerRated: !!o.worker_rated,
+    // Berilgan yulduzlar faqat ro'yxat javobida (`worker_rating`); tafsilotda yo'q, shuning uchun
+    // kalit yo'q bo'lsa `{...ro'yxat, ...tafsilot}` birlashtirishda ro'yxatdagi qiymat saqlanadi.
+    ...(o.worker_rating != null ? { givenRating: toNumber(o.worker_rating) } : {}),
   };
 }
 
@@ -192,6 +227,7 @@ export async function getOrderDetail(orderId) {
   ]);
   const order = mapOrder(detail);
   order.paymentStatus = PAYMENT_STATE_TO_UI[payment?.state] || 'not_charged';
+  order.paymentState = payment?.state ?? null;
   return order;
 }
 
@@ -294,6 +330,13 @@ export const completeOrder = (orderId, comment) =>
 export const workNotDone = (orderId) =>
   postJson(ENDPOINTS.ORDER_WORK_NOT_DONE(orderId), undefined, 'Amal bajarilmadi');
 
+/**
+ * Mijozning "usta bog'lana olmadi" da'vosiga javobi: `reached` false — usta to'lovni qaytarib oladi,
+ * true — operator hal qiladi. Bir marta (409 complaint_already_answered).
+ */
+export const answerMatchComplaint = (orderId, reached) =>
+  postJson(ENDPOINTS.ORDER_COMPLAINT_ANSWER(orderId), { reached }, "Javob yuborib bo'lmadi");
+
 // Ommaviy buyurtmaga kelgan takliflar (faqat PENDING, ustasiz buyurtma uchun).
 function mapOffer(o) {
   const w = o.worker ?? {};
@@ -316,6 +359,19 @@ function mapOffer(o) {
       jobs: w.completed_jobs ?? 0,
       experience: w.experience_years ?? 0,
     },
+    // Taklif smetasi, brigada (id, nomi, a'zolar soni) va talabdan qaysi bandlar bajarilmagani.
+    estimate: (o.estimate ?? []).map((row) => ({
+      name: row.name ?? '',
+      qty: toNumber(row.qty),
+      unit: row.unit ?? null,
+      price: toNumber(row.price),
+    })),
+    brigade: o.brigade
+      ? { id: o.brigade.id, name: o.brigade.name, size: o.brigade.size ?? null }
+      : null,
+    unmet: (Array.isArray(o.unmet) ? o.unmet : [])
+      .map((u) => (typeof u === 'string' ? u : (u?.label ?? u?.name ?? u?.code ?? null)))
+      .filter(Boolean),
   };
 }
 
@@ -349,3 +405,60 @@ export const publishOrder = (orderId) =>
 
 export const cancelOrderByCustomer = (orderId, reason) =>
   postJson(ENDPOINTS.ORDER_CANCEL(orderId), { reason }, 'Buyurtma bekor qilinmadi');
+
+/** Yopilgan buyurtmaga keyinroq yakuniy izoh qo'shadi (bir marta; 409 final_comment_already_set). */
+export const addFinalComment = (orderId, comment) =>
+  postJson(ENDPOINTS.ORDER_FINAL_COMMENT(orderId), { comment }, "Izoh yuborib bo'lmadi");
+
+// ─── Ish bosqichlari ─────────────────────────────────────────────────
+
+function mapStage(st) {
+  const confirmed = !!st.confirmed_at || st.status === 'confirmed';
+  const done = !confirmed && (st.status === 'done' || !!st.done_at);
+  return {
+    id: st.id,
+    position: st.position ?? 0,
+    title: st.title ?? '',
+    note: st.note?.trim() || null,
+    amount: toNumber(st.amount),
+    state: confirmed ? 'confirmed' : done ? 'done' : 'waiting',
+    doneAt: st.done_at ?? null,
+    confirmedAt: st.confirmed_at ?? null,
+  };
+}
+
+export async function getOrderStages(orderId) {
+  const list = await getJson(ENDPOINTS.ORDER_STAGES(orderId), 'Bosqichlar yuklanmadi');
+  return (list || []).map(mapStage).sort((a, b) => a.position - b.position);
+}
+
+/** Usta bajarilgan deb belgilagan bosqichni tasdiqlaydi (409 stage_not_done). */
+export const confirmOrderStage = (orderId, stageId) =>
+  postJson(ENDPOINTS.ORDER_STAGE_CONFIRM(orderId, stageId), undefined, 'Bosqich tasdiqlanmadi');
+
+// ─── Onlayn to'lov ───────────────────────────────────────────────────
+
+/** Serverda yoqilgan to'lov tizimlari (payme | click). Bo'sh bo'lsa to'lov tugmasi yashiriladi. */
+export async function getPaymentProviders() {
+  const data = await request(ENDPOINTS.PAYMENT_PROVIDERS, { auth: false });
+  const list = Array.isArray(data) ? data : (data?.providers ?? []);
+  return list
+    .map((p) => (typeof p === 'string' ? p : (p?.id ?? p?.provider ?? p?.code)))
+    .filter(Boolean);
+}
+
+/**
+ * Bajarilgan buyurtma uchun to'lov yaratadi; `checkout_url` — brauzerda ochiladigan to'lov sahifasi
+ * (409 order_not_completed / order_already_paid).
+ */
+export async function createOrderPayment(orderId, { amountUzs, provider, locale }) {
+  const body = { amount_uzs: Math.round(amountUzs) };
+  if (provider) body.provider = provider;
+  if (locale) body.locale = locale;
+  const data = await postJson(ENDPOINTS.ORDER_PAYMENT(orderId), body, "To'lov boshlanmadi");
+  return {
+    id: data?.id ?? null,
+    checkoutUrl: data?.checkout_url ?? null,
+    state: data?.state ?? null,
+  };
+}

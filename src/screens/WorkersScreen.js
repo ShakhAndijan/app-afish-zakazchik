@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { trackEvent } from '../utils/analytics';
+import { useWithPresence } from '../queries/presence';
 import {
   View,
   Text,
@@ -24,6 +27,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import LocationMapPicker from '../components/LocationMapPicker';
 import { useWorkersFeed } from '../queries/workers';
+import { getMapClusters } from '../api/workers';
 import { useRegions, useDistricts } from '../queries/reference';
 import { useCategoryTreeQuery } from '../queries/categories';
 import { ustaRoute, newOrderRoute } from '../navigation/params';
@@ -41,6 +45,9 @@ const LIST_PAGE = 20;
 // Xaritada bir martada ko'proq usta ko'rinishi uchun sahifa kattaroq.
 const MAP_PAGE = 50;
 const formatKm = (km) => (km < 10 ? km.toFixed(1) : String(Math.round(km)));
+// Shu masshtabdan uzoqroqda xarita nuqtalar o'rniga hudud bo'yicha ustalar sonini ko'rsatadi.
+const CLUSTER_MAX_ZOOM = 8;
+
 const NO_FILTERS = {
   parentIds: [],
   subIds: [],
@@ -77,7 +84,11 @@ export default function WorkersScreen({ onBack }) {
 
   // Har harf uchun so'rov yuborilmasligi uchun qidiruv matni biroz kutib qo'llanadi.
   useEffect(() => {
-    const id = setTimeout(() => setQ(queryInput.trim()), SEARCH_DELAY_MS);
+    const id = setTimeout(() => {
+      const next = queryInput.trim();
+      setQ(next);
+      if (next) trackEvent('search_performed');
+    }, SEARCH_DELAY_MS);
     return () => clearTimeout(id);
   }, [queryInput]);
 
@@ -106,6 +117,7 @@ export default function WorkersScreen({ onBack }) {
   );
   const mapMode = view === 'map';
   const feed = useWorkersFeed(filters, mapMode ? MAP_PAGE : LIST_PAGE);
+  const liveItems = useWithPresence(feed.items);
 
   // Viloyat/tuman tanlangan bo'lsa xarita shu hududga markazlanadi (ustalar bo'lmasa ham boshqa shaharda qolib ketmaydi).
   const regions = useRegions().data;
@@ -139,6 +151,38 @@ export default function WorkersScreen({ onBack }) {
         .filter((w) => w.latitude != null && w.longitude != null)
         .map((w) => ({ id: w.id, lat: w.latitude, lon: w.longitude })),
     [feed.items]
+  );
+  // Xarita uzoqlashtirilganda (viloyat darajasi) alohida ustalar o'rniga hudud bo'yicha soni ko'rsatiladi.
+  const [mapZoom, setMapZoom] = useState(null);
+  const showClusters = mapMode && mapZoom != null && mapZoom <= CLUSTER_MAX_ZOOM;
+  const clusterQuery = useQuery({
+    queryKey: ['workers', 'map-clusters', filter, categoryIds, q],
+    queryFn: () =>
+      getMapClusters({
+        level: filter.regionId ? 'district' : 'region',
+        regionId: filter.regionId,
+        categoryId: categoryIds.length === 1 ? categoryIds[0] : null,
+        isOnline: filter.isOnline,
+        verifiedOnly: filter.verifiedOnly,
+        minRating: filter.minRating,
+        badge: filter.badge,
+        q,
+      }),
+    enabled: showClusters,
+    staleTime: 60 * 1000,
+  });
+  const clusters = useMemo(
+    () =>
+      showClusters && clusterQuery.data
+        ? clusterQuery.data.map((c) => ({
+            name: c.name,
+            count: c.workerCount,
+            lat: c.latitude,
+            lon: c.longitude,
+            zoom: filter.regionId ? 11 : 9,
+          }))
+        : null,
+    [showClusters, clusterQuery.data, filter.regionId]
   );
   const noLocationCount = feed.items.length - mapPins.length;
   const selected = selectedId != null ? feed.items.find((w) => w.id === selectedId) : null;
@@ -379,6 +423,8 @@ export default function WorkersScreen({ onBack }) {
         <WorkersMap
           style={StyleSheet.absoluteFill}
           pins={mapPins}
+          clusters={clusters}
+          onZoom={setMapZoom}
           me={coords}
           area={mapArea}
           selectedId={selected ? selected.id : null}
@@ -498,7 +544,7 @@ export default function WorkersScreen({ onBack }) {
           </>
         ) : (
           <FlatList
-            data={feed.items}
+            data={liveItems}
             keyExtractor={(w) => String(w.id)}
             contentContainerStyle={{ paddingBottom: 28 + insets.bottom, flexGrow: 1 }}
             ListHeaderComponent={header}

@@ -4,15 +4,17 @@ import { COLORS } from '../../../constants/colors';
 import { useLanguage } from '../../../context/LanguageContext';
 import { getWorkers } from '../../../api/workers';
 import WorkerCard from '../../../components/WorkerCard';
+import { useWithPresence } from '../../../queries/presence';
 
 // "Eng zo'r ustalar": reyting bo'yicha 5 ta usta. Ma'lumot bo'lmasa — chizilmaydi.
 export default function TopWorkers({ onSelectUsta }) {
   const { t } = useLanguage();
-  const [workers, setWorkers] = useState([]);
+  const [loaded, setLoaded] = useState([]);
+  const workers = useWithPresence(loaded);
 
   useEffect(() => {
     getWorkers({ size: 5 })
-      .then(setWorkers)
+      .then(setLoaded)
       .catch(() => {});
   }, []);
 

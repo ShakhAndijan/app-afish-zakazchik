@@ -7,6 +7,7 @@ import { useTheme } from '../../../context/ThemeContext';
 import { useLanguage } from '../../../context/LanguageContext';
 import { encodeImageUri, priceText, timeAgo } from '../utils';
 import ReelActionButton from './ReelActionButton';
+import ListingVideo from './ListingVideo';
 
 const ORANGE = '#e87a45';
 const GOLD = '#f5c451';
@@ -30,6 +31,7 @@ function ReelPage({
   onDetails,
   onContact,
   onOpenWorker,
+  active = true,
 }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
@@ -41,7 +43,15 @@ function ReelPage({
 
   return (
     <View style={{ width, height, backgroundColor: '#0b1117' }}>
-      {photos.length > 0 ? (
+      {listing.videoUrl ? (
+        <ListingVideo
+          uri={listing.videoUrl}
+          poster={listing.videoPoster ?? photos[0]}
+          width={width}
+          height={height}
+          active={active}
+        />
+      ) : photos.length > 0 ? (
         <FlatList
           data={photos}
           keyExtractor={(uri, i) => `${i}-${uri}`}
@@ -105,7 +115,7 @@ function ReelPage({
           </View>
         )}
         <View style={{ flex: 1 }} />
-        {photos.length > 1 && (
+        {!listing.videoUrl && photos.length > 1 && (
           <View style={s.counter}>
             <Text style={s.counterTxt}>
               {photoIndex + 1}/{photos.length}

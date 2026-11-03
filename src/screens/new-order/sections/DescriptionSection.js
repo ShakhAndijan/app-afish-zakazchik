@@ -1,18 +1,16 @@
-import { useState } from 'react';
 import { Text, TextInput, StyleSheet } from 'react-native';
 import { useTheme } from '../../../context/ThemeContext';
 import { useLanguage } from '../../../context/LanguageContext';
 import { common } from '../styles';
 
-const MIN_HEIGHT = 100;
-const V_PADDING = 14;
-const BORDER = 1.5;
+const MIN_HEIGHT = 84;
 
-// Tavsif maydoni: boshida 100 px, matn ko'paygan sari balandligi o'sadi (ichida aylantirish yo'q).
+// Tavsif maydoni: boshida ixcham, matn ko'paygan sari balandligi o'zi o'sadi (ichida aylantirish yo'q).
+// Balandlik qo'lda hisoblanmaydi: Android'da `contentSize` maydonning o'z balandligidan kichik bo'lmagani
+// uchun qo'lda qo'shilgan padding har yangilanishda maydonni cheksiz kattalashtirib yuborardi.
 export default function DescriptionSection({ description, setDescription }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
-  const [height, setHeight] = useState(MIN_HEIGHT);
 
   return (
     <>
@@ -28,18 +26,7 @@ export default function DescriptionSection({ description, setDescription }) {
         placeholderTextColor={t.faint}
         multiline
         scrollEnabled={false}
-        onContentSizeChange={(e) =>
-          setHeight(
-            Math.max(
-              MIN_HEIGHT,
-              Math.ceil(e.nativeEvent.contentSize.height) + V_PADDING * 2 + BORDER * 2
-            )
-          )
-        }
-        style={[
-          s.textarea,
-          { backgroundColor: t.card, borderColor: t.border, color: t.text, height },
-        ]}
+        style={[s.textarea, { backgroundColor: t.card, borderColor: t.border, color: t.text }]}
       />
     </>
   );
@@ -47,9 +34,10 @@ export default function DescriptionSection({ description, setDescription }) {
 
 const s = StyleSheet.create({
   textarea: {
-    borderWidth: BORDER,
+    minHeight: MIN_HEIGHT,
+    borderWidth: 1.5,
     borderRadius: 14,
-    padding: V_PADDING,
+    padding: 14,
     fontSize: 14,
     textAlignVertical: 'top',
   },

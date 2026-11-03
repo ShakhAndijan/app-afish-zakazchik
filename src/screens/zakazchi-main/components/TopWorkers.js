@@ -2,6 +2,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../../../context/ThemeContext';
 import { useLanguage } from '../../../context/LanguageContext';
 import WorkerCard from '../../../components/WorkerCard';
+import { useWithPresence } from '../../../queries/presence';
 import SectionLoader from './SectionLoader';
 import SectionError from './SectionError';
 import EmptyCard from './EmptyCard';
@@ -11,11 +12,11 @@ import EmptyCard from './EmptyCard';
 export default function TopWorkers({ state, onSelectUsta, onRetry }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
+  const workers = useWithPresence(state.data ?? []);
 
   if (state.loading) return <SectionLoader height={176} />;
   if (state.error) return <SectionError onRetry={onRetry} />;
 
-  const workers = state.data ?? [];
   if (workers.length === 0) {
     return (
       <EmptyCard

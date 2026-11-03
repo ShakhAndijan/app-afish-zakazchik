@@ -1,8 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
-  AppState,
   Image,
-  Linking,
   View,
   Text,
   ScrollView,
@@ -20,7 +18,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import AppLoader from '../components/AppLoader';
 import SectionError from './zakazchi-main/components/SectionError';
-import { getIdentityStatus, startIdentityProvider, submitIdentityDocuments } from '../api/account';
+import { getIdentityStatus, submitIdentityDocuments } from '../api/account';
 import { getErrorMessage } from '../utils/errors';
 import useBottomInset from '../hooks/useBottomInset';
 
@@ -36,7 +34,7 @@ const STATUS_ICON = {
 };
 
 // Shaxsni tasdiqlash (saytdagi "Profilingizni tasdiqlang"): pasport/ID rasmi + hujjat bilan selfie
-// administratorga yuboriladi; MyID mavjud bo'lsa tezkor tasdiqlash ham taklif qilinadi.
+// administratorga yuboriladi (MyID faqat mutaxassislar uchun).
 export default function VerifyIdentityScreen({ onBack }) {
   const bottomInset = useBottomInset();
   const { theme: t } = useTheme();
@@ -46,16 +44,6 @@ export default function VerifyIdentityScreen({ onBack }) {
   const [files, setFiles] = useState([]);
   const [consent, setConsent] = useState(false);
   const [sending, setSending] = useState(false);
-  const [starting, setStarting] = useState(false);
-
-  // MyID brauzerda tugagach ilovaga qaytilganda holat qayta o'qiladi.
-  const refetch = status.refetch;
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', (st) => {
-      if (st === 'active') refetch();
-    });
-    return () => sub.remove();
-  }, [refetch]);
 
   const pick = useCallback(
     async (fromCamera) => {
@@ -108,21 +96,8 @@ export default function VerifyIdentityScreen({ onBack }) {
     }
   };
 
-  const startMyId = async () => {
-    setStarting(true);
-    try {
-      const { redirect_url } = await startIdentityProvider('myid');
-      await Linking.openURL(redirect_url);
-    } catch (e) {
-      appAlert(tr('common.errorTitle'), getErrorMessage(e, tr, 'account.verify.sendFailed'));
-    } finally {
-      setStarting(false);
-    }
-  };
-
   const st = status.data?.submission_status ?? 'not_submitted';
   const canSend = st === 'not_submitted' || st === 'rejected';
-  const hasMyId = (status.data?.available_providers ?? []).includes('myid');
   const tone = TONE[st] ?? 'muted';
   const toneColor = t[tone] ?? t.muted;
   const ready = files.length >= MIN_FILES && consent && !sending;
@@ -208,25 +183,6 @@ export default function VerifyIdentityScreen({ onBack }) {
                   </Text>
                 </View>
               </View>
-
-              {hasMyId && (
-                <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
-                  <Text style={[s.cardTitle, { color: t.text }]}>
-                    {tr('account.verify.autoTitle')}
-                  </Text>
-                  <Text style={[s.lead, { color: t.muted }]}>{tr('account.verify.autoBody')}</Text>
-                  <TouchableOpacity
-                    style={[s.primary, { backgroundColor: t.orange, opacity: starting ? 0.6 : 1 }]}
-                    activeOpacity={0.85}
-                    disabled={starting}
-                    onPress={startMyId}
-                  >
-                    <MaterialCommunityIcons name="flash" size={18} color="#fff" />
-                    <Text style={s.primaryText}>{tr('account.verify.autoStart')}</Text>
-                  </TouchableOpacity>
-                  <Text style={[s.or, { color: t.faint }]}>{tr('account.verify.autoOr')}</Text>
-                </View>
-              )}
 
               <View style={s.slots}>
                 {files.map((f, i) => (

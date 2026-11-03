@@ -16,6 +16,7 @@ export default function ProfileCover({
   location,
   stats,
   onEdit,
+  onLocationPress,
   onOrdersPress,
   identityStatus,
   rating,
@@ -39,6 +40,7 @@ export default function ProfileCover({
             phone={phone}
             location={location}
             onEdit={onEdit}
+            onLocationPress={onLocationPress}
             identityStatus={identityStatus}
             rating={rating}
             onIdentityPress={onIdentityPress}

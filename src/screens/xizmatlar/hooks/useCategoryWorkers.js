@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getWorkersPage } from '../../../api/workers';
+import { trackEvent } from '../../../utils/analytics';
 
 const SEARCH_DEBOUNCE_MS = 400;
 const EMPTY = [];
@@ -14,7 +15,13 @@ export default function useCategoryWorkers(categoryId, filters, query = '') {
   // Har bir harfda so'rov yubormaslik uchun yozish to'xtagach kutamiz.
   const [debouncedQuery, setDebouncedQuery] = useState(query);
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedQuery(query), query.trim() ? SEARCH_DEBOUNCE_MS : 0);
+    const timer = setTimeout(
+      () => {
+        setDebouncedQuery(query);
+        if (query.trim()) trackEvent('search_performed');
+      },
+      query.trim() ? SEARCH_DEBOUNCE_MS : 0
+    );
     return () => clearTimeout(timer);
   }, [query]);
 

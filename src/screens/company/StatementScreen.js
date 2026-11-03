@@ -8,6 +8,7 @@ import SectionError from '../zakazchi-main/components/SectionError';
 import { useStatement } from '../../queries/business';
 import { formatDate } from '../../utils/format';
 import { Card, Frame, SectionHead, money } from './ui';
+import StatementDocs from './StatementDocs';
 
 const periodOf = (year, month) => `${year}-${String(month + 1).padStart(2, '0')}`;
 
@@ -91,6 +92,8 @@ export default function StatementScreen({ onBack }) {
                 : ''}
             </Text>
           </Card>
+
+          {data.rows.length > 0 && <StatementDocs period={periodOf(cursor.year, cursor.month)} />}
 
           {data.rows.length === 0 && (
             <Text style={{ color: t.muted, textAlign: 'center', paddingVertical: 20 }}>

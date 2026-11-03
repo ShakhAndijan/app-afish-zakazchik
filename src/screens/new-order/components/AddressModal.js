@@ -8,6 +8,8 @@ import {
   Modal,
   Pressable,
   PanResponder,
+  Animated,
+  Keyboard,
   LayoutAnimation,
   StyleSheet,
   useWindowDimensions,
@@ -36,6 +38,8 @@ function AddressModalContent({
   onSelectDistrict,
   street,
   onStreetChange,
+  mahalla,
+  onMahallaChange,
   entrance,
   onEntranceChange,
   floor,
@@ -62,21 +66,31 @@ function AddressModalContent({
     setExpandedRaw(value);
   }, []);
 
-  // Panel tutqichi (tepadagi chiziqcha): tepaga tortilsa maydonlar ochiladi, pastga tortilsa yopiladi,
-  // qisqa bosilsa ochiq/yopiq holat almashadi.
-  const handlePan = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
-        onPanResponderRelease: (_e, g) => {
-          if (g.dy < -18) setExpanded(true);
-          else if (g.dy > 18) setExpanded(false);
-          else if (Math.abs(g.dx) < 8 && Math.abs(g.dy) < 8) setExpanded(!expanded);
-        },
-      }),
-    [expanded, setExpanded]
-  );
+  // Panel tutqichi (tepadagi chiziqcha): panel barmoq ortidan siljiydi. Ochiq panel pastga tortilib
+  // yetarlicha surilsa yopiladi; yopiq panel tepaga tortilsa ochiladi (u yerda faqat yengil "tortilish"
+  // ko'rinadi, chunki panel hali o'sib ulgurmagan). Qisqa bosish holatni almashtiradi. Qo'yib
+  // yuborilganda panel prujina bilan joyiga qaytadi.
+  const dragY = useState(() => new Animated.Value(0))[0];
+  // `expanded` o'zgarganda (faqat qo'yib yuborilganda) tutqich qayta yaratiladi — gesture o'rtasida emas.
+  const handlePan = useMemo(() => {
+    const settle = () =>
+      Animated.spring(dragY, { toValue: 0, useNativeDriver: true, bounciness: 5 }).start();
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderMove: (_e, g) => {
+        if (expanded) dragY.setValue(Math.max(0, g.dy));
+        else dragY.setValue(g.dy < 0 ? Math.max(g.dy * 0.4, -36) : Math.min(g.dy * 0.4, 24));
+      },
+      onPanResponderRelease: (_e, g) => {
+        settle();
+        if (!expanded && (g.dy < -30 || g.vy < -0.7)) setExpanded(true);
+        else if (expanded && (g.dy > 60 || g.vy > 0.7)) setExpanded(false);
+        else if (Math.abs(g.dx) < 8 && Math.abs(g.dy) < 8) setExpanded(!expanded);
+      },
+      onPanResponderTerminate: settle,
+    });
+  }, [expanded, dragY, setExpanded]);
   const [sheetH, setSheetH] = useState(0);
   // Telefonning pastki tizim tugmalari (orqaga / uy) paneldagi tugmani yopib qo'ymasligi uchun.
   const bottomInset = useSafeAreaInsets().bottom;
@@ -96,15 +110,27 @@ function AddressModalContent({
   const selectedDistrictName = districts.find((d) => d.id === districtId)?.name;
   const areaText = [selectedDistrictName, selectedRegionName].filter(Boolean).join(', ');
 
-  const { panLat, panLng, panZoom, geocodeQuery, geocodeZoom, searchQuery, handleAddressResolved } =
-    useAddressMapSync({
-      regions,
-      regionId,
-      selectedRegionName,
-      selectedDistrictName,
-      street,
-      onStreetChange,
-    });
+  const {
+    panLat,
+    panLng,
+    panZoom,
+    geocodeQuery,
+    geocodeZoom,
+    focusPoint,
+    suggestions,
+    noResults,
+    isSearching,
+    selectSuggestion,
+    handleAddressResolved,
+  } = useAddressMapSync({
+    regions,
+    regionId,
+    selectedRegionName,
+    selectedDistrictName,
+    street,
+    onStreetChange,
+  });
+  const showSuggestions = expanded && (suggestions.length > 0 || noResults || isSearching);
 
   return (
     <>
@@ -123,7 +149,7 @@ function AddressModalContent({
           panLat={panLat}
           panLng={panLng}
           panZoom={panZoom}
-          searchQuery={searchQuery}
+          focusPoint={focusPoint}
           onAddressResolved={handleAddressResolved}
           autoLocate={!gpsLat}
           locateRound
@@ -150,6 +176,48 @@ function AddressModalContent({
           <MaterialCommunityIcons name="arrow-left" size={24} color={t.text} />
         </TouchableOpacity>
 
+        {/* ── Ko'cha yozilganda mos manzillar: tanlanmaguncha xarita siljimaydi ── */}
+        {showSuggestions && (
+          <View
+            style={[
+              s.suggestCard,
+              { backgroundColor: t.card, borderColor: t.border, bottom: controlsBottom - 4 },
+            ]}
+          >
+            {suggestions.map((item, idx) => (
+              <TouchableOpacity
+                key={item.id}
+                onPress={() => {
+                  selectSuggestion(item);
+                  Keyboard.dismiss();
+                }}
+                activeOpacity={0.7}
+                style={[
+                  s.suggestRow,
+                  idx > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.border },
+                ]}
+              >
+                <MaterialCommunityIcons name="map-marker-outline" size={22} color={t.orange} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[s.suggestTitle, { color: t.text }]} numberOfLines={1}>
+                    {item.title}
+                  </Text>
+                  {!!item.subtitle && (
+                    <Text style={[s.suggestSub, { color: t.muted }]} numberOfLines={1}>
+                      {item.subtitle}
+                    </Text>
+                  )}
+                </View>
+              </TouchableOpacity>
+            ))}
+            {suggestions.length === 0 && (
+              <Text style={[s.suggestEmpty, { color: t.muted }]}>
+                {isSearching ? tr('newOrder.addressSearching') : tr('newOrder.addressNoResults')}
+              </Text>
+            )}
+          </View>
+        )}
+
         {/* ── Sarlavha faqat ekran o'zi bergan bo'lsagina ("Mening manzillarim"da) ── */}
         {!!title && (
           <SafeAreaView edges={['top']} style={s.mapTopBar} pointerEvents="box-none">
@@ -161,161 +229,181 @@ function AddressModalContent({
 
         {/* ── Xaritaning pastki qismida suzuvchi panel: boshida ixcham, bosilsa maydonlar ochiladi ── */}
         <KeyboardStickyView style={s.bottomSheetWrap}>
-          <View
-            onLayout={(e) => setSheetH(e.nativeEvent.layout.height)}
-            style={[
-              s.bottomSheet,
-              {
-                backgroundColor: sheetBg,
-                borderColor: t.border,
-                // Klaviatura ochiq bo'lsa tizim tugmalari ostida emas, qo'shimcha bo'sh joy shart emas
-                paddingBottom: kbVisible ? 16 : Math.max(bottomInset, 12) + 16,
-              },
-            ]}
-          >
-            <View style={s.sheetHandleWrap} {...handlePan.panHandlers}>
-              <View style={[common.sheetHandle, { backgroundColor: t.border }]} />
-            </View>
-
-            {expanded ? (
-              <>
-                <ScrollView
-                  style={{ maxHeight: sheetMaxH }}
-                  showsVerticalScrollIndicator={false}
-                  keyboardShouldPersistTaps="handled"
-                >
-                  <Text style={[s.mapHint, { color: t.faint }]}>{tr('newOrder.mapHint')}</Text>
-
-                  <View style={{ gap: 14, marginTop: 10 }}>
-                    {header}
-                    <View style={{ flexDirection: 'row', gap: 10 }}>
-                      <View style={{ flex: 1 }}>
-                        <SelectField
-                          label={tr('newOrder.regionLabel')}
-                          value={selectedRegionName}
-                          placeholder={tr('newOrder.regionPlaceholder')}
-                          onPress={() => setRegionSheetOpen(true)}
-                          t={t}
-                          bg={fieldBg}
-                        />
-                      </View>
-
-                      <View style={{ flex: 1 }}>
-                        <SelectField
-                          label={tr('newOrder.districtLabel')}
-                          value={selectedDistrictName}
-                          placeholder={
-                            regionId
-                              ? tr('newOrder.districtPlaceholder')
-                              : tr('newOrder.regionPlaceholder')
-                          }
-                          onPress={() => setDistrictSheetOpen(true)}
-                          t={t}
-                          bg={fieldBg}
-                          disabled={!regionId}
-                        />
-                      </View>
-                    </View>
-
-                    <TextInput
-                      value={street}
-                      onChangeText={onStreetChange}
-                      placeholder={tr('newOrder.streetPlaceholder')}
-                      placeholderTextColor={t.faint}
-                      style={[
-                        common.input,
-                        { backgroundColor: fieldBg, borderColor: t.border, color: t.text },
-                      ]}
-                    />
-                    {!hideUnitFields && (
-                      <View style={{ flexDirection: 'row', gap: 10 }}>
-                        <TextInput
-                          value={entrance}
-                          onChangeText={onEntranceChange}
-                          placeholder={tr('newOrder.entrancePlaceholder')}
-                          placeholderTextColor={t.faint}
-                          style={[
-                            common.input,
-                            {
-                              flex: 1,
-                              backgroundColor: fieldBg,
-                              borderColor: t.border,
-                              color: t.text,
-                            },
-                          ]}
-                        />
-                        <TextInput
-                          value={floor}
-                          onChangeText={onFloorChange}
-                          placeholder={tr('newOrder.floorPlaceholder')}
-                          placeholderTextColor={t.faint}
-                          style={[
-                            common.input,
-                            {
-                              flex: 1,
-                              backgroundColor: fieldBg,
-                              borderColor: t.border,
-                              color: t.text,
-                            },
-                          ]}
-                        />
-                      </View>
-                    )}
-
-                    <View style={[s.noteBox, { backgroundColor: fieldBg, borderColor: t.border }]}>
-                      <MaterialCommunityIcons
-                        name="shield-check-outline"
-                        size={16}
-                        color={t.muted}
-                      />
-                      <Text style={[s.noteTxt, { color: t.muted }]}>
-                        {tr('newOrder.addressAccuracyNote')}
-                      </Text>
-                    </View>
-                  </View>
-                </ScrollView>
-              </>
-            ) : (
-              // Butun karta bitta bosiladigan maydon: ichidagi elementlar bosishni ushlab olmaydi
-              // (`pointerEvents="none"`), shuning uchun kartaning istalgan joyiga bosilsa panel ochiladi.
-              <Pressable
-                onPress={() => setExpanded(true)}
-                accessibilityRole="button"
-                style={({ pressed }) => [
-                  s.addressRow,
-                  { backgroundColor: fieldBg, borderColor: t.border, opacity: pressed ? 0.85 : 1 },
-                ]}
-              >
-                <View style={s.addressRowInner} pointerEvents="none">
-                  <View style={[s.addressIcon, { backgroundColor: t.orange + '1f' }]}>
-                    <MaterialCommunityIcons name="map-marker" size={22} color={t.orange} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={[s.addressTitle, { color: street?.trim() ? t.text : t.muted }]}
-                      numberOfLines={1}
-                    >
-                      {street?.trim() || tr('newOrder.addressPickPlaceholder')}
-                    </Text>
-                    {!!areaText && (
-                      <Text style={[s.addressSub, { color: t.muted }]} numberOfLines={1}>
-                        {areaText}
-                      </Text>
-                    )}
-                  </View>
-                  <MaterialCommunityIcons name="chevron-up" size={22} color={t.muted} />
-                </View>
-              </Pressable>
-            )}
-
-            <TouchableOpacity
-              onPress={onSave || onClose}
-              activeOpacity={0.85}
-              style={[common.modalDoneBtn, { backgroundColor: t.orange, marginTop: 14 }]}
+          <Animated.View style={{ transform: [{ translateY: dragY }] }}>
+            <View
+              onLayout={(e) => setSheetH(e.nativeEvent.layout.height)}
+              style={[
+                s.bottomSheet,
+                {
+                  backgroundColor: sheetBg,
+                  borderColor: t.border,
+                  // Klaviatura ochiq bo'lsa tizim tugmalari ostida emas, qo'shimcha bo'sh joy shart emas
+                  paddingBottom: kbVisible ? 16 : Math.max(bottomInset, 12) + 16,
+                },
+              ]}
             >
-              <Text style={common.modalDoneTxt}>{tr('newOrder.addressSaveBtn')}</Text>
-            </TouchableOpacity>
-          </View>
+              <View style={s.sheetHandleWrap} {...handlePan.panHandlers}>
+                <View style={[common.sheetHandle, { backgroundColor: t.border }]} />
+              </View>
+
+              {expanded ? (
+                <>
+                  <ScrollView
+                    style={{ maxHeight: sheetMaxH }}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                  >
+                    <Text style={[s.mapHint, { color: t.faint }]}>{tr('newOrder.mapHint')}</Text>
+
+                    <View style={{ gap: 14, marginTop: 10 }}>
+                      {header}
+                      <View style={{ flexDirection: 'row', gap: 10 }}>
+                        <View style={{ flex: 1 }}>
+                          <SelectField
+                            label={tr('newOrder.regionLabel')}
+                            value={selectedRegionName}
+                            placeholder={tr('newOrder.regionPlaceholder')}
+                            onPress={() => setRegionSheetOpen(true)}
+                            t={t}
+                            bg={fieldBg}
+                          />
+                        </View>
+
+                        <View style={{ flex: 1 }}>
+                          <SelectField
+                            label={tr('newOrder.districtLabel')}
+                            value={selectedDistrictName}
+                            placeholder={
+                              regionId
+                                ? tr('newOrder.districtPlaceholder')
+                                : tr('newOrder.regionPlaceholder')
+                            }
+                            onPress={() => setDistrictSheetOpen(true)}
+                            t={t}
+                            bg={fieldBg}
+                            disabled={!regionId}
+                          />
+                        </View>
+                      </View>
+
+                      <TextInput
+                        value={street}
+                        onChangeText={onStreetChange}
+                        placeholder={tr('newOrder.streetPlaceholder')}
+                        placeholderTextColor={t.faint}
+                        style={[
+                          common.input,
+                          { backgroundColor: fieldBg, borderColor: t.border, color: t.text },
+                        ]}
+                      />
+                      {!!onMahallaChange && (
+                        <TextInput
+                          value={mahalla ?? ''}
+                          onChangeText={onMahallaChange}
+                          placeholder={tr('newOrder.mahallaPlaceholder')}
+                          placeholderTextColor={t.faint}
+                          style={[
+                            common.input,
+                            { backgroundColor: fieldBg, borderColor: t.border, color: t.text },
+                          ]}
+                        />
+                      )}
+                      {!hideUnitFields && (
+                        <View style={{ flexDirection: 'row', gap: 10 }}>
+                          <TextInput
+                            value={entrance}
+                            onChangeText={onEntranceChange}
+                            placeholder={tr('newOrder.entrancePlaceholder')}
+                            placeholderTextColor={t.faint}
+                            style={[
+                              common.input,
+                              {
+                                flex: 1,
+                                backgroundColor: fieldBg,
+                                borderColor: t.border,
+                                color: t.text,
+                              },
+                            ]}
+                          />
+                          <TextInput
+                            value={floor}
+                            onChangeText={onFloorChange}
+                            placeholder={tr('newOrder.floorPlaceholder')}
+                            placeholderTextColor={t.faint}
+                            style={[
+                              common.input,
+                              {
+                                flex: 1,
+                                backgroundColor: fieldBg,
+                                borderColor: t.border,
+                                color: t.text,
+                              },
+                            ]}
+                          />
+                        </View>
+                      )}
+
+                      <View
+                        style={[s.noteBox, { backgroundColor: fieldBg, borderColor: t.border }]}
+                      >
+                        <MaterialCommunityIcons
+                          name="shield-check-outline"
+                          size={16}
+                          color={t.muted}
+                        />
+                        <Text style={[s.noteTxt, { color: t.muted }]}>
+                          {tr('newOrder.addressAccuracyNote')}
+                        </Text>
+                      </View>
+                    </View>
+                  </ScrollView>
+                </>
+              ) : (
+                // Butun karta bitta bosiladigan maydon: ichidagi elementlar bosishni ushlab olmaydi
+                // (`pointerEvents="none"`), shuning uchun kartaning istalgan joyiga bosilsa panel ochiladi.
+                <Pressable
+                  onPress={() => setExpanded(true)}
+                  accessibilityRole="button"
+                  style={({ pressed }) => [
+                    s.addressRow,
+                    {
+                      backgroundColor: fieldBg,
+                      borderColor: t.border,
+                      opacity: pressed ? 0.85 : 1,
+                    },
+                  ]}
+                >
+                  <View style={s.addressRowInner} pointerEvents="none">
+                    <View style={[s.addressIcon, { backgroundColor: t.orange + '1f' }]}>
+                      <MaterialCommunityIcons name="map-marker" size={22} color={t.orange} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={[s.addressTitle, { color: street?.trim() ? t.text : t.muted }]}
+                        numberOfLines={1}
+                      >
+                        {street?.trim() || tr('newOrder.addressPickPlaceholder')}
+                      </Text>
+                      {!!areaText && (
+                        <Text style={[s.addressSub, { color: t.muted }]} numberOfLines={1}>
+                          {areaText}
+                        </Text>
+                      )}
+                    </View>
+                    <MaterialCommunityIcons name="chevron-up" size={22} color={t.muted} />
+                  </View>
+                </Pressable>
+              )}
+
+              <TouchableOpacity
+                onPress={onSave || onClose}
+                activeOpacity={0.85}
+                style={[common.modalDoneBtn, { backgroundColor: t.orange, marginTop: 14 }]}
+              >
+                <Text style={common.modalDoneTxt}>{tr('newOrder.addressSaveBtn')}</Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
         </KeyboardStickyView>
       </View>
 
@@ -407,6 +495,29 @@ const s = StyleSheet.create({
     paddingLeft: 10,
     paddingRight: 14,
   },
+  suggestCard: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    borderWidth: 1,
+    borderRadius: 18,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 12,
+  },
+  suggestRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 11,
+    paddingHorizontal: 14,
+  },
+  suggestTitle: { fontSize: 15, fontWeight: '700' },
+  suggestSub: { fontSize: 12.5, marginTop: 1 },
+  suggestEmpty: { fontSize: 13, lineHeight: 18, paddingVertical: 14, paddingHorizontal: 16 },
   addressRowInner: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   addressIcon: {
     width: 44,

@@ -27,6 +27,8 @@ const HTML = `
   var selectedId = null;
   var meMark = null;
   var group = null; // ymaps.Clusterer
+  var bubbles = null; // viloyat/tuman bo'yicha ustalar soni (uzoqlashtirilganda)
+  var zoomTimer = null;
 
   function send(msg) {
     window.ReactNativeWebView.postMessage(JSON.stringify(msg));
@@ -47,10 +49,11 @@ const HTML = `
     }, fallback);
   }
 
-  // data: { pins: [{id, lat, lon}], me: {lat, lon} | null, area: {...} | null, fit: boolean }
+  // data: { pins: [{id, lat, lon}], clusters: [{name, count, lat, lon}] | null, me: {lat, lon} | null, area: {...} | null, fit: boolean }
   function setData(data) {
     if (!ready) { pending = data; return; }
     if (group) map.geoObjects.remove(group);
+    if (bubbles) { map.geoObjects.remove(bubbles); bubbles = null; }
     // Yaqin nuqtalar raqamli klasterga birlashadi; klasterni bossa yaqinlashadi.
     group = new ymaps.Clusterer({
       preset: 'islands#orangeClusterIcons',
@@ -67,7 +70,18 @@ const HTML = `
       return mark;
     });
     group.add(marks);
-    map.geoObjects.add(group);
+    if (data.clusters) {
+      // Uzoqdan ko'rinishda alohida ustalar o'rniga hudud bo'yicha soni; bossa o'sha hududga yaqinlashadi.
+      bubbles = new ymaps.GeoObjectCollection();
+      data.clusters.forEach(function (c) {
+        var mark = new ymaps.Placemark([c.lat, c.lon], { iconContent: String(c.count), hintContent: c.name }, { preset: 'islands#orangeStretchyIcon' });
+        mark.events.add('click', function () { map.setCenter([c.lat, c.lon], c.zoom, { duration: 300 }); });
+        bubbles.add(mark);
+      });
+      map.geoObjects.add(bubbles);
+    } else {
+      map.geoObjects.add(group);
+    }
 
     if (meMark) { map.geoObjects.remove(meMark); meMark = null; }
     if (data.me) {
@@ -76,6 +90,7 @@ const HTML = `
     }
 
     if (!data.fit) return;
+    if (data.clusters) return;
     if (data.area) {
       focusArea(data.area);
     } else if (data.pins.length > 1) {
@@ -106,9 +121,13 @@ const HTML = `
       copyrightUaVisible: false
     });
     map.events.add('click', function () { send({ id: null }); });
+    map.events.add('boundschange', function () {
+      clearTimeout(zoomTimer);
+      zoomTimer = setTimeout(function () { send({ zoom: map.getZoom() }); }, 250);
+    });
     ready = true;
     if (pending) { setData(pending); pending = null; }
-    send({ ready: true });
+    send({ ready: true, zoom: map.getZoom() });
   });
 </script>
 </body>
@@ -120,7 +139,19 @@ const HTML = `
 // "yana yuklash" kabi qo'shimcha nuqtalar kelganda ko'rinish o'zgarmaydi.
 // `area` (tanlangan viloyat/tuman) berilsa, xarita nuqtalar bo'lmasa ham o'sha hududga markazlanadi:
 // { lat, lon, zoom } yoki koordinatasiz bo'lsa { query, fallback: { lat, lon, zoom } }.
-export default function WorkersMap({ pins, me, area, selectedId, onSelect, fitKey, style }) {
+// `clusters` ([{ name, count, lat, lon, zoom }]) berilsa nuqtalar o'rniga hudud bo'yicha ustalar soni chiziladi;
+// `onZoom(n)` — xarita masshtabi o'zgarganda chaqiriladi.
+export default function WorkersMap({
+  pins,
+  clusters,
+  me,
+  area,
+  selectedId,
+  onSelect,
+  onZoom,
+  fitKey,
+  style,
+}) {
   const webRef = useRef(null);
   const [ready, setReady] = useState(false);
   const lastFit = useRef(null);
@@ -129,12 +160,18 @@ export default function WorkersMap({ pins, me, area, selectedId, onSelect, fitKe
     if (!ready) return;
     const fit = lastFit.current !== fitKey;
     lastFit.current = fitKey;
-    const payload = JSON.stringify({ pins, me: me ?? null, area: area ?? null, fit });
+    const payload = JSON.stringify({
+      pins,
+      clusters: clusters ?? null,
+      me: me ?? null,
+      area: area ?? null,
+      fit,
+    });
     webRef.current?.injectJavaScript(`setData(${payload}); true;`);
     // Nuqtalar qayta chizilgach tanlangan nuqta rangi ham qayta qo'llanadi.
     webRef.current?.injectJavaScript(`select(${selectedId ?? 'null'}); true;`);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- tanlov alohida effektda
-  }, [ready, pins, me, area, fitKey]);
+  }, [ready, pins, clusters, me, area, fitKey]);
 
   useEffect(() => {
     if (!ready) return;
@@ -145,7 +182,8 @@ export default function WorkersMap({ pins, me, area, selectedId, onSelect, fitKe
     try {
       const msg = JSON.parse(e.nativeEvent.data);
       if (msg.ready) setReady(true);
-      else if ('id' in msg) onSelect?.(msg.id);
+      if (msg.zoom != null) onZoom?.(msg.zoom);
+      if ('id' in msg) onSelect?.(msg.id);
     } catch {}
   };
 

@@ -27,7 +27,7 @@ function Chip({ active, onPress, children }) {
   );
 }
 
-// Ishchiga talablar (sayt bilan bir xil): rasmli profil, tasdiqlangan usta, reyting, tajriba, yosh va boshqa talablar.
+// Ishchiga talablar: rasmli profil, tasdiqlangan usta, reyting, tajriba va boshqa talablar.
 // Aniq ustaga buyurtma berilganda faqat "boshqa talablar" matni qoladi (saytdagidek).
 export default function RequirementsSection({
   targeted = false,
@@ -39,10 +39,6 @@ export default function RequirementsSection({
   setMinRating,
   minExperience,
   setMinExperience,
-  ageFrom,
-  setAgeFrom,
-  ageTo,
-  setAgeTo,
   extraRequirements,
   setExtraRequirements,
 }) {
@@ -145,47 +141,6 @@ export default function RequirementsSection({
             </View>
 
             <View style={[common.requirementDivider, { backgroundColor: t.border }]} />
-
-            <Text style={[common.requirementLabel, { color: t.text, marginBottom: 10 }]}>
-              {tr('newOrder.requirements.ageLabel')}
-            </Text>
-            <View style={s.ageRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={[s.ageInputLabel, { color: t.muted }]}>
-                  {tr('newOrder.requirements.ageFrom')}
-                </Text>
-                <TextInput
-                  value={ageFrom}
-                  onChangeText={setAgeFrom}
-                  keyboardType="number-pad"
-                  placeholder="18"
-                  placeholderTextColor={t.faint}
-                  style={[
-                    common.input,
-                    { backgroundColor: t.bg, borderColor: t.border, color: t.text },
-                  ]}
-                />
-              </View>
-              <Text style={[s.ageDash, { color: t.muted }]}>—</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={[s.ageInputLabel, { color: t.muted }]}>
-                  {tr('newOrder.requirements.ageTo')}
-                </Text>
-                <TextInput
-                  value={ageTo}
-                  onChangeText={setAgeTo}
-                  keyboardType="number-pad"
-                  placeholder="60"
-                  placeholderTextColor={t.faint}
-                  style={[
-                    common.input,
-                    { backgroundColor: t.bg, borderColor: t.border, color: t.text },
-                  ]}
-                />
-              </View>
-            </View>
-
-            <View style={[common.requirementDivider, { backgroundColor: t.border }]} />
           </>
         )}
 
@@ -207,9 +162,6 @@ const s = StyleSheet.create({
     paddingVertical: 8,
   },
   ratingChipTxt: { fontSize: 13, fontWeight: '600' },
-  ageRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 10 },
-  ageInputLabel: { fontSize: 12, marginBottom: 6 },
-  ageDash: { fontSize: 16, paddingBottom: 14 },
   other: {
     borderWidth: 1.5,
     borderRadius: 14,

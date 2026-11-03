@@ -23,7 +23,7 @@ const s = StyleSheet.create({
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 12,
-    paddingVertical: 12,
+    paddingVertical: 9,
   },
   summaryLabelWrap: {
     flexDirection: 'row',

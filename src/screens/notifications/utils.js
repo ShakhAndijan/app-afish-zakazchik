@@ -81,6 +81,16 @@ export function notificationHref(n) {
   return '/orders';
 }
 
+/** Bildirishnoma oynasidagi tugma matnining i18n kaliti; ochiladigan aniq ekran bo'lmasa — null. */
+export function notificationAction(n) {
+  const p = n.payload ?? {};
+  if (n.type === 'support.answered') return 'notifList.openAnswer';
+  if (n.type === 'listing.commented' || n.type === 'listing.replied')
+    return 'notifList.openListing';
+  if (p.order_id != null && /^(order|offer)./.test(n.type)) return 'notifList.openOrder';
+  return null;
+}
+
 export function notificationDate(value) {
   const d = new Date(value);
   if (!value || Number.isNaN(d.getTime())) return '—';

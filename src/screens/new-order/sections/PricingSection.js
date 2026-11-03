@@ -21,6 +21,7 @@ export default function PricingSection({
   setEstimatedHours,
   fixedPrice,
   setFixedPrice,
+  priceMissing,
 }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
@@ -122,6 +123,15 @@ export default function PricingSection({
             t={t}
           />
         )}
+        {priceMissing && (
+          <Text style={[s.required, { color: t.orange }]}>
+            {tr(
+              pricingType === 'hourly'
+                ? 'newOrder.pricing.requiredHourly'
+                : 'newOrder.pricing.requiredFixed'
+            )}
+          </Text>
+        )}
       </View>
     </>
   );
@@ -144,4 +154,5 @@ const s = StyleSheet.create({
   change: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999 },
   changeTxt: { fontSize: 12.5, fontWeight: '800' },
   inputs: { marginTop: 12 },
+  required: { fontSize: 12, fontWeight: '600', marginTop: 8, lineHeight: 16 },
 });

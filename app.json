@@ -35,6 +35,8 @@
     },
     "plugins": [
       "expo-web-browser",
+      "expo-video",
+      "expo-sharing",
       "expo-location",
       "expo-secure-store",
       "expo-image",

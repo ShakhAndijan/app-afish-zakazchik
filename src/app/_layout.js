@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import {
   Stack,
   useRouter,
+  usePathname,
   useRootNavigationState,
   ThemeProvider as NavigationThemeProvider,
   DarkTheme,
@@ -20,11 +21,11 @@ import { AuthProvider, useAuth } from '../context/AuthContext';
 import { LanguageProvider } from '../context/LanguageContext';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { UserProvider } from '../context/UserContext';
-import { WalletProvider } from '../context/WalletContext';
 import { markStartup } from '../utils/startup';
 import usePushNotifications from '../hooks/usePushNotifications';
 import usePreferencesSync from '../hooks/usePreferencesSync';
 import ConsentGate from '../components/ConsentGate';
+import RealtimeSync from '../realtime/RealtimeSync';
 
 // Native splash birinchi ekran tayyor bo'lguncha turadi: bo'sh ekran va alohida yuklagich bosqichi yo'q.
 SplashScreen.preventAutoHideAsync();
@@ -92,63 +93,64 @@ function RootNavigator() {
 
   return (
     <UserProvider enabled={signedIn}>
-      <WalletProvider>
-        <NavigationThemeProvider value={navTheme}>
-          <View style={{ flex: 1, backgroundColor: t.bg }} onLayout={hideSplash}>
-            <StatusBar style="light" />
-            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.bg } }}>
-              <Stack.Protected guard={signedIn}>
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="wallet" />
-                <Stack.Screen name="orders" />
-                <Stack.Screen name="order/[id]" />
-                <Stack.Screen name="order-worker" />
-                <Stack.Screen name="addresses" />
-                <Stack.Screen name="payment-history" />
-                <Stack.Screen name="notifications" />
-                <Stack.Screen name="help" />
-                <Stack.Screen name="edit-profile" />
-                <Stack.Screen name="change-password" />
-                <Stack.Screen name="change-phone" />
-                <Stack.Screen name="my-rating" />
-                <Stack.Screen name="verify-identity" />
-                <Stack.Screen name="verify-email" />
-                <Stack.Screen name="favorites" />
-                <Stack.Screen name="request/[id]" />
-                <Stack.Screen name="chat" />
-                <Stack.Screen name="support" />
-                <Stack.Screen name="support-chat" />
-                <Stack.Screen name="delete-account" />
-                <Stack.Screen name="complaint" />
-                <Stack.Screen name="my-complaints" />
-                <Stack.Screen name="company" />
-                <Stack.Screen name="company-form" />
-                <Stack.Screen name="company-site" />
-                <Stack.Screen name="company-plan" />
-                <Stack.Screen name="company-member" />
-                <Stack.Screen name="company-statement" />
-              </Stack.Protected>
-              <Stack.Protected guard={!signedIn}>
-                <Stack.Screen name="index" />
-                <Stack.Screen name="login" />
-              </Stack.Protected>
-              <Stack.Screen name="usta/[id]" />
-              <Stack.Screen name="work" />
-              <Stack.Screen name="listings" />
-              <Stack.Screen name="listing/[id]" />
-              <Stack.Screen name="reels" options={{ animation: 'fade' }} />
-              <Stack.Screen name="workers" />
-              <Stack.Screen name="document" />
-              <Stack.Screen name="articles" />
-              <Stack.Screen name="article/[slug]" />
-            </Stack>
-            <AuthRedirect />
-            <PushNotifications />
-            <PreferencesSync />
-            <ConsentGate />
-          </View>
-        </NavigationThemeProvider>
-      </WalletProvider>
+      <NavigationThemeProvider value={navTheme}>
+        <View style={{ flex: 1, backgroundColor: t.bg }} onLayout={hideSplash}>
+          <StatusBar style="light" />
+          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.bg } }}>
+            <Stack.Protected guard={signedIn}>
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="orders" />
+              <Stack.Screen name="order/[id]" />
+              <Stack.Screen name="order-worker" />
+              <Stack.Screen name="addresses" />
+              <Stack.Screen name="notifications" />
+              <Stack.Screen name="help" />
+              <Stack.Screen name="help-menu" />
+              <Stack.Screen name="security" />
+              <Stack.Screen name="settings" />
+              <Stack.Screen name="edit-profile" />
+              <Stack.Screen name="change-password" />
+              <Stack.Screen name="change-phone" />
+              <Stack.Screen name="my-rating" />
+              <Stack.Screen name="verify-identity" />
+              <Stack.Screen name="verify-email" />
+              <Stack.Screen name="favorites" />
+              <Stack.Screen name="request/[id]" />
+              <Stack.Screen name="chat" />
+              <Stack.Screen name="support" />
+              <Stack.Screen name="support-chat" />
+              <Stack.Screen name="delete-account" />
+              <Stack.Screen name="complaint" />
+              <Stack.Screen name="my-complaints" />
+              <Stack.Screen name="company" />
+              <Stack.Screen name="company-form" />
+              <Stack.Screen name="company-site" />
+              <Stack.Screen name="company-plan" />
+              <Stack.Screen name="company-member" />
+              <Stack.Screen name="company-statement" />
+            </Stack.Protected>
+            <Stack.Protected guard={!signedIn}>
+              <Stack.Screen name="index" />
+              <Stack.Screen name="login" />
+            </Stack.Protected>
+            <Stack.Screen name="usta/[id]" />
+            <Stack.Screen name="guest-order" />
+            <Stack.Screen name="work" />
+            <Stack.Screen name="listings" />
+            <Stack.Screen name="listing/[id]" />
+            <Stack.Screen name="reels" options={{ animation: 'fade' }} />
+            <Stack.Screen name="workers" />
+            <Stack.Screen name="document" />
+            <Stack.Screen name="articles" />
+            <Stack.Screen name="article/[slug]" />
+          </Stack>
+          <AuthRedirect />
+          <PushNotifications />
+          <RealtimeSync enabled={signedIn} />
+          <PreferencesSync />
+          <ConsentGate />
+        </View>
+      </NavigationThemeProvider>
     </UserProvider>
   );
 }
@@ -172,15 +174,18 @@ function AuthRedirect() {
   const { signedIn } = useAuth();
   const router = useRouter();
   const navState = useRootNavigationState();
+  const pathname = usePathname();
   const previous = useRef(null);
 
   useEffect(() => {
     if (!navState?.key || previous.current === signedIn) return;
     const isFirst = previous.current === null;
     previous.current = signedIn;
+    // Mehmon buyurtmasi: kirgach ham forma ochiq qoladi, buyurtma yaratilgach ekranning o'zi bosh sahifaga o'tadi.
+    if (signedIn && pathname === '/guest-order') return;
     if (signedIn) router.replace('/home');
     else if (!isFirst) router.replace('/');
-  }, [signedIn, navState?.key, router]);
+  }, [signedIn, navState?.key, router, pathname]);
 
   return null;
 }

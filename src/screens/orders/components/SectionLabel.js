@@ -1,12 +1,10 @@
 import { View, Text, StyleSheet } from 'react-native';
-import MockBadge from './MockBadge';
 
-// Bo'lim sarlavhasi. `mock` bo'lsa, o'ng tomonda "Namuna ma'lumot" belgisi chiqadi.
-export default function SectionLabel({ children, mock, t }) {
+// Bo'lim sarlavhasi.
+export default function SectionLabel({ children, t }) {
   return (
     <View style={s.row}>
       <Text style={[s.label, { color: t.text }]}>{children}</Text>
-      {mock && <MockBadge />}
     </View>
   );
 }

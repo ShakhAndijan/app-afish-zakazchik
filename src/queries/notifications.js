@@ -5,10 +5,11 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from '../api/notifications';
+import { pollEvery } from '../utils/realtime';
 
 const UNREAD_KEY = ['notifications', 'unread'];
 const LIST_KEY = ['notifications', 'list'];
-const POLL_MS = 60 * 1000;
+const POLL_MS = pollEvery(60 * 1000, 3 * 60 * 1000);
 
 /** O'qilmagan bildirishnomalar soni (qo'ng'iroqcha belgisi); ilova ochiq turganda har daqiqada yangilanadi. */
 export function useUnreadNotifications(enabled = true) {

@@ -1,5 +1,7 @@
-import { ENDPOINTS } from '../constants/config';
-import { request } from '../utils/request';
+import * as FileSystem from 'expo-file-system/legacy';
+import { ENDPOINTS, CLIENT_HEADERS } from '../constants/config';
+import { request, ApiError } from '../utils/request';
+import { apiFetch } from '../utils/apiClient';
 
 // Korporativ hisob (saytdagi /biznes va kabinet "Компания"): ariza, obyektlar, doimiy xizmat (reja),
 // xodimlar va oylik hisobot. Barcha o'zgartiruvchi so'rovlar yangilangan `BusinessMeOut` qaytaradi.
@@ -193,4 +195,52 @@ export async function getStatement(period) {
       fromPlan: !!r.from_plan,
     })),
   };
+}
+
+/** Oylik "Bajarilgan ishlar dalolatnomasi" (`YYYY-MM`). */
+export async function getStatementAct(period) {
+  const d = await request(ENDPOINTS.BUSINESS_STATEMENT_ACT(period), {
+    fallbackMessage: 'Dalolatnoma yuklanmadi',
+  });
+  return {
+    number: d?.number ?? '',
+    period: d?.period ?? period,
+    issuedOn: d?.issued_on ?? null,
+    customerName: d?.customer_name ?? '',
+    customerTin: d?.customer_tin ?? '',
+    customerAddress: d?.customer_address ?? '',
+    customerContact: d?.customer_contact ?? '',
+    platformName: d?.platform_name ?? '',
+    platformSite: d?.platform_site ?? '',
+    jobs: Number(d?.jobs) || 0,
+    total: Number(d?.total) || 0,
+    totalWords: d?.total_words ?? '',
+    rows: (d?.rows ?? []).map((r, i) => ({
+      n: r.n ?? r.number ?? i + 1,
+      code: r.code ?? '',
+      completedAt: r.completed_at ?? null,
+      site: r.site ?? '',
+      category: r.category ?? '',
+      worker: r.worker ?? '',
+      price: r.price != null ? Number(r.price) : null,
+    })),
+  };
+}
+
+/**
+ * Oylik hisobot CSV faylini yuklab, qurilma keshiga saqlaydi (buxgalter uchun).
+ * @returns {Promise<string>} fayl manzili (file://)
+ */
+export async function downloadStatementCsv(period) {
+  const res = await apiFetch(ENDPOINTS.BUSINESS_STATEMENT_CSV(period), {
+    headers: { ...CLIENT_HEADERS, Accept: 'text/csv' },
+  });
+  if (!res.ok) {
+    throw new ApiError({ status: res.status, message: 'CSV yuklanmadi', kind: 'http' });
+  }
+  const text = await res.text();
+  const uri = `${FileSystem.cacheDirectory}hisobot-${period}.csv`;
+  // Excel kirill/lotin harflarni to'g'ri ochishi uchun UTF-8 BOM qo'shiladi.
+  await FileSystem.writeAsStringAsync(uri, text.startsWith('﻿') ? text : `﻿${text}`);
+  return uri;
 }

@@ -5,7 +5,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import Avatar from '../../../components/Avatar';
 
 // Buyurtmaga biriktirilgan usta. Usta tanlanmagan bo'lsa bosilmaydi.
-// `rating` — mock (backend usta reytingini buyurtma javobida bermaydi).
+// `rating` — ustaning umumiy reytingi (`worker.overall_rating`, faqat tafsilot javobida).
 export default function MasterCard({ order, rating, onPress, t }) {
   const { t: tr } = useLanguage();
   const Wrapper = order.workerId ? TouchableOpacity : View;

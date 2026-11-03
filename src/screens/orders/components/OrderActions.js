@@ -7,7 +7,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 // Pastki tugma: faol buyurtmada (kutilmoqda / kelishilmoqda / jarayonda) — bekor qilish,
 // yakunlangan yoki bekor qilingan buyurtmada — qayta buyurtma berish. Bekor qilingan buyurtmada
 // (`onRepost` berilsa) saytdagidek "Qayta e'lon qilish" ham chiqadi: o'sha buyurtmaning o'zi ommaga chiqadi.
-export default function OrderActions({ isOpen, onCancel, onReorder, onRepost }) {
+export default function OrderActions({ isOpen, onCancel, onReorder, onRepost, onRate }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
 
@@ -25,6 +25,8 @@ export default function OrderActions({ isOpen, onCancel, onReorder, onRepost }) 
     );
   }
 
+  const secondary = !!onRepost || !!onRate;
+
   return (
     <>
       {!!onRepost && (
@@ -38,10 +40,21 @@ export default function OrderActions({ isOpen, onCancel, onReorder, onRepost }) 
           <Text style={s.reorderText}>{tr('orderFlow.stage.repost')}</Text>
         </TouchableOpacity>
       )}
+      {!!onRate && (
+        <TouchableOpacity
+          style={[s.reorder, { backgroundColor: t.orange }]}
+          activeOpacity={0.85}
+          onPress={onRate}
+          accessibilityRole="button"
+        >
+          <MaterialCommunityIcons name="star-outline" size={18} color="#fff" />
+          <Text style={s.reorderText}>{tr('orderDetail.rate')}</Text>
+        </TouchableOpacity>
+      )}
       <TouchableOpacity
         style={[
           s.reorder,
-          onRepost
+          secondary
             ? { backgroundColor: t.card, borderWidth: 1.5, borderColor: t.border, marginTop: 12 }
             : { backgroundColor: t.orange },
         ]}
@@ -49,8 +62,8 @@ export default function OrderActions({ isOpen, onCancel, onReorder, onRepost }) 
         onPress={onReorder}
         accessibilityRole="button"
       >
-        <Feather name="repeat" size={15} color={onRepost ? t.text : '#fff'} />
-        <Text style={[s.reorderText, onRepost && { color: t.text }]}>
+        <Feather name="repeat" size={15} color={secondary ? t.text : '#fff'} />
+        <Text style={[s.reorderText, secondary && { color: t.text }]}>
           {tr('orderDetail.reorder')}
         </Text>
       </TouchableOpacity>

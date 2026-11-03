@@ -54,6 +54,8 @@ export default function ListingsFilters({
   hasPhoto,
   onTogglePhoto,
   hideCategories,
+  authorName,
+  onOpenAuthor,
 }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
@@ -167,6 +169,14 @@ export default function ListingsFilters({
               active={priceActive}
               onPress={onOpenPrice}
             />
+            {!!onOpenAuthor && (
+              <Chip
+                icon="account-search-outline"
+                label={authorName || tr('listings.filters.author')}
+                active={!!authorName}
+                onPress={onOpenAuthor}
+              />
+            )}
             <Chip
               icon="camera-outline"
               label={tr('listings.filters.withPhoto')}

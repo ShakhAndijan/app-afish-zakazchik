@@ -25,15 +25,13 @@ function Avatar({ color, initial }) {
 }
 
 // "Usta izohi": usta nomi (profilga o'tadi) va izoh matni.
-export function MasterNoteSection({ name, initial, color, text, mock, onPressMaster }) {
+export function MasterNoteSection({ name, initial, color, text, onPressMaster }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
 
   return (
     <>
-      <SectionLabel mock={mock} t={t}>
-        {tr('workDetail.masterNoteTitle')}
-      </SectionLabel>
+      <SectionLabel t={t}>{tr('workDetail.masterNoteTitle')}</SectionLabel>
       <NoteCard
         text={text}
         header={
@@ -51,15 +49,13 @@ export function MasterNoteSection({ name, initial, color, text, mock, onPressMas
 }
 
 // "Mijoz sharhi": sharh egasi, bahosi va matni.
-export function CustomerReviewSection({ review, mock }) {
+export function CustomerReviewSection({ review }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
 
   return (
     <>
-      <SectionLabel mock={mock} t={t}>
-        {tr('workDetail.customerReviewTitle')}
-      </SectionLabel>
+      <SectionLabel t={t}>{tr('workDetail.customerReviewTitle')}</SectionLabel>
       <NoteCard
         text={review.text}
         header={
@@ -70,7 +66,9 @@ export function CustomerReviewSection({ review, mock }) {
             </Text>
             <View style={styles.ratingBadge}>
               <Ionicons name="star" size={11} color={t.gold} />
-              <Text style={[styles.ratingText, { color: t.gold }]}>{Number(review.rating).toFixed(1)}</Text>
+              <Text style={[styles.ratingText, { color: t.gold }]}>
+                {Number(review.rating).toFixed(1)}
+              </Text>
             </View>
           </View>
         }

@@ -1,4 +1,4 @@
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { appAlert } from '../components/AppAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -10,9 +10,10 @@ import { useLanguage } from '../context/LanguageContext';
 import Avatar from '../components/Avatar';
 import AppLoader from '../components/AppLoader';
 import SectionError from './zakazchi-main/components/SectionError';
-import { getFavoritesPage, unlikeWorker } from '../api/workers';
-import { getFavoriteListingsPage } from '../api/listings';
-import { listingsRoute, ustaRoute } from '../navigation/params';
+import { getFavoritesPage, unfavoriteWorker } from '../api/workers';
+import { getFavoriteListingsPage, getLikedListingsPage } from '../api/listings';
+import { listingRoute, listingsRoute, ustaRoute } from '../navigation/params';
+import { priceText } from './listings/utils';
 import { getErrorMessage } from '../utils/errors';
 import useBottomInset from '../hooks/useBottomInset';
 
@@ -37,8 +38,16 @@ export default function FavoritesScreen({ onBack }) {
     staleTime: 30 * 1000,
   });
 
+  // Layk bosgan e'lonlar (saqlanganlardan alohida) — ro'yxat oxirida alohida bo'lim.
+  const liked = useQuery({
+    queryKey: ['favorites', 'liked-listings'],
+    queryFn: () => getLikedListingsPage({ size: 10 }),
+    staleTime: 30 * 1000,
+  });
+  const likedItems = liked.data?.items ?? EMPTY;
+
   const remove = useMutation({
-    mutationFn: unlikeWorker,
+    mutationFn: unfavoriteWorker,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
       queryClient.invalidateQueries({ queryKey: ['workers'] });
@@ -107,7 +116,43 @@ export default function FavoritesScreen({ onBack }) {
             flexGrow: 1,
           }}
           refreshing={workers.isRefetching}
-          onRefresh={workers.refetch}
+          onRefresh={() => {
+            workers.refetch();
+            liked.refetch();
+          }}
+          ListFooterComponent={
+            likedItems.length > 0 ? (
+              <View style={{ marginTop: 14, gap: 10 }}>
+                <Text style={[s.sectionTitle, { color: t.text }]}>
+                  {tr('favorites.likedListings')}
+                  {liked.data ? ` (${liked.data.total})` : ''}
+                </Text>
+                {likedItems.map((l) => (
+                  <TouchableOpacity
+                    key={l.id}
+                    style={[s.row, { backgroundColor: t.card, borderColor: t.border }]}
+                    activeOpacity={0.85}
+                    onPress={() => router.push(listingRoute(l))}
+                  >
+                    {l.photos[0] ? (
+                      <Image source={{ uri: l.photos[0] }} style={s.thumb} resizeMode="cover" />
+                    ) : (
+                      <View style={[s.thumb, { backgroundColor: t.card2 ?? t.border }]} />
+                    )}
+                    <View style={{ flex: 1 }}>
+                      <Text style={[s.name, { color: t.text }]} numberOfLines={2}>
+                        {l.title}
+                      </Text>
+                      <Text style={[s.meta, { color: t.muted }]} numberOfLines={1}>
+                        {[l.worker?.name, priceText(l, tr)].filter(Boolean).join(' · ')}
+                      </Text>
+                    </View>
+                    <MaterialCommunityIcons name="thumb-up" size={20} color={t.orange} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : null
+          }
           ListEmptyComponent={
             <View style={s.center}>
               <MaterialCommunityIcons name="heart-outline" size={42} color={t.faint} />
@@ -194,6 +239,8 @@ const s = StyleSheet.create({
   tab: { flex: 1, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   tabText: { fontSize: 13.5, fontWeight: '700' },
   empty: { fontSize: 14 },
+  sectionTitle: { fontWeight: '800', fontSize: 16 },
+  thumb: { width: 52, height: 52, borderRadius: 12 },
   browse: {
     height: 44,
     paddingHorizontal: 22,

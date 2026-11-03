@@ -221,6 +221,8 @@ function SingleReel({ listing, size, insets, onBack, tools }) {
   );
 }
 
+const VIEWABILITY = { itemVisiblePercentThreshold: 60 };
+
 function ReelsPager({ size, insets, initial, feedItems, loadMore, onBack, tools }) {
   const router = useRouter();
   const { signedIn } = useAuth();
@@ -244,11 +246,19 @@ function ReelsPager({ size, insets, initial, feedItems, loadMore, onBack, tools 
     )
   );
 
+  // Faqat ko'rinib turgan sahifadagi video o'ynaydi.
+  const [activeId, setActiveId] = useState(items[startIndex]?.id ?? null);
+  const onViewableItemsChanged = useCallback(({ viewableItems }) => {
+    const first = viewableItems.find((v) => v.isViewable);
+    if (first) setActiveId(first.item.id);
+  }, []);
+
   const onComments = useCallback((l) => setCommentsFor(l.id), []);
   const renderItem = useCallback(
     ({ item }) => (
       <ReelPage
         listing={item}
+        active={item.id === activeId}
         width={size.width}
         height={size.height}
         insets={insets}
@@ -258,7 +268,7 @@ function ReelsPager({ size, insets, initial, feedItems, loadMore, onBack, tools 
         {...actions}
       />
     ),
-    [size, insets, onBack, tools, onComments, actions]
+    [size, insets, onBack, tools, onComments, actions, activeId]
   );
 
   return (
@@ -277,6 +287,8 @@ function ReelsPager({ size, insets, initial, feedItems, loadMore, onBack, tools 
         windowSize={3}
         maxToRenderPerBatch={1}
         removeClippedSubviews
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={VIEWABILITY}
         onEndReached={loadMore}
         onEndReachedThreshold={2}
         scrollEnabled={commentsFor == null}

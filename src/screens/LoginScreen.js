@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { StyleSheet } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import { appAlert } from '../components/AppAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
@@ -15,6 +16,7 @@ import {
   verifyResetPasswordOtp,
 } from '../api/auth';
 import { acceptConsent } from '../api/legal';
+import { getSystemInfo } from '../api/stats';
 import { useConsentVersion, useLegalIndex } from '../queries/legal';
 import { saveSession, saveActorType } from '../utils/token';
 import { buildIdentifier } from '../utils/identifier';
@@ -25,11 +27,18 @@ import CodeStep from './steps/CodeStep';
 import NewPasswordStep from './steps/NewPasswordStep';
 import CompleteProfileStep from './steps/CompleteProfileStep';
 import { devLog } from '../utils/log';
+import { trackEvent } from '../utils/analytics';
 import { getErrorMessage } from '../utils/errors';
 
 WebBrowser.maybeCompleteAuthSession();
 
-export default function LoginScreen({ onBack, onLoginSuccess }) {
+// `initialPhone` (9 raqam) — mehmon buyurtmasida formadagi telefon oldindan to'ldiriladi; `guestOrder` — tahlil uchun.
+export default function LoginScreen({
+  onBack,
+  onLoginSuccess,
+  initialPhone = '',
+  guestOrder = false,
+}) {
   const { theme } = useTheme();
   const { t } = useLanguage();
   const [step, setStep] = useState('phone');
@@ -49,7 +58,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
   const [loginError, setLoginError] = useState('');
 
   // ── Telefon + OTP (login va register birlashgan oqimi: start → verify → complete) ──
-  const [identifier, setIdentifier] = useState('');
+  const [identifier, setIdentifier] = useState(initialPhone);
   // Kirish usuli: telefon yoki qo'lda yoziladigan email.
   const [identifierMode, setIdentifierMode] = useState('phone');
   const [ticket, setTicket] = useState('');
@@ -58,6 +67,13 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
   const [consent, setConsent] = useState(false);
   const legalIndex = useLegalIndex();
   const consentVersion = useConsentVersion();
+  // Server qaysi kanal va Google'ni yoqqan bo'lsa, faqat o'sha usullar ko'rsatiladi.
+  // Ma'lumot kelmasa (offline/xato) — barcha usullar ko'rinadi.
+  const { data: systemInfo } = useQuery({
+    queryKey: ['system', 'info'],
+    queryFn: getSystemInfo,
+    staleTime: 10 * 60 * 1000,
+  });
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpChannel, setOtpChannel] = useState('sms');
   const [otpError, setOtpError] = useState('');
@@ -85,6 +101,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
       setVerifyError('');
       const data = await startCustomerAuth(buildIdentifier(identifier, identifierMode), channel);
       setDevCode(data?.dev_code || '');
+      if (guestOrder) trackEvent('wizard_code_sent');
       setStep('code');
     } catch (e) {
       setOtpError(getErrorMessage(e, t, 'login.errors.sendCodeFailed'));
@@ -120,6 +137,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
         setVerifyError(t('login.errors.loginFailed'));
       }
     } catch (e) {
+      if (guestOrder) trackEvent('wizard_code_rejected');
       setVerifyError(getErrorMessage(e, t, 'login.errors.loginFailed'));
     } finally {
       setVerifyLoading(false);
@@ -236,6 +254,8 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
         onBack={onBack}
         onGoogle={handleGoogle}
         googleLoading={googleLoading}
+        otpChannels={systemInfo?.otpChannels ?? null}
+        googleEnabled={systemInfo?.googleLogin !== false}
         actorType={actorType}
         consent={consent}
         onConsentChange={setConsent}

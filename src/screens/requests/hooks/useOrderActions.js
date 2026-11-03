@@ -13,6 +13,7 @@ import {
   repostOrder,
   completeOrder,
   workNotDone,
+  answerMatchComplaint,
 } from '../../../api/orders';
 import { formatNumber } from '../../../utils/format';
 import { getErrorMessage } from '../../../utils/errors';
@@ -102,6 +103,27 @@ export default function useOrderActions(orderId, onDone) {
     [orderId, run, tr]
   );
 
+  // "Usta bog'lana olmadi" da'vosiga javob (bir marta, bekor qilib bo'lmaydi — avval tasdiqlanadi).
+  const confirmComplaintAnswer = useCallback(
+    (reached) =>
+      appConfirm({
+        title: tr(
+          reached ? 'orderFlow.complaint.talkedTitle' : 'orderFlow.complaint.notReachedTitle'
+        ),
+        message: tr(
+          reached ? 'orderFlow.complaint.talkedHint' : 'orderFlow.complaint.notReachedHint'
+        ),
+        confirmLabel: tr(reached ? 'orderFlow.complaint.talked' : 'orderFlow.complaint.notReached'),
+        destructive: !reached,
+        onConfirm: async () => {
+          if (await run(() => answerMatchComplaint(orderId, reached))) {
+            appAlert(tr('orderFlow.complaint.sent'));
+          }
+        },
+      }),
+    [orderId, run, tr]
+  );
+
   // Kelishuvni to'xtatish: saytdagidek sababsiz, faqat tasdiqlash. `after` — muvaffaqiyatdan keyin.
   const confirmDecline = useCallback(
     (after) =>
@@ -153,6 +175,7 @@ export default function useOrderActions(orderId, onDone) {
     confirmAgree,
     confirmRecall,
     confirmNotDone,
+    confirmComplaintAnswer,
     repost,
     complete,
     decline,

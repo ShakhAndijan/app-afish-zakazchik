@@ -19,6 +19,7 @@ import SendToModal from './requests/components/SendToModal';
 import OfferModal from './requests/components/OfferModal';
 import RepostModal from './requests/components/RepostModal';
 import OffersSection from './requests/components/OffersSection';
+import MatchComplaintNotice from './requests/components/MatchComplaintNotice';
 import useLiveOrder from './requests/hooks/useLiveOrder';
 import useOrderActions from './requests/hooks/useOrderActions';
 import {
@@ -131,6 +132,12 @@ export default function RequestScreen({ orderId, onBack }) {
             <Text style={[s.noteTxt, { color: t.text }]}>{note}</Text>
           </View>
         )}
+
+        <MatchComplaintNotice
+          complaint={order.matchComplaint}
+          busy={actions.busy}
+          onAnswer={actions.confirmComplaintAnswer}
+        />
 
         <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
           <SummaryRow
@@ -298,6 +305,29 @@ export default function RequestScreen({ orderId, onBack }) {
 
         {info.state === 'returned' && (
           <View style={{ gap: 10 }}>
+            {(order.returnedLapsed || !!order.returnedReason) && (
+              <View
+                style={{
+                  backgroundColor: t.card,
+                  borderColor: t.border,
+                  borderWidth: 1,
+                  borderRadius: 16,
+                  padding: 14,
+                  gap: 4,
+                }}
+              >
+                {order.returnedLapsed && (
+                  <Text style={{ color: t.text, fontSize: 13, lineHeight: 19, fontWeight: '600' }}>
+                    {tr('orderDetail.returnedLapsed')}
+                  </Text>
+                )}
+                {!!order.returnedReason && (
+                  <Text style={{ color: t.muted, fontSize: 13, lineHeight: 19 }}>
+                    {tr('orderDetail.returnedReason')}: {order.returnedReason}
+                  </Text>
+                )}
+              </View>
+            )}
             <TouchableOpacity
               style={[s.wideBtn, { backgroundColor: t.orange, opacity: actions.busy ? 0.6 : 1 }]}
               activeOpacity={0.85}

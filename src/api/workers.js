@@ -15,9 +15,26 @@ export const AVATAR_COLORS = [
 const formatPrice = (price) =>
   String(Math.round(parseFloat(price))).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
+// Ro'yxat va profil javobida umumiy: bandlik holati va nishonlar.
+function mapWorkerExtras(w) {
+  return {
+    // online | busy | offline; eski javoblarda faqat `is_online` bo'ladi.
+    availability: w.availability ?? null,
+    busyUntil: w.busy_until ?? null,
+    isPro: !!w.is_pro,
+    isTop: !!w.is_top,
+    contestWins: w.contest_wins ?? 0,
+    complaintsCount: w.complaints_count ?? 0,
+    brigade: w.brigade
+      ? { id: w.brigade.id ?? null, name: w.brigade.name ?? '', size: w.brigade.size ?? null }
+      : null,
+  };
+}
+
 /** Backenddan kelgan worker obyektini UI formatiga o'giradi */
 export function mapWorker(w) {
   return {
+    ...mapWorkerExtras(w),
     id: w.id,
     name: `${w.first_name} ${w.last_name}`,
     initial: w.first_name?.[0]?.toUpperCase() ?? '?',
@@ -58,6 +75,11 @@ const UNION_SORTERS = {
   distance: (a, b) =>
     (a.distanceKm ?? Number.POSITIVE_INFINITY) - (b.distanceKm ?? Number.POSITIVE_INFINITY),
 };
+
+/** Faqat ustalar ro'yxati (umumiy sonsiz): bosh sahifa va so'rovlar uchun. Parametrlar `getWorkersPage` dagidek. */
+export async function getWorkers(params) {
+  return (await getWorkersPage(params)).items;
+}
 
 /**
  * @param {{ page?: number, size?: number, categoryId?: number|string|null,
@@ -230,6 +252,7 @@ export function mapWorkerDetail(w) {
   const ratingBreakdown = w.rating_breakdown ?? null;
 
   return {
+    ...mapWorkerExtras(w),
     id: w.id,
     name: `${w.first_name} ${w.last_name}`,
     initial: w.first_name?.[0]?.toUpperCase() ?? '?',
@@ -252,6 +275,8 @@ export function mapWorkerDetail(w) {
     languages: (w.languages ?? [])
       .map((l) => (typeof l === 'string' ? l : l?.name))
       .filter(Boolean),
+    // false — usta hozir buyurtma qabul qila olmaydi (bloklangan yoki telefoni tasdiqlanmagan).
+    takesOrders: w.takes_orders !== false,
     reviewCount: w.review_count ?? 0,
     completedJobsCount: w.completed_jobs_count ?? 0,
     ratingBreakdown: ratingBreakdown && {
@@ -262,7 +287,6 @@ export function mapWorkerDetail(w) {
       1: ratingBreakdown.one ?? 0,
     },
     startingPrice: primary?.minPrice ?? primary?.price ?? '0',
-    isLiked: !!(w.is_liked ?? w.is_favorite),
     categories: mappedCategories,
     portfolio: (w.portfolio ?? []).map(mapPortfolioItem),
     certificates: (w.certificates ?? []).map(mapCertificate),
@@ -290,10 +314,111 @@ export async function getWorkerById(workerId) {
 }
 
 /**
+ * Ekrandagi ustalarning joriy holati (ko'pi bilan 100 ta id): `{ [id]: { availability, busyUntil, isOnline } }`.
+ */
+export async function getWorkersPresence(ids) {
+  const unique = [...new Set(ids)].slice(0, 100);
+  if (unique.length === 0) return {};
+  const data = await request(ENDPOINTS.WORKER_PRESENCE(unique), {
+    auth: false,
+    fallbackMessage: 'Ustalar holati yuklanmadi',
+  });
+  const map = {};
+  for (const p of data ?? []) {
+    map[p.id] = {
+      availability: p.availability ?? null,
+      busyUntil: p.busy_until ?? null,
+      isOnline: !!p.is_online,
+    };
+  }
+  return map;
+}
+
+/**
+ * Ustaning keyingi kunlari: `{ hasSchedule, days: [{ day: 'YYYY-MM-DD', status, start, end }] }`.
+ * `status`: open | full | off (server qiymatlari: bo'sh / to'la / dam).
+ */
+export async function getWorkerAvailability(workerId, days = 35) {
+  const data = await request(ENDPOINTS.WORKER_AVAILABILITY(workerId, days), {
+    fallbackMessage: "Ustaning bo'sh kunlari yuklanmadi",
+  });
+  return {
+    hasSchedule: !!data?.has_schedule,
+    days: (data?.days ?? []).map((d) => ({
+      day: d.day,
+      status: d.status ?? null,
+      start: d.start ?? null,
+      end: d.end ?? null,
+    })),
+  };
+}
+
+/**
+ * Xarita uzoqlashtirilganda viloyat/tuman bo'yicha ustalar soni.
+ * @param {{ level?: 'region'|'district', regionId?: number|null, categoryId?: number|null,
+ *   isOnline?: boolean, verifiedOnly?: boolean, minRating?: number|null, badge?: string|null, q?: string }} params
+ */
+export async function getMapClusters({
+  level = 'region',
+  regionId,
+  categoryId,
+  isOnline,
+  verifiedOnly,
+  minRating,
+  badge,
+  q,
+} = {}) {
+  const params = [`level=${level}`];
+  if (regionId) params.push(`region_id=${regionId}`);
+  if (categoryId) params.push(`category_id=${categoryId}`);
+  if (isOnline) params.push('is_online=true');
+  if (verifiedOnly) params.push('is_verified=true');
+  if (minRating) params.push(`min_rating=${minRating}`);
+  if (badge) params.push(`badge=${badge}`);
+  if (q?.trim()) params.push(`q=${encodeURIComponent(q.trim().slice(0, 100))}`);
+  const data = await request(`${ENDPOINTS.WORKER_MAP_CLUSTERS}?${params.join('&')}`, {
+    auth: false,
+    fallbackMessage: 'Xarita yuklanmadi',
+  });
+  return (data ?? [])
+    .map((c) => ({
+      name: c.name ?? '',
+      workerCount: c.worker_count ?? 0,
+      locatedCount: c.located_count ?? 0,
+      latitude: c.latitude != null ? Number(c.latitude) : null,
+      longitude: c.longitude != null ? Number(c.longitude) : null,
+    }))
+    .filter((c) => c.latitude != null && c.longitude != null);
+}
+
+/** O'tgan oyning "Tumanning eng yaxshi ustasi" g'oliblari: `{ period, winners }`. */
+export async function getContestWinners({ limit = 12 } = {}) {
+  const data = await request(ENDPOINTS.CONTEST_WINNERS(limit), {
+    auth: false,
+    fallbackMessage: "G'oliblar yuklanmadi",
+  });
+  return {
+    period: data?.period ?? null,
+    winners: (data?.winners ?? [])
+      .filter((x) => x?.worker)
+      .map((x) => ({
+        period: x.period ?? data?.period ?? null,
+        region: x.region ?? '',
+        district: x.district ?? '',
+        jobs: x.jobs ?? 0,
+        rating: x.rating != null ? Number(x.rating) : null,
+        worker: mapWorker(x.worker),
+      })),
+  };
+}
+
+// Shaxsiy sevimlilar (POST 201 / DELETE 200, ikkalasi idempotent). Ochiq "layk"
+// (`/workers/{id}/like`) bilan aralashtirmang: u hammaga ko'rinadigan `likes_count`ni o'zgartiradi.
+/**
  * @param {number|string} workerId
  */
-export async function likeWorker(workerId) {
-  await request(ENDPOINTS.WORKER_LIKE(workerId), {
+export async function favoriteWorker(workerId) {
+  await request(ENDPOINTS.CUSTOMER_FAVORITE(workerId), {
     method: 'POST',
     fallbackMessage: "Sevimlilarga qo'shib bo'lmadi",
   });
@@ -302,8 +427,8 @@ export async function likeWorker(workerId) {
 /**
  * @param {number|string} workerId
  */
-export async function unlikeWorker(workerId) {
-  await request(ENDPOINTS.WORKER_LIKE(workerId), {
+export async function unfavoriteWorker(workerId) {
+  await request(ENDPOINTS.CUSTOMER_FAVORITE(workerId), {
     method: 'DELETE',
     fallbackMessage: "Sevimlilardan olib tashlab bo'lmadi",
   });

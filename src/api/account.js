@@ -59,14 +59,6 @@ export async function submitIdentityDocuments(files) {
   });
 }
 
-/** MyID orqali tezkor tasdiqlashni boshlaydi; `redirect_url` ni brauzerda ochish kerak. */
-export const startIdentityProvider = (provider = 'myid') =>
-  request(ENDPOINTS.VERIFY_START, {
-    method: 'POST',
-    body: { provider },
-    fallbackMessage: 'Tasdiqlashni boshlab bo‘lmadi',
-  });
-
 // ─── Email tasdiqlash ────────────────────────────────────────────
 
 /** Email manziliga tasdiqlash kodi yuboradi (boshqa manzil kiritilsa, tasdiqlangach hisobdagi email almashadi). */

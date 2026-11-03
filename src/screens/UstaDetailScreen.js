@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View, ScrollView } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useLanguage } from '../context/LanguageContext';
+import { useWithPresence } from '../queries/presence';
 import { UstaStyleProvider, useUstaStyles } from './usta-detail/styles';
 import useUstaDetail from './usta-detail/hooks/useUstaDetail';
 import { pickProfile, buildBadges, buildStatItems, buildSchedule } from './usta-detail/derive';
@@ -17,6 +18,7 @@ import ServicePricesSection from './usta-detail/components/ServicePricesSection'
 import ScheduleSection from './usta-detail/components/ScheduleSection';
 import CertificatesSection from './usta-detail/components/CertificatesSection';
 import WorksSection from './usta-detail/components/WorksSection';
+import CompletedJobsSection from './usta-detail/components/CompletedJobsSection';
 import ListingsSection from './usta-detail/components/ListingsSection';
 import RatingSection from './usta-detail/components/RatingSection';
 import ReviewsSection from './usta-detail/components/ReviewsSection';
@@ -57,19 +59,23 @@ function UstaDetailContent({
     setSelectedCategoryId,
     liked,
     toggleLike,
+    reviews,
+    completedJobs,
   } = useUstaDetail(usta);
 
   const profile = pickProfile({ detail, usta, C, tr });
+  // Profil ochiq turganda holat (Onlayn/Band/Dam olishda) 2 daqiqada bir yangilanadi.
+  const [livePresence] = useWithPresence(useMemo(() => (detail ? [detail] : []), [detail]));
   const { d, initial, name, trade, rating, rawRating, bgColor, location, experience, bio } =
     profile;
 
   const categories = detail?.categories || [];
   const portfolio = detail?.portfolio || [];
-  const reviewItems = portfolio.filter((p) => p.comment || p.rating != null);
   const { weekDays, workHours, offDates } = buildSchedule(detail?.schedule || null);
 
+  const workerId = usta?.id ?? detail?.id;
+
   const handleOrderThisWorker = () => {
-    const workerId = usta?.id ?? detail?.id;
     if (!workerId) return;
     onOrderWorker?.({
       id: workerId,
@@ -109,7 +115,7 @@ function UstaDetailContent({
             bgColor={bgColor}
             photo={d.profile_photo}
             bio={bio}
-            isOnline={profile.isOnline}
+            presence={livePresence ?? detail ?? profile.presence}
             isIdentityVerified={!!detail?.isIdentityVerified}
             avgResponseMin={detail?.avgResponseMin}
             showLoader={loadingDetail && !detail}
@@ -138,7 +144,12 @@ function UstaDetailContent({
         <WorksSection
           portfolio={portfolio}
           loading={loadingDetail}
-          onSelectWork={(work) => onSelectWork?.({ ...work, worker: name })}
+          onSelectWork={(work) => onSelectWork?.({ ...work, worker: name, workerId })}
+        />
+
+        <CompletedJobsSection
+          jobs={completedJobs.items}
+          onSelectWork={(work) => onSelectWork?.({ ...work, worker: name, workerId })}
         />
 
         <ListingsSection workerId={usta?.id ?? detail?.id} />
@@ -148,13 +159,16 @@ function UstaDetailContent({
             rating={rating}
             rawRating={rawRating}
             reviewCount={detail?.reviewCount ?? 0}
-            reviewItemsCount={reviewItems.length}
+            reviewItemsCount={reviews.total}
             ratingBreakdown={detail?.ratingBreakdown ?? null}
           />
           <ReviewsSection
-            reviewItems={reviewItems}
+            reviews={reviews.items}
             filter={reviewFilter}
             onFilterChange={setReviewFilter}
+            hasMore={reviews.hasMore}
+            fetchingMore={reviews.fetchingMore}
+            onLoadMore={reviews.loadMore}
           />
           <ComplaintsSection workerId={usta?.id ?? detail?.id} />
         </View>
@@ -162,6 +176,7 @@ function UstaDetailContent({
 
       <BottomCta
         price={profile.startingPrice}
+        unavailable={detail?.takesOrders === false}
         onPress={isLoggedIn ? handleOrderThisWorker : onGoToLogin}
       />
     </SafeAreaView>

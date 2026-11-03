@@ -10,19 +10,17 @@ import WorkDetailHeader from './work-detail/components/WorkDetailHeader';
 import WorkHero from './work-detail/components/WorkHero';
 import WorkMeta from './work-detail/components/WorkMeta';
 import WorkerCard from './work-detail/components/WorkerCard';
-import PriceSection from './work-detail/components/PriceSection';
 import { MasterNoteSection, CustomerReviewSection } from './work-detail/components/NoteSections';
 import PhotoThumbs from './work-detail/components/PhotoThumbs';
 import useBottomInset from '../hooks/useBottomInset';
 
-// Bajarilgan ish tafsiloti. Backenddan kelmagan maydonlar namuna ma'lumot bilan to'ldiriladi
-// (`work-detail/mock.js`) va "Namuna ma'lumot" belgisi bilan ko'rsatiladi.
+// Bajarilgan ish tafsiloti: faqat backend bergan ma'lumot (kategoriya, sana, suratlar, baho).
 export default function WorkDetailScreen({ work, onBack, onSelectUsta }) {
   const bottomInset = useBottomInset();
   const { theme: t } = useTheme();
   const { t: tr } = useLanguage();
   const [photoIndex, setPhotoIndex] = useState(0);
-  const { details, isMock, beforePhotos } = useWorkDetails(work);
+  const { details, beforePhotos } = useWorkDetails(work);
 
   const title = work?.title || tr('workDetail.headerTitle');
   const worker = work?.worker || '';
@@ -40,7 +38,6 @@ export default function WorkDetailScreen({ work, onBack, onSelectUsta }) {
       trade: details.category,
       rating,
       bgColor: workerColor,
-      location: details.location,
     });
   };
 
@@ -71,13 +68,7 @@ export default function WorkDetailScreen({ work, onBack, onSelectUsta }) {
         />
 
         <View style={{ paddingHorizontal: 20, paddingTop: 18 }}>
-          <WorkMeta
-            title={title}
-            category={details.category}
-            location={details.location}
-            postedAgo={details.postedAgo}
-            mock={isMock.meta}
-          />
+          <WorkMeta title={title} category={details.category} postedAgo={details.postedAgo} />
 
           <WorkerCard
             name={workerName}
@@ -87,22 +78,17 @@ export default function WorkDetailScreen({ work, onBack, onSelectUsta }) {
             onPress={openUstaProfile}
           />
 
-          <PriceSection
-            details={details}
-            mock={isMock.priceSection}
-            showSplit={isMock.priceSplit}
-          />
+          {!!details.description && (
+            <MasterNoteSection
+              name={workerName}
+              initial={workerInitial}
+              color={workerColor}
+              text={details.description}
+              onPressMaster={openUstaProfile}
+            />
+          )}
 
-          <MasterNoteSection
-            name={workerName}
-            initial={workerInitial}
-            color={workerColor}
-            text={details.masterNote}
-            mock={isMock.masterNote}
-            onPressMaster={openUstaProfile}
-          />
-
-          <CustomerReviewSection review={details.customerReview} mock={isMock.review} />
+          {!!details.customerReview && <CustomerReviewSection review={details.customerReview} />}
 
           {photos.length > 1 && (
             <PhotoThumbs

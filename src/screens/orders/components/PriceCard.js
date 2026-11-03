@@ -10,9 +10,8 @@ const TOTAL_LABEL_KEY = {
   estimate: 'orderDetail.priceEstimate',
 };
 
-// Ish narxi: yirik umumiy summa. Umumiy narx va soatlik tarif backenddan; materiallar / ish haqi
-// bo'linishi (`split`) hozircha mock — backend uni bermaydi.
-export default function PriceCard({ order, split, t }) {
+// Ish narxi: yirik umumiy summa va (soatbay bo'lsa) soatlik tarif — hammasi backenddan.
+export default function PriceCard({ order, t }) {
   const { t: tr } = useLanguage();
   const som = tr('common.currencySom');
   const money = (n) => `${formatNumber(Math.round(n))} ${som}`;
@@ -46,18 +45,6 @@ export default function PriceCard({ order, split, t }) {
               t={t}
             />
           )}
-        </View>
-      )}
-
-      {split.material != null && (
-        <View style={s.rows}>
-          <InfoRow
-            icon="package"
-            label={tr('orderDetail.materials')}
-            value={money(split.material)}
-            t={t}
-          />
-          <InfoRow icon="tool" label={tr('orderDetail.labor')} value={money(split.labor)} t={t} />
         </View>
       )}
     </View>

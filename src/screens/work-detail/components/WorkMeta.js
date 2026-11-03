@@ -1,28 +1,26 @@
 import { View, Text, StyleSheet } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 import { useTheme } from '../../../context/ThemeContext';
-import MockBadge from '../../orders/components/MockBadge';
 
-// Ish sarlavhasi va kategoriya / joylashuv / qachon bajarilgani qatori.
-export default function WorkMeta({ title, category, location, postedAgo, mock }) {
+// Ish sarlavhasi va kategoriya / qachon bajarilgani qatori (kelmagan maydonlar chizilmaydi).
+export default function WorkMeta({ title, category, postedAgo }) {
   const { theme: t } = useTheme();
 
   return (
     <>
       <Text style={[styles.title, { color: t.text }]}>{title}</Text>
       <View style={styles.row}>
-        <View style={[styles.chip, { backgroundColor: t.orange + '18' }]}>
-          <Text style={[styles.chipText, { color: t.orange }]}>{category}</Text>
-        </View>
-        <View style={styles.item}>
-          <Feather name="map-pin" size={13} color={t.muted} />
-          <Text style={[styles.itemText, { color: t.muted }]}>{location}</Text>
-        </View>
-        <View style={styles.item}>
-          <Feather name="calendar" size={13} color={t.muted} />
-          <Text style={[styles.itemText, { color: t.muted }]}>{postedAgo}</Text>
-        </View>
-        {mock && <MockBadge />}
+        {!!category && (
+          <View style={[styles.chip, { backgroundColor: t.orange + '18' }]}>
+            <Text style={[styles.chipText, { color: t.orange }]}>{category}</Text>
+          </View>
+        )}
+        {!!postedAgo && (
+          <View style={styles.item}>
+            <Feather name="calendar" size={13} color={t.muted} />
+            <Text style={[styles.itemText, { color: t.muted }]}>{postedAgo}</Text>
+          </View>
+        )}
       </View>
     </>
   );

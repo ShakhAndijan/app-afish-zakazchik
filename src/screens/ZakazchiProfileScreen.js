@@ -3,24 +3,25 @@ import { Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter, useIsFocused } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useUser } from '../context/UserContext';
 import { useAuth } from '../context/AuthContext';
-import TilBottomSheet, { LANGS } from '../components/TilBottomSheet';
 import AvatarPickerSheet from '../components/AvatarPickerSheet';
 import useProfileStats from './profile/hooks/useProfileStats';
 import useAvatarActions from './profile/hooks/useAvatarActions';
-import useTelegramLink from './profile/hooks/useTelegramLink';
 import { useUnreadNotifications } from '../queries/notifications';
 import { getIdentityStatus } from '../api/account';
+import { getCustomerMe, updateCustomerMe } from '../api/user';
+import AddressEditor from './addresses/components/AddressEditor';
+import { primaryFromMe } from './addresses/hooks/useAddresses';
 import { formatPhoneDisplay } from './profile/utils';
 import ProfileCover from './profile/components/ProfileCover';
 import IncompleteProfileBanner from './profile/components/IncompleteProfileBanner';
 import MenuCard from './profile/components/MenuCard';
 import useTabBarSpace from '../navigation/useTabBarSpace';
-import { listingsRoute, supportRoute } from '../navigation/params';
+import { listingsRoute } from '../navigation/params';
 import { FEATURES } from '../constants/config';
 
 // Mijoz profili (pastki menyudagi "profile" tabi): tepada rasm/ma'lumot/statistika, so'ng hamyon va
@@ -30,15 +31,16 @@ export default function ZakazchiProfileScreen() {
   const router = useRouter();
   const { signOut } = useAuth();
   const { theme: t } = useTheme();
-  const { language: lang, setLanguage: setLang, t: tr } = useLanguage();
-  const { user } = useUser();
+  const { t: tr } = useLanguage();
+  const { user, refreshUser } = useUser();
+  const queryClient = useQueryClient();
 
-  const [showTil, setShowTil] = useState(false);
+  // Manzil oynasi: buyurtmadagi kabi xaritali oyna; asosiy manzil profilga (backendga) saqlanadi.
+  const [addressOpen, setAddressOpen] = useState(false);
 
   // Profil sahifalaridan qaytilganda statistika qayta yuklanadi.
   const focused = useIsFocused();
   const stats = useProfileStats(focused);
-  const telegram = useTelegramLink(focused);
   const unreadNotifs = useUnreadNotifications();
   const identity = useQuery({
     queryKey: ['identity', 'status'],
@@ -55,6 +57,23 @@ export default function ZakazchiProfileScreen() {
   const displayPhone = user?.phone ? formatPhoneDisplay(user.phone) : '';
   const displayAvatarUri = avatar.previewUri || user?.profile_photo || null;
   const displayLocation = [user?.district, user?.region].filter(Boolean).join(', ');
+
+  const meQuery = useQuery({ queryKey: ['customer', 'me'], queryFn: getCustomerMe });
+  const openAddress = () => setAddressOpen(true);
+  const saveAddress = async (address) => {
+    await updateCustomerMe({
+      region_id: address.regionId,
+      district_id: address.districtId,
+      address: address.street.trim() || null,
+      default_gps_lat: address.lat,
+      default_gps_lng: address.lng,
+    });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['customer', 'me'] }),
+      refreshUser(),
+    ]);
+    setAddressOpen(false);
+  };
 
   const go = (path) => () => router.push(path);
 
@@ -80,10 +99,11 @@ export default function ZakazchiProfileScreen() {
           onIdentityPress={go('/verify-identity')}
           onRatingPress={go('/my-rating')}
           onEdit={go('/edit-profile')}
+          onLocationPress={openAddress}
           onOrdersPress={go('/orders')}
         />
 
-        {!displayLocation && <IncompleteProfileBanner onPress={go('/edit-profile')} />}
+        {!displayLocation && <IncompleteProfileBanner onPress={openAddress} />}
 
         <MenuCard
           style={{ paddingTop: 22 }}
@@ -139,115 +159,37 @@ export default function ZakazchiProfileScreen() {
 
         <MenuCard
           style={{ paddingTop: 16 }}
-          title={tr('account.title')}
           rows={[
-            {
-              icon: 'phone-outline',
-              label: tr('profile.settings.changePhone'),
-              value: displayPhone || undefined,
-              onPress: go('/change-phone'),
-            },
-            {
-              icon: stats.emailVerified ? 'check-circle-outline' : 'email-outline',
-              label: tr('account.email.title'),
-              value: stats.email
-                ? tr(
-                    stats.emailVerified
-                      ? 'account.email.statusVerified'
-                      : 'account.email.statusUnverified'
-                  )
-                : tr('account.email.statusNone'),
-              color: stats.emailVerified ? t.green : undefined,
-              onPress: go('/verify-email'),
-            },
-            {
-              icon: 'lock-outline',
-              label: tr(
-                stats.hasPassword === false
-                  ? 'account.password.create'
-                  : 'profile.settings.changePassword'
-              ),
-              onPress: go('/change-password'),
-            },
-            ...(telegram.available
-              ? [
-                  {
-                    icon: 'send-outline',
-                    label: tr('account.telegram.title'),
-                    value: telegram.linked
-                      ? tr('account.telegram.linked')
-                      : tr('account.telegram.connect'),
-                    color: telegram.linked ? t.green : undefined,
-                    onPress: telegram.toggle,
-                  },
-                ]
-              : []),
-          ]}
-        />
-
-        <MenuCard
-          style={{ paddingTop: 16 }}
-          title={tr('profile.settings.title')}
-          rows={[
-            {
-              icon: 'shield-check-outline',
-              label: tr('account.verify.title'),
-              value: identityStatus ? tr(`account.verify.status.${identityStatus}`) : undefined,
-              color: identityStatus === 'approved' ? t.green : undefined,
-              onPress: go('/verify-identity'),
-            },
-            {
-              icon: 'bell-outline',
-              label: tr('profile.settings.notifications'),
-              value: unreadNotifs > 0 ? String(unreadNotifs) : undefined,
-              color: unreadNotifs > 0 ? t.orange : undefined,
-              onPress: go('/notifications'),
-            },
-            {
-              icon: 'earth',
-              label: tr('profile.settings.language'),
-              value: LANGS.find((l) => l.code === lang)?.name,
-              onPress: () => setShowTil(true),
-            },
-            {
-              icon: 'help-circle-outline',
-              label: tr('profile.settings.helpCenter'),
-              onPress: go('/help'),
-            },
-            {
-              icon: 'message-text-outline',
-              label: tr('support.mineQuestions'),
-              onPress: () => router.push(supportRoute('question')),
-            },
-            {
-              icon: 'lightbulb-outline',
-              label: tr('support.mineSuggestions'),
-              onPress: () => router.push(supportRoute('suggestion')),
-            },
             {
               icon: 'domain',
               label: tr('business.menu'),
               onPress: go('/company'),
             },
             {
-              icon: 'flag-outline',
-              label: tr('complaints.mine.menu'),
-              onPress: go('/my-complaints'),
+              icon: 'shield-lock-outline',
+              label: tr('profile.menu.security'),
+              value: identityStatus === 'approved' ? tr('account.identityApproved') : undefined,
+              color: identityStatus === 'approved' ? t.green : undefined,
+              onPress: go('/security'),
+            },
+            {
+              icon: 'cog-outline',
+              label: tr('profile.menu.settings'),
+              value: unreadNotifs > 0 ? String(unreadNotifs) : undefined,
+              color: unreadNotifs > 0 ? t.orange : undefined,
+              onPress: go('/settings'),
+            },
+            {
+              icon: 'help-circle-outline',
+              label: tr('profile.menu.help'),
+              onPress: go('/help-menu'),
             },
           ]}
         />
 
         <MenuCard
           style={{ paddingTop: 16 }}
-          rows={[
-            { icon: 'logout', label: tr('profile.logout'), danger: true, onPress: signOut },
-            {
-              icon: 'account-remove-outline',
-              label: tr('legal.deleteAccount.menu'),
-              danger: true,
-              onPress: go('/delete-account'),
-            },
-          ]}
+          rows={[{ icon: 'logout', label: tr('profile.logout'), danger: true, onPress: signOut }]}
         />
         <Text
           style={{
@@ -262,12 +204,16 @@ export default function ZakazchiProfileScreen() {
         </Text>
       </ScrollView>
 
-      <TilBottomSheet
-        visible={showTil}
-        currentLang={lang}
-        onSelect={setLang}
-        onClose={() => setShowTil(false)}
-      />
+      {addressOpen && (
+        <AddressEditor
+          mode="primary"
+          initial={primaryFromMe(meQuery.data)}
+          onClose={() => setAddressOpen(false)}
+          onSave={saveAddress}
+          t={t}
+          tr={tr}
+        />
+      )}
       <AvatarPickerSheet
         visible={avatar.sheetOpen}
         onClose={avatar.closeSheet}

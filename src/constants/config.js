@@ -15,13 +15,12 @@ export const YANDEX_MAPS_API_KEY =
 export const YANDEX_GEOCODER_API_KEY =
   process.env.EXPO_PUBLIC_YANDEX_GEOCODER_API_KEY || 'ca902206-f8b0-42a0-8ba2-9ae813f026d8';
 
-// Imkoniyat bayroqlari. Onlayn to'lov (ikkinchi versiya) qo'shilguncha hamyon balansi yashirin.
+// Imkoniyat bayroqlari.
 export const FEATURES = {
-  walletBalance: false,
   // "Barcha xizmatlar" tepasidagi umumiy statistika: ma'lumotlar yetarli bo'lgach yoqiladi.
   overallStats: false,
-  // Profildagi "Manzillarim" (saqlangan manzillar ro'yxati): hozircha yashirin, ekran saqlab qo'yilgan.
-  savedAddresses: false,
+  // Profildagi "Manzillarim" (saqlangan manzillar ro'yxati).
+  savedAddresses: true,
 };
 
 // Qo'llab-quvvatlash aloqa ma'lumotlari — saytdagi (dev.harna.uz/config.json) bilan bir xil.
@@ -73,7 +72,6 @@ export const ENDPOINTS = {
   VERIFY_STATUS: `${API_BASE_URL}/api/v1/auth/verify/status`,
   VERIFY_UPLOAD_URL: `${API_BASE_URL}/api/v1/auth/verify/manual/upload-url`,
   VERIFY_SUBMIT: `${API_BASE_URL}/api/v1/auth/verify/manual/submit`,
-  VERIFY_START: `${API_BASE_URL}/api/v1/auth/verify/start`,
   TELEGRAM_LINK_STATUS: `${API_BASE_URL}/api/v1/auth/telegram/status`,
   TELEGRAM_LINK: `${API_BASE_URL}/api/v1/auth/telegram/link`,
   AUTH_CHANGE_PHONE_REQUEST_OTP: `${API_BASE_URL}/api/v1/auth/change-phone/request-otp`,
@@ -87,6 +85,17 @@ export const ENDPOINTS = {
   DISTRICTS: (regionId) => `${API_BASE_URL}/api/v1/regions/${regionId}/districts`,
   WORKERS: `${API_BASE_URL}/api/v1/workers`,
   WORKER_DETAIL: (workerId) => `${API_BASE_URL}/api/v1/workers/${workerId}`,
+  WORKER_PRESENCE: (ids) => `${API_BASE_URL}/api/v1/workers/presence?ids=${ids.join(',')}`,
+  WORKER_AVAILABILITY: (workerId, days = 35) =>
+    `${API_BASE_URL}/api/v1/workers/${workerId}/availability?days=${days}`,
+  WORKER_MAP_CLUSTERS: `${API_BASE_URL}/api/v1/workers/map-clusters`,
+  CONTEST_WINNERS: (limit = 12) => `${API_BASE_URL}/api/v1/contest/winners?limit=${limit}`,
+  CUSTOMER_TOP_CATEGORIES: (days = 90, limit = 10) =>
+    `${API_BASE_URL}/api/v1/customers/me/top-categories?days=${days}&limit=${limit}`,
+  CUSTOMER_LIKED_LISTINGS: (page = 1, size = 20) =>
+    `${API_BASE_URL}/api/v1/customers/me/liked-listings?page=${page}&size=${size}`,
+  LISTING_AUTHORS: (q, limit = 10) =>
+    `${API_BASE_URL}/api/v1/listings/authors?q=${encodeURIComponent(q)}&limit=${limit}`,
   WORKER_COMPLAINTS: (workerId, page = 1, size = 10) =>
     `${API_BASE_URL}/api/v1/workers/${workerId}/complaints?page=${page}&size=${size}`,
   WORKER_COMPLAINT_OPTIONS: (workerId) =>
@@ -104,20 +113,29 @@ export const ENDPOINTS = {
   BUSINESS_PLANS: `${API_BASE_URL}/api/v1/business/plans`,
   BUSINESS_PLAN: (id) => `${API_BASE_URL}/api/v1/business/plans/${id}`,
   BUSINESS_STATEMENT: (period) => `${API_BASE_URL}/api/v1/business/statements/${period}`,
+  BUSINESS_STATEMENT_ACT: (period) => `${API_BASE_URL}/api/v1/business/statements/${period}/act`,
+  BUSINESS_STATEMENT_CSV: (period) => `${API_BASE_URL}/api/v1/business/statements/${period}/csv`,
   BUSINESS_MEMBERS: `${API_BASE_URL}/api/v1/business/members`,
   BUSINESS_MEMBER: (id) => `${API_BASE_URL}/api/v1/business/members/${id}`,
   BUSINESS_LEAVE: `${API_BASE_URL}/api/v1/business/leave`,
-  WORKER_LIKE: (workerId) => `${API_BASE_URL}/api/v1/workers/${workerId}/like`,
   WORKER_CERTIFICATES: (workerId, categoryId) =>
     categoryId
       ? `${API_BASE_URL}/api/v1/workers/${workerId}/certificates?category_id=${categoryId}`
       : `${API_BASE_URL}/api/v1/workers/${workerId}/certificates`,
+  WORKER_REVIEWS: (workerId, page = 1, size = 10) =>
+    `${API_BASE_URL}/api/v1/workers/${workerId}/reviews?page=${page}&size=${size}`,
+  WORKER_COMPLETED_JOBS: (workerId, page = 1, size = 10) =>
+    `${API_BASE_URL}/api/v1/workers/${workerId}/completed-jobs?page=${page}&size=${size}`,
   SYSTEM_STATS: `${API_BASE_URL}/api/v1/system/stats`,
+  SYSTEM_INFO: `${API_BASE_URL}/api/v1/system/info`,
+  REGION_NEAREST: (lat, lon) => `${API_BASE_URL}/api/v1/regions/nearest?lat=${lat}&lon=${lon}`,
+  ANALYTICS_EVENTS: `${API_BASE_URL}/api/v1/analytics/events`,
   TOP_COMMENTS: (limit = 10) => `${API_BASE_URL}/api/v1/reviews/top-comments?limit=${limit}`,
   TOP_ORDERS: (limit = 10) => `${API_BASE_URL}/api/v1/reviews/top-orders?limit=${limit}`,
   CUSTOMER_ME: `${API_BASE_URL}/api/v1/customers/me`,
   CUSTOMER_FAVORITES: (page = 1, size = 10) =>
     `${API_BASE_URL}/api/v1/customers/me/favorites?page=${page}&size=${size}`,
+  CUSTOMER_FAVORITE: (workerId) => `${API_BASE_URL}/api/v1/customers/me/favorites/${workerId}`,
   CUSTOMER_AVATAR_UPLOAD_URL: `${API_BASE_URL}/api/v1/customers/me/avatar/upload-url`,
   CUSTOMER_AVATAR_CONFIRM: `${API_BASE_URL}/api/v1/customers/me/avatar/confirm`,
   CUSTOMER_AVATAR: `${API_BASE_URL}/api/v1/customers/me/avatar`,
@@ -138,7 +156,15 @@ export const ENDPOINTS = {
   ORDER_CANCEL: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/cancel-by-customer`,
   ORDER_RECALL: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/recall`,
   ORDER_REPOST: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/repost`,
+  ORDER_REVIEW: (orderId) => `${API_BASE_URL}/api/v1/reviews/orders/${orderId}`,
+  REVIEW_PHOTO_UPLOAD_URL: `${API_BASE_URL}/api/v1/reviews/photos/upload-url`,
   ORDER_COMPLETE: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/complete`,
+  ORDER_FINAL_COMMENT: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/final-comment`,
+  ORDER_STAGES: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/stages`,
+  ORDER_STAGE_CONFIRM: (orderId, stageId) =>
+    `${API_BASE_URL}/api/v1/orders/${orderId}/stages/${stageId}/confirm`,
+  PAYMENT_PROVIDERS: `${API_BASE_URL}/api/v1/payments/providers`,
+  ORDER_COMPLAINT_ANSWER: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/complaint/answer`,
   ORDER_WORK_NOT_DONE: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/work-not-done`,
   ORDER_OFFERS: (orderId) => `${API_BASE_URL}/api/v1/orders/${orderId}/offers`,
   ORDER_OFFER_CHOOSE: (orderId, offerId) =>
@@ -162,3 +188,6 @@ export const ENDPOINTS = {
 };
 // https://engraver-garnet-scalded.ngrok-free.dev
 // http://10.240.8.109:9494
+
+// VAQTINCHA o'chirilgan: push-bildirishnomalar (expo-notifications). Expo Go da ochish uchun. Qaytarish: true.
+export const PUSH_ENABLED = false;

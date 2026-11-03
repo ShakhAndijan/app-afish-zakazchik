@@ -7,6 +7,7 @@ export default function LandingRoute() {
   return (
     <LandingScreen
       onLogin={() => router.push('/login')}
+      onOrder={() => router.push('/guest-order')}
       onSelectUsta={(usta) => router.push(ustaRoute(usta))}
     />
   );

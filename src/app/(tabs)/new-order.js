@@ -3,7 +3,7 @@ import { useRouter, useNavigation, useLocalSearchParams, useFocusEffect } from '
 import NewOrderScreen from '../../screens/NewOrderScreen';
 import { decodeParam } from '../../navigation/params';
 
-// Tabdan chiqilganda forma yangidan boshlanadi (avvalgi xatti-harakat); `worker` — ma'lum ustaga
+// Tabdan chiqilganda forma qayta ochiladi; kiritilgan ma'lumotlar qoralamadan tiklanadi (NewOrderScreen); `worker` — ma'lum ustaga
 // buyurtma berilganda uzatiladigan usta.
 export default function NewOrderRoute() {
   const router = useRouter();
@@ -35,6 +35,8 @@ export default function NewOrderRoute() {
     <NewOrderScreen
       key={`${formKey}:${worker ?? ''}`}
       targetWorker={decodeParam(worker)}
+      // Tiklangan qoralama ustidagi "Yangidan boshlash": forma bo'sh holda qayta ochiladi.
+      onRestartDraft={() => setFormKey((k) => k + 1)}
       // Buyurtma berilgach bosh sahifaga qaytiladi — u yerda "Faol buyurtmalar" ro'yxatida ko'rinadi.
       onOrderCreated={() => router.navigate('/home')}
     />

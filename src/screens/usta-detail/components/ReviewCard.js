@@ -11,15 +11,19 @@ export default function ReviewCard({ item }) {
   return (
     <View style={[st.card, { padding: 14 }]}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center', flex: 1, marginRight: 8 }}>
+        <View
+          style={{ flexDirection: 'row', gap: 10, alignItems: 'center', flex: 1, marginRight: 8 }}
+        >
           <View style={[st.revAv, { backgroundColor: C.card3 }]}>
-            <MaterialCommunityIcons name="briefcase-outline" size={16} color={C.dim} />
+            <MaterialCommunityIcons name="account-outline" size={16} color={C.dim} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ fontWeight: '700', fontSize: 14, color: C.txt }} numberOfLines={1}>
               {item.title}
             </Text>
-            <Text style={{ fontSize: 11, color: C.dim, marginTop: 1 }}>{formatDate(item.workDate)}</Text>
+            <Text style={{ fontSize: 11, color: C.dim, marginTop: 1 }}>
+              {[formatDate(item.workDate), item.category].filter(Boolean).join(' · ')}
+            </Text>
           </View>
         </View>
         {item.rating != null && (

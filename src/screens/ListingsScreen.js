@@ -25,6 +25,7 @@ import SectionError from './zakazchi-main/components/SectionError';
 import ListingCard from './listings/components/ListingCard';
 import ListingsFilters from './listings/components/ListingsFilters';
 import PriceFilterModal from './listings/components/PriceFilterModal';
+import AuthorFilterModal from './listings/components/AuthorFilterModal';
 
 const H_PAD = 20;
 const GAP = 12;
@@ -56,6 +57,9 @@ export default function ListingsScreen({
   const [price, setPrice] = useState(NO_PRICE);
   const [hasPhoto, setHasPhoto] = useState(false);
   const [priceOpen, setPriceOpen] = useState(false);
+  // "Mutaxassis" filtri: tanlangan muallif ({ id, name }).
+  const [author, setAuthor] = useState(null);
+  const [authorOpen, setAuthorOpen] = useState(false);
 
   // Har harf uchun so'rov yuborilmasligi uchun qidiruv matni biroz kutib qo'llanadi.
   useEffect(() => {
@@ -67,14 +71,14 @@ export default function ListingsScreen({
     () => ({
       q,
       categoryId: subId ?? parentId,
-      workerId,
+      workerId: workerId ?? author?.id ?? null,
       sort,
       priceMin: price.priceMin,
       priceMax: price.priceMax,
       priced: price.priced,
       hasPhoto,
     }),
-    [q, subId, parentId, workerId, sort, price, hasPhoto]
+    [q, subId, parentId, workerId, author, sort, price, hasPhoto]
   );
 
   const feed = useListingsFeed(filters, { saved });
@@ -110,6 +114,8 @@ export default function ListingsScreen({
         hasPhoto={hasPhoto}
         onTogglePhoto={() => setHasPhoto((v) => !v)}
         hideCategories={!!workerId}
+        authorName={author?.name}
+        onOpenAuthor={workerId ? undefined : () => setAuthorOpen(true)}
       />
       {!feed.loading && !feed.error && feed.total > 0 && (
         <Text style={[s.count, { color: t.muted }]}>{tr('listings.count', { n: feed.total })}</Text>
@@ -198,6 +204,16 @@ export default function ListingsScreen({
             colors={[t.orange]}
           />
         }
+      />
+
+      <AuthorFilterModal
+        visible={authorOpen}
+        selected={author}
+        onClose={() => setAuthorOpen(false)}
+        onPick={(next) => {
+          setAuthor(next);
+          setAuthorOpen(false);
+        }}
       />
 
       <PriceFilterModal

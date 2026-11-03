@@ -24,6 +24,10 @@ export function mapListing(l) {
     priceKind: PRICE_KIND[l.price_type_id] ?? 'fixed',
     currency: l.currency ?? 'UZS',
     photos: (l.photos ?? []).filter(Boolean).map(secureUrl),
+    // Video e'lon: havola, muqova va davomiyligi (soniya).
+    videoUrl: secureUrl(l.video_url) ?? null,
+    videoPoster: secureUrl(l.video_poster) ?? null,
+    videoDuration: l.video_duration != null ? Number(l.video_duration) : null,
     isTop: !!l.is_top,
     createdAt: l.created_at,
     isFavorite: !!l.is_favorite,
@@ -103,6 +107,33 @@ export async function getListing(listingId) {
 export async function getFavoriteListingsPage({ page = 1, size = 12 } = {}) {
   const data = await request(ENDPOINTS.LISTING_FAVORITES(page, size), {
     fallbackMessage: "Saqlangan e'lonlar yuklanmadi",
+  });
+  return mapPage(data, mapListing);
+}
+
+/**
+ * "Mutaxassis" filtri uchun e'lon mualliflarini qidiradi: nik, ism yoki to'liq telefon raqami.
+ * @returns {Promise<{ id: number, name: string, nickname: string|null, photo: string|null, listingCount: number }[]>}
+ */
+export async function searchListingAuthors(q, limit = 10) {
+  const text = q.trim();
+  if (!text) return [];
+  const data = await request(ENDPOINTS.LISTING_AUTHORS(text.slice(0, 100), limit), {
+    fallbackMessage: 'Mutaxassislar yuklanmadi',
+  });
+  return (data ?? []).map((a) => ({
+    id: a.id,
+    name: [a.first_name, a.last_name].filter(Boolean).join(' '),
+    nickname: a.nickname ?? null,
+    photo: secureUrl(a.profile_photo) ?? null,
+    listingCount: a.listing_count ?? 0,
+  }));
+}
+
+/** Mijoz layk bosgan e'lonlar (oxirgisi birinchi). */
+export async function getLikedListingsPage({ page = 1, size = 12 } = {}) {
+  const data = await request(ENDPOINTS.CUSTOMER_LIKED_LISTINGS(page, size), {
+    fallbackMessage: "Yoqtirgan e'lonlar yuklanmadi",
   });
   return mapPage(data, mapListing);
 }

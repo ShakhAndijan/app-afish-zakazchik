@@ -20,7 +20,7 @@ export function pickProfile({ detail, usta, C, tr }) {
     location: d.location || '',
     experience: d.experienceYears > 0 ? formatYears(tr, d.experienceYears) : '',
     bio: d.bio || '',
-    isOnline: !!d.is_online,
+    presence: d,
     startingPrice: d.startingPrice || '0',
     languages: Array.isArray(d.languages) ? d.languages : [],
   };
@@ -42,6 +42,48 @@ export function buildBadges(d, tr, C) {
       label: tr('ustaDetail.vipBadge'),
       color: C.purple,
       bg: 'rgba(148,102,207,0.14)',
+    });
+  }
+  if (d.isPro) {
+    badges.push({
+      emoji: '💼',
+      label: tr('workerBadges.pro'),
+      color: C.blue,
+      bg: 'rgba(63,127,212,0.14)',
+    });
+  }
+  if (d.isTop) {
+    badges.push({
+      emoji: '🔥',
+      label: tr('workerBadges.top'),
+      color: C.orange,
+      bg: 'rgba(232,122,69,0.14)',
+    });
+  }
+  if (d.contestWins > 0) {
+    badges.push({
+      emoji: '🏆',
+      label: tr('workerBadges.contestWins', { n: d.contestWins }),
+      color: C.gold,
+      bg: 'rgba(245,196,81,0.14)',
+    });
+  }
+  if (d.brigade) {
+    badges.push({
+      emoji: '👥',
+      label: d.brigade.size
+        ? tr('workerBadges.brigadeSize', { name: d.brigade.name, count: d.brigade.size })
+        : tr('workerBadges.brigade', { name: d.brigade.name }),
+      color: C.green,
+      bg: 'rgba(47,163,122,0.14)',
+    });
+  }
+  if (d.complaintsCount > 0) {
+    badges.push({
+      emoji: '⚠️',
+      label: tr('workerBadges.complaints', { n: d.complaintsCount }),
+      color: '#e0473a',
+      bg: 'rgba(224,71,58,0.12)',
     });
   }
   return badges;

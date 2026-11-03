@@ -1,8 +1,7 @@
 // Viloyat/tuman ro'yxatlari va xaritadagi nuqtaga qarab ularni avtomatik tanlash.
 
 import { useState, useEffect, useRef } from 'react';
-import { getRegions, getDistricts } from '../../../api/reference';
-import { findNearestByCoords } from '../utils';
+import { getRegions, getDistricts, getNearestRegion } from '../../../api/reference';
 
 export default function useOrderLocation() {
   const [regions, setRegions] = useState([]);
@@ -10,10 +9,11 @@ export default function useOrderLocation() {
   const [districts, setDistricts] = useState([]);
   const [districtId, setDistrictId] = useState(null);
 
-  // Xaritada nuqta tanlanganda topilgan viloyatning tumanlar ro'yxati hali
-  // yuklanmagan bo'lishi mumkin — shu holatda maqsad koordinatani shu yerga
-  // saqlab, ro'yxat kelgach tuman moslashtiriladi (pastdagi effektga qarang).
+  // Xaritada nuqta tanlanganda server topgan viloyat o'zgarsa, tumanlar ro'yxati hali
+  // yuklanmagan bo'ladi — shu holatda tuman id'sini saqlab, ro'yxat kelgach tanlaymiz.
   const pendingAutoDistrictRef = useRef(null);
+  // Eski javob yangisini bosib ketmasligi uchun so'rovlar tartibi.
+  const nearestSeqRef = useRef(0);
 
   // Saqlangan manzilni tahrirlashda: viloyat o'rnatiladi, tumanlar ro'yxati kelgach
   // shu tuman tanlanadi.
@@ -23,23 +23,30 @@ export default function useOrderLocation() {
     setRegionId(presetRegionId ?? null);
   };
 
-  const autoSelectLocation = (mapLat, mapLng) => {
-    if (!Number.isFinite(mapLat) || !Number.isFinite(mapLng) || regions.length === 0) return;
-    const nearestRegion = findNearestByCoords(regions, mapLat, mapLng);
-    if (!nearestRegion) return;
-    if (nearestRegion.id !== regionId) {
-      pendingAutoDistrictRef.current = { lat: mapLat, lng: mapLng };
-      setRegionId(nearestRegion.id);
+  // Nuqtaga mos viloyat/tuman serverdan olinadi (GET /regions/nearest); topilmasa tanlov o'zgarmaydi.
+  const autoSelectLocation = async (mapLat, mapLng) => {
+    if (!Number.isFinite(mapLat) || !Number.isFinite(mapLng)) return;
+    const seq = ++nearestSeqRef.current;
+    let nearest;
+    try {
+      nearest = await getNearestRegion(mapLat, mapLng);
+    } catch {
       return;
     }
-    const nearestDistrict = findNearestByCoords(districts, mapLat, mapLng);
-    if (nearestDistrict && nearestDistrict.id !== districtId) {
-      setDistrictId(nearestDistrict.id);
+    if (seq !== nearestSeqRef.current || !nearest?.region) return;
+    const nextDistrictId = nearest.district?.id ?? null;
+    if (nearest.region.id !== regionId) {
+      pendingAutoDistrictRef.current = nextDistrictId;
+      setRegionId(nearest.region.id);
+      return;
     }
+    if (nextDistrictId != null && nextDistrictId !== districtId) setDistrictId(nextDistrictId);
   };
 
   useEffect(() => {
-    getRegions().then(setRegions).catch(() => {});
+    getRegions()
+      .then(setRegions)
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -57,11 +64,10 @@ export default function useOrderLocation() {
           const presetId = pendingDistrictIdRef.current;
           pendingDistrictIdRef.current = null;
           if (d.some((x) => x.id === presetId)) setDistrictId(presetId);
-        } else if (pendingAutoDistrictRef.current) {
-          const { lat: pLat, lng: pLng } = pendingAutoDistrictRef.current;
+        } else if (pendingAutoDistrictRef.current != null) {
+          const autoId = pendingAutoDistrictRef.current;
           pendingAutoDistrictRef.current = null;
-          const nearestDistrict = findNearestByCoords(d, pLat, pLng);
-          if (nearestDistrict) setDistrictId(nearestDistrict.id);
+          if (d.some((x) => x.id === autoId)) setDistrictId(autoId);
         }
       })
       .catch(() => {});

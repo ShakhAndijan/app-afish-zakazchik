@@ -7,6 +7,7 @@ import {
   sendSupportChatMessage,
   sendSupportItem,
 } from '../api/support';
+import { pollEvery } from '../utils/realtime';
 
 const CONVERSATION_KEY = ['support', 'conversation'];
 
@@ -36,7 +37,7 @@ export function useSupportConversation() {
       }
       return data;
     },
-    refetchInterval: 20 * 1000,
+    refetchInterval: pollEvery(20 * 1000, 60 * 1000),
   });
 }
 

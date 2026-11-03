@@ -12,11 +12,7 @@ function HeroPhotos({ photos, index, onIndexChange }) {
   if (photos.length === 0) {
     return (
       <View
-        style={[
-          styles.img,
-          styles.empty,
-          { backgroundColor: t.isDark ? '#1d2a3a' : '#e0eaf5' },
-        ]}
+        style={[styles.img, styles.empty, { backgroundColor: t.isDark ? '#1d2a3a' : '#e0eaf5' }]}
       >
         <MaterialCommunityIcons
           name="image-outline"
@@ -35,10 +31,18 @@ function HeroPhotos({ photos, index, onIndexChange }) {
       <Image source={{ uri: photos[index] }} style={styles.img} resizeMode="cover" />
       {photos.length > 1 && (
         <>
-          <TouchableOpacity style={[styles.navBtn, styles.navBtnLeft]} onPress={goPrev} hitSlop={HIT_SLOP}>
+          <TouchableOpacity
+            style={[styles.navBtn, styles.navBtnLeft]}
+            onPress={goPrev}
+            hitSlop={HIT_SLOP}
+          >
             <Ionicons name="chevron-back" size={18} color="#fff" />
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.navBtn, styles.navBtnRight]} onPress={goNext} hitSlop={HIT_SLOP}>
+          <TouchableOpacity
+            style={[styles.navBtn, styles.navBtnRight]}
+            onPress={goNext}
+            hitSlop={HIT_SLOP}
+          >
             <Ionicons name="chevron-forward" size={18} color="#fff" />
           </TouchableOpacity>
           <View style={styles.dots}>

@@ -5,6 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { formatYears } from '../utils/format';
 import Avatar from './Avatar';
+import PresenceBadge from './PresenceBadge';
 
 // Usta kartochkasi ("Eng zo'r ustalar"): mehmon va mijoz bosh sahifasida bir xil ko'rinadi.
 // Yuqorida avatar, ism, kasb va reyting; o'rtada manzil va tajriba (uzun matn qirqiladi, kartadan chiqmaydi);
@@ -30,7 +31,6 @@ export default function WorkerCard({ worker, rank, onPress, style }) {
               <Text style={s.rankText}>#1</Text>
             </View>
           )}
-          {w.is_online && <View style={[s.onlineDot, { borderColor: t.card }]} />}
         </View>
 
         <View style={s.info}>
@@ -45,6 +45,7 @@ export default function WorkerCard({ worker, rank, onPress, style }) {
           <Text style={[s.prof, { color: t.muted }]} numberOfLines={1}>
             {w.profession || tr('zakazchiMain.defaultProfession')}
           </Text>
+          <PresenceBadge worker={w} style={{ marginTop: 6 }} />
         </View>
 
         {w.rating > 0 && (
@@ -122,16 +123,6 @@ const s = StyleSheet.create({
     borderRadius: 7,
   },
   rankText: { fontSize: 9, fontWeight: '800', color: '#3a2a08' },
-  onlineDot: {
-    position: 'absolute',
-    bottom: -1,
-    right: -1,
-    width: 13,
-    height: 13,
-    borderRadius: 7,
-    backgroundColor: '#22C55E',
-    borderWidth: 2.5,
-  },
   chips: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 },
   chip: {
     flexDirection: 'row',

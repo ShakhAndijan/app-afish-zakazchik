@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { trackEvent } from '../utils/analytics';
 import { useRouter } from 'expo-router';
 import { KeyboardAwareScrollView, useKeyboardState } from 'react-native-keyboard-controller';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -24,6 +26,7 @@ import SectionError from './zakazchi-main/components/SectionError';
 import SectionHeader from './zakazchi-main/components/SectionHeader';
 import ListingCard from './listings/components/ListingCard';
 import ListingGallery from './listings/components/ListingGallery';
+import ListingVideo from './listings/components/ListingVideo';
 import FavoriteButton from './listings/components/FavoriteButton';
 import CommentsSection from './listings/components/CommentsSection';
 import useOrderListing from './listings/hooks/useOrderListing';
@@ -46,6 +49,9 @@ export default function ListingDetailScreen({ listingId, initial, onBack }) {
   const keyboardVisible = useKeyboardState((st) => st.isVisible);
 
   const detail = useListingDetail(listingId);
+  useEffect(() => {
+    if (listingId) trackEvent('listing_viewed');
+  }, [listingId]);
   const listing = detail.listing ?? initial;
   const worker = listing?.worker ?? null;
   const category = categories.find((c) => c.id === listing?.categoryId);
@@ -126,7 +132,20 @@ export default function ListingDetailScreen({ listingId, initial, onBack }) {
         bottomOffset={96 + insets.bottom}
         mode="layout"
       >
-        <ListingGallery photos={listing.photos} width={width - H_PAD * 2} />
+        {!!listing.videoUrl && (
+          <ListingVideo
+            uri={listing.videoUrl}
+            poster={listing.videoPoster ?? listing.photos[0]}
+            width={width - H_PAD * 2}
+            height={Math.round((width - H_PAD * 2) * 0.75)}
+            controls
+            contentFit="contain"
+            style={{ borderRadius: 24, overflow: 'hidden', marginBottom: 12 }}
+          />
+        )}
+        {(listing.photos.length > 0 || !listing.videoUrl) && (
+          <ListingGallery photos={listing.photos} width={width - H_PAD * 2} />
+        )}
 
         <View style={s.metaRow}>
           {!!category && (

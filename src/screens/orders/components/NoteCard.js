@@ -36,20 +36,20 @@ export function MasterNoteCard({ order, text, onPressMaster, t }) {
   );
 }
 
-// Mijozning (foydalanuvchining) o'z sharhi va bahosi.
+// Mijozning (foydalanuvchining) o'z yakuniy izohi va ustaga bergan bahosi (ikkalasi ixtiyoriy).
 export function CustomerReviewCard({ rating, text, t }) {
   const { t: tr } = useLanguage();
 
   return (
     <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
-      <View style={s.header}>
+      <View style={[s.header, !text && { marginBottom: 0 }]}>
         <View style={[s.youAvatar, { backgroundColor: t.orange }]}>
           <MaterialCommunityIcons name="account" size={16} color="#fff" />
         </View>
         <Text style={[s.name, { color: t.text, flex: 1 }]}>{tr('orderDetail.you')}</Text>
-        <Stars rating={rating} t={t} />
+        {rating != null && <Stars rating={rating} t={t} />}
       </View>
-      <Text style={[s.text, { color: t.muted }]}>{text}</Text>
+      {!!text && <Text style={[s.text, { color: t.muted }]}>{text}</Text>}
     </View>
   );
 }
@@ -57,7 +57,13 @@ export function CustomerReviewCard({ rating, text, t }) {
 const s = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: 16, padding: 14 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  youAvatar: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  youAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   name: { fontSize: 13.5, fontWeight: '700' },
   text: { fontSize: 13, lineHeight: 19 },
 });

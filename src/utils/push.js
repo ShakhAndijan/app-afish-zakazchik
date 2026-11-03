@@ -1,9 +1,9 @@
 import { Linking, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
-import * as Notifications from 'expo-notifications';
 import { registerPushDevice, unregisterPushDevice } from '../api/push';
 import { devLog } from './log';
+import { PUSH_ENABLED } from '../constants/config';
 
 // Android 8+ da bildirishnoma kanalsiz chiqmaydi; kanal id si FCM `android.notification.channel_id`
 // bilan bir xil bo'lishi kerak (app.json dagi `defaultChannel` ham shu).
@@ -12,21 +12,29 @@ export const PUSH_CHANNEL_ID = 'default';
 const REGISTERED_KEY = 'push_registered'; // { token, locale } — backendga oxirgi yuborilgani
 const PROMPTED_KEY = 'push_prompted'; // ruxsat so'rovi bir marta o'zi chiqadi, keyin faqat sozlamadan
 
-// Ilova ochiq turganda ham xabar tepada ko'rinadi (aks holda Android ko'rsatmaydi).
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+// expo-notifications faqat kerak bo'lganda yuklanadi: PUSH_ENABLED o'chiq bo'lsa (yoki native moduli yo'q
+// Expo Go da) import xato bermasligi uchun. Ilova ochiq turganda ham xabar tepada ko'rinadi.
+let notifications = null;
+function getNotifications() {
+  if (!notifications) {
+    notifications = require('expo-notifications');
+    notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    });
+  }
+  return notifications;
+}
 
 async function ensureChannel() {
-  if (Platform.OS !== 'android') return;
+  if (!PUSH_ENABLED || Platform.OS !== 'android') return;
+  const Notifications = getNotifications();
   await Notifications.setNotificationChannelAsync(PUSH_CHANNEL_ID, {
     name: 'harna.uz',
-    // eslint-disable-next-line import/namespace -- enum build/*.types.js dan `export *` orqali chiqadi
     importance: Notifications.AndroidImportance.HIGH,
     vibrationPattern: [0, 250, 250, 250],
     lightColor: '#f97316',
@@ -35,6 +43,8 @@ async function ensureChannel() {
 
 /** `status`: 'granted' | 'denied' | 'undetermined'; `canAskAgain`: tizim oynasini yana ko'rsatsa bo'ladimi. */
 export async function getPushPermission() {
+  if (!PUSH_ENABLED) return { status: 'granted', canAskAgain: false }; // banner chiqmaydi
+  const Notifications = getNotifications();
   const p = await Notifications.getPermissionsAsync();
   return { status: p.status, canAskAgain: p.canAskAgain };
 }
@@ -44,6 +54,8 @@ export async function getPushPermission() {
  * Foydalanuvchi ikki marta rad etgan bo'lsa tizim oynani ko'rsatmaydi, shu sabab sozlamalar ochiladi.
  */
 export async function requestPushPermission() {
+  if (!PUSH_ENABLED) return false;
+  const Notifications = getNotifications();
   await ensureChannel();
   const current = await getPushPermission();
   if (current.status === 'granted') return true;
@@ -55,6 +67,45 @@ export async function requestPushPermission() {
     ios: { allowAlert: true, allowBadge: true, allowSound: true },
   });
   return res.status === 'granted';
+}
+
+// Huawei (Google xizmatlarisiz) telefonlar: FCM tokeni olinmasa HMS Push Kit tokeni ishlatiladi.
+// `@hmscore/react-native-hms-push` o'rnatilmagan (yoki Expo Go) bo'lsa — null, ilova ishlashda davom etadi.
+const HMS_TOKEN_TIMEOUT_MS = 8000;
+let hmsModule;
+function getHms() {
+  if (hmsModule === undefined) {
+    try {
+      hmsModule = require('@hmscore/react-native-hms-push');
+    } catch {
+      hmsModule = null;
+    }
+  }
+  return hmsModule;
+}
+
+async function getHuaweiToken() {
+  const hms = getHms();
+  if (!hms?.HmsPushInstanceId || !hms?.HmsPushEvent) return null;
+  const { HmsPushInstanceId, HmsPushEvent } = hms;
+  const pick = (r) => (typeof r === 'string' ? r : (r?.token ?? r?.result ?? null));
+  // Token ba'zan getToken natijasida, ba'zan keyin "tokenReceived" hodisasi bilan keladi.
+  return new Promise((resolve) => {
+    let sub = null;
+    const finish = (value) => {
+      clearTimeout(timer);
+      sub?.remove?.();
+      resolve(typeof value === 'string' && value ? value : null);
+    };
+    const timer = setTimeout(() => finish(null), HMS_TOKEN_TIMEOUT_MS);
+    sub = HmsPushEvent.onTokenReceived((r) => finish(pick(r)));
+    HmsPushInstanceId.getToken('')
+      .then((r) => {
+        const token = pick(r);
+        if (token) finish(token);
+      })
+      .catch(() => finish(null));
+  });
 }
 
 async function readRegistered() {
@@ -71,7 +122,9 @@ async function readRegistered() {
  * Hech qachon xato tashlamaydi: push ishlamasa ham ilova ishlashda davom etadi.
  */
 export async function registerPush({ locale, ask = false }) {
+  if (!PUSH_ENABLED) return false;
   try {
+    const Notifications = getNotifications();
     await ensureChannel();
     let { status } = await getPushPermission();
     if (status !== 'granted' && ask && !(await AsyncStorage.getItem(PROMPTED_KEY))) {
@@ -81,7 +134,19 @@ export async function registerPush({ locale, ask = false }) {
     if (status !== 'granted') return false;
 
     // Android'da bu FCM tokeni (iOS'da APNs). Expo Go'da ishlamaydi: development/production build kerak.
-    const { data: token } = await Notifications.getDevicePushTokenAsync();
+    // Google xizmatlari yo'q Huawei telefonda FCM tokeni olinmaydi — u holda HMS tokeni ("huawei") sinab ko'riladi.
+    let token = null;
+    let platform = Platform.OS;
+    try {
+      token = (await Notifications.getDevicePushTokenAsync()).data;
+    } catch (err) {
+      if (Platform.OS !== 'android') throw err;
+      devLog("[push] FCM tokeni yo'q, HMS sinab ko'riladi:", err?.message);
+    }
+    if (!token && Platform.OS === 'android') {
+      token = await getHuaweiToken();
+      if (token) platform = 'huawei';
+    }
     if (!token) return false;
 
     const saved = await readRegistered();
@@ -89,7 +154,7 @@ export async function registerPush({ locale, ask = false }) {
 
     await registerPushDevice({
       token,
-      platform: Platform.OS,
+      platform,
       locale,
       appVersion: Constants.expoConfig?.version ?? null,
     });

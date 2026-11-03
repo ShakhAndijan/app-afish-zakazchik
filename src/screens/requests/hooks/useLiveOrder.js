@@ -2,8 +2,9 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { getOrderDetail } from '../../../api/orders';
 import usePolling from './usePolling';
 import { isOpenOrder } from '../utils';
+import { pollEvery } from '../../../utils/realtime';
 
-const POLL_MS = 8000;
+const POLL_MS = pollEvery(8000, 30000);
 
 // Buyurtmaning joriy holati backenddan: yuklanadi va u yakunlanmaguncha ekran ochiq turganda
 // vaqti-vaqti bilan yangilanadi (usta qabul qilsa yoki narx aytsa shu yerda ko'rinadi).
