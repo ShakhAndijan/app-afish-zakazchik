@@ -147,7 +147,7 @@ async function getWorkersSingle({
   if (covers) params.push(`covers=${covers}`);
   if (nearLat != null && nearLon != null) params.push(`near_lat=${nearLat}`, `near_lon=${nearLon}`);
   const data = await request(`${ENDPOINTS.WORKERS}?${params.join('&')}`, {
-    fallbackMessage: "Ustalar ro'yxati yuklanmadi",
+    fallbackMessage: "Mutaxassislar ro'yxati yuklanmadi",
   });
   const items = data?.items ?? data ?? [];
   return {
@@ -307,7 +307,7 @@ export function mapWorkerDetail(w) {
  */
 export async function getWorkerById(workerId) {
   const data = await request(ENDPOINTS.WORKER_DETAIL(workerId), {
-    fallbackMessage: "Usta ma'lumoti yuklanmadi",
+    fallbackMessage: "Mutaxassis ma'lumoti yuklanmadi",
   });
   devLog('[getWorkerById] /workers/{id} response:', data);
   return mapWorkerDetail(data);
@@ -321,7 +321,7 @@ export async function getWorkersPresence(ids) {
   if (unique.length === 0) return {};
   const data = await request(ENDPOINTS.WORKER_PRESENCE(unique), {
     auth: false,
-    fallbackMessage: 'Ustalar holati yuklanmadi',
+    fallbackMessage: 'Mutaxassislar holati yuklanmadi',
   });
   const map = {};
   for (const p of data ?? []) {
@@ -340,7 +340,7 @@ export async function getWorkersPresence(ids) {
  */
 export async function getWorkerAvailability(workerId, days = 35) {
   const data = await request(ENDPOINTS.WORKER_AVAILABILITY(workerId, days), {
-    fallbackMessage: "Ustaning bo'sh kunlari yuklanmadi",
+    fallbackMessage: "Mutaxassisning bo'sh kunlari yuklanmadi",
   });
   return {
     hasSchedule: !!data?.has_schedule,

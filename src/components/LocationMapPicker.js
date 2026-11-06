@@ -189,6 +189,7 @@ async function reverseGeocodeAddress(lat, lng) {
 const LOCATE_MAX_MS = 15000; // shundan keyin aniqlash to'xtatiladi
 const LOCATE_GOOD_ACCURACY = 25; // metr: shu aniqlikka yetilsa darhol to'xtaydi
 const LOCATE_WORST_ACCURACY = 2000; // metr: bundan taxminiyroq nuqta "joyingiz" sifatida ko'rsatilmaydi
+const LOCATE_FALLBACK_MS = 10000; // aniq nuqta kelmasa: tarmoq orqali taxminiy nuqtani kutish vaqti
 const LOCATE_MIN_GAIN = 15; // metr: xarita faqat aniqlik shuncha yaxshilansagina qayta suriladi
 
 /**
@@ -334,8 +335,21 @@ export default function LocationMapPicker({
           })
           .catch(finish);
       });
-      if (!shown) throw new Error('no accurate fix');
-    } catch {
+      // 3) Aniq nuqta kelmadi (uyda GPS sekin, yoki faqat tarmoq nuqtasi bor): taxminiyroq nuqta olinadi —
+      // foydalanuvchi xaritada o'zi surib to'g'rilashi mumkin. Avval tarmoq bilan, bo'lmasa oxirgi ma'lum nuqta.
+      if (!shown) {
+        const approx = await Promise.race([
+          Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }).catch(
+            () => null
+          ),
+          new Promise((resolve) => setTimeout(() => resolve(null), LOCATE_FALLBACK_MS)),
+        ]);
+        const fallback = approx ?? (await Location.getLastKnownPositionAsync().catch(() => null));
+        if (fallback) show(fallback.coords);
+      }
+      if (!shown) throw new Error('no fix at all');
+    } catch (err) {
+      devLog('[LocationMapPicker] joylashuv aniqlanmadi:', err?.message);
       if (!silent && errorTitle) appAlert(errorTitle, errorMessage);
     } finally {
       setLocating(false);
